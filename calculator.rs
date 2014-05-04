@@ -45,6 +45,7 @@ pub fn eval(expr: &str) -> ~str {
 /// some expressions may have zero terms. Additionally, it can't check
 /// for bad tokens, instead passing the buck to tokenize.
 pub fn validate(expr: &str) -> bool {
+    if expr.len() <= 1 { return false }
     let mut lparenth = 0;
     let mut rparenth = 0;
     let mut operators = 0;
@@ -78,7 +79,7 @@ pub fn validate(expr: &str) -> bool {
                         //impossible
         }
     }
-    if lparenth != operators { return false }
+    if lparenth > operators { return false } //- is an operator and a sign
 
     true
 }
@@ -95,7 +96,7 @@ pub fn tokenize(expr: &str) -> (~str, Vec<f64>) {
     let mut point_flag = false;
     let mut skip = 0;
 
-    let operator: &str = expr.slice_from(1).words().next().unwrap();
+    let operator: &str = expr.slice_from(1).words().next().unwrap_or("oops");
     // This essentially forbids terms from touching operators. Which I am
     // 100% fine with.
     match operator {
@@ -120,6 +121,12 @@ pub fn tokenize(expr: &str) -> (~str, Vec<f64>) {
         if skip != 0 { skip -= 1 }
         else  {
             match c {
+                '-'         => {
+                    pi_flag = false;
+                    if buf.len() == 0 { buf.push_char(c) }
+                    else { return (BAD_TERM.to_owned(), terms) }
+                },
+
                 '0'..'9'    => { 
                     if pi_flag == false { buf.push_char(c) }
                     else { return (BAD_TERM.to_owned(), terms) }
@@ -358,6 +365,29 @@ pub fn pow(terms: &[f64]) -> ~str {
     }
 
     product.to_str().to_owned()
+}
+
+/// Root finds a number which when raised to a power equal to the index is
+/// equal to the radicand. It requires two arguments: the index and a
+/// radicand. It analyzes the index to prevent overflowing the stack with
+/// recursion. If the index is not a number whose inverse is an integer,
+/// it must be able to be expressed as a sequence of power and root
+/// expressions.
+pub fn root(radicand: f64, index: f64) -> ~str {
+    if index == 0.0 { return "1".to_owned() } //handles (root 0 0)
+    if radicand == 0.0 { return "0".to_owned() }
+    if index % 2.0 == 0.0 && radicand < 0.0 {
+        return "I can't handle this complexity!".to_owned()
+    }
+    let denominator = match index.floor() < index {
+        false   => 0.0, //this will be passed to pow as the power
+        true    => index - index.floor()
+    };
+    let factor = pow(&[base, denominator.recip()
+    
+    let numerator = index.floor();
+
+    return numerator.to_str().to_owned()
 }
 
 /// Rad converts degrees to radians. Its use is not recommended and it is
