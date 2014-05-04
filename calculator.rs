@@ -20,15 +20,18 @@ static DESPAIR: &'static str = "Laundry day is a very dangerous day.";
 pub fn eval(expr: &str) -> ~str {
     if validate(expr) == false { return BAD_EXPR.to_owned() }
     let (operator, terms) = tokenize(expr);
+    let termslice = terms.as_slice();
     let answer = match operator.slice_from(0) {
-        "+"     => add(terms.as_slice()),
-        "-"     => sub(terms.as_slice()),
-        "*"     => mul(terms.as_slice()),
-        "/"     => div(terms.as_slice()),
-        "%"     => rem(terms.as_slice()),
-        "pow"   => pow(terms.as_slice()),
-        "rad"   => rad(terms.as_slice()),
-        "sin"   => sin(terms.as_slice()),
+        "+"     => add(termslice),
+        "-"     => sub(termslice),
+        "*"     => mul(termslice),
+        "/"     => div(termslice),
+        "%"     => rem(termslice),
+        "pow"   => pow(termslice),
+        "rad"   => rad(termslice),
+        "sin"   => sin(termslice),
+        "cos"   => cos(termslice),
+        "tan"   => tan(termslice),
 //        "fac"   => fac(&terms),
         _   => operator
     };
@@ -63,14 +66,14 @@ pub fn validate(expr: &str) -> bool {
         }
         char_counter += 1;
     }
-    if lparenth != rparenth { return false }
+    if lparenth != rparenth || lparenth < 1 { return false }
     for w in expr.words() {
         let word = match w.slice_to(1) {
             "(" => w.slice_from(1),
             _   => w
         };
         match word {
-            "pow" | "sin" | "cos" | "tan" => { operators += 1 },
+            "pow" | "sin" | "cos" | "tan" | "rad" => { operators += 1 },
             _   => { }  //do nothing still because this kind of filter is
                         //impossible
         }
@@ -96,7 +99,9 @@ pub fn tokenize(expr: &str) -> (~str, Vec<f64>) {
     // This essentially forbids terms from touching operators. Which I am
     // 100% fine with.
     match operator {
-        "+" | "-" | "*" | "/" | "%" | "pow" | "sin" | "cos" | "tan"  => { },
+        "+" | "-" | "*" | "/" | "%"    => { },
+        "pow" | "sin" | "cos" | "tan"  => { },
+        "rad" => { },
         _   => { return (BAD_OPERATOR.to_owned(), terms) }
     }
     let mut op_len = 0;
@@ -361,18 +366,37 @@ pub fn pow(terms: &[f64]) -> ~str {
 /// if the user wants to use degrees, he will have to use the rad function
 /// to convert.
 pub fn rad(terms: &[f64]) -> ~str {
-    if terms.len() != 1 { return ONE_ARG_ONLY.to_owned(); }
+    if terms.len() != 1 { return ONE_ARG_ONLY.to_owned() }
     let radians = terms[0] * PI / 180.0;
 
     radians.to_str().to_owned()
 }
 
-/// The sin function. Takes either zero or one arguments. For no arguments,
+/// The sin function. Takes either zero or one terms. For no terms,
 /// 0 is returned.
 pub fn sin(terms: &[f64]) -> ~str {
-    if terms.len() > 1 { return ONE_ARG_ONLY.to_owned(); }
+    if terms.len() > 1 { return ONE_ARG_ONLY.to_owned() }
     if terms.len() == 0 { return "0".to_owned() }
     let answer = terms[0].sin();
+
+    answer.to_str().to_owned()
+}
+
+/// The cos function. Takes either zero or one terms. For no terms, 1 is 
+/// returned.
+pub fn cos(terms: &[f64]) -> ~str {
+    if terms.len() > 1 { return ONE_ARG_ONLY.to_owned() }
+    if terms.len() == 0 { return "0".to_owned() }
+    let answer = terms[0].cos();
+
+    answer.to_str().to_owned()
+}
+
+/// The tan function. Takes exactly one argument.
+pub fn tan(terms: &[f64]) -> ~str {
+    if terms.len() != 1 { return ONE_ARG_ONLY.to_owned() }
+    let answer = terms[0].tan();
+
     answer.to_str().to_owned()
 }
 
@@ -389,7 +413,7 @@ fn main() {
     let mut expr;
 
     loop {
-        expr = reader.read_line().ok().unwrap_or("exit ".to_owned());
+        expr = reader.read_line().ok().unwrap_or("exit".to_owned());
         if expr.trim() == "exit".to_owned() { break }
         let output = eval(expr.trim());
         println!("{}", output);
