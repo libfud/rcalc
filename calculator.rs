@@ -13,8 +13,7 @@ static BAD_OPERATOR : &'static str = "Improperly placed or missing operator!";
 static BAD_EXPR : &'static str = "Poorly formatted expression!";
 static BAD_TERM : &'static str = "Poorly formatted term!";
 static ONE_ARG_ONLY : &'static str = "This function only takes one argument!";
-static DESPAIR: &'static str =
-"I don't quite know what happened here. Maybe something very illogical. Maybe an oversight on my part. But this is going to be a rough day if this string is printed.";
+static DESPAIR: &'static str = "Laundry day is a very dangerous day.";
 
 ///Wrapper to evaluate a given expression. Checks to make sure that it's a
 ///valid expression, then does the appropriate action given the operator.
