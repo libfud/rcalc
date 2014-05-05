@@ -4,10 +4,13 @@
 //! Polish notation calculator.
 
 use std::io;
-use std::num::Float;
-use arithmetic::{add, sub, mul, div, rem};
+use arithmetic::{add, sub, mul, div, rem, pow};
+use trig::{rad, sin, cos, tan};
+use stats::avg;
 
 pub mod arithmetic;
+pub mod trig;
+pub mod stats;
 
 static PI: f64 = 3.141592653589793;
 //most accurate representation of pi possible in f64
@@ -23,19 +26,21 @@ static DESPAIR: &'static str = "Laundry day is a very dangerous day.";
 pub fn eval(expr: &str) -> ~str {
     if validate(expr) == false { return BAD_EXPR.to_owned() }
     let (operator, terms) = tokenize(expr);
-    let termslice = terms.as_slice();
+    let terms_slice = terms.as_slice();
     let answer = match operator.slice_from(0) {
-        "+"     => add(termslice),
-        "-"     => sub(termslice),
-        "*"     => mul(termslice),
-        "/"     => div(termslice),
-        "%"     => rem(termslice),
-        "pow"   => pow(termslice),
-        "rad"   => rad(termslice),
-        "sin"   => sin(termslice),
-        "cos"   => cos(termslice),
-        "tan"   => tan(termslice),
+        "+"     => add(terms_slice),
+        "-"     => sub(terms_slice),
+        "*"     => mul(terms_slice),
+        "/"     => div(terms_slice),
+        "%"     => rem(terms_slice),
+        "pow"   => pow(terms_slice),
+        "rad"   => rad(terms_slice),
+        "sin"   => sin(terms_slice),
+        "cos"   => cos(terms_slice),
+        "tan"   => tan(terms_slice),
+        "avg"   => avg(terms_slice),
 //        "fac"   => fac(&terms),
+//        going to add gamma function instead
         _   => operator
     };
 
@@ -77,7 +82,9 @@ pub fn validate(expr: &str) -> bool {
             _   => w
         };
         match word {
-            "pow" | "sin" | "cos" | "tan" | "rad" => { operators += 1 },
+            "pow" | "root"  => { operators += 1 },
+            "avg"           => { operators += 1 },
+            "sin" | "cos" | "tan" | "rad" => { operators += 1 },
             _   => { }  //do nothing still because this kind of filter is
                         //impossible
         }
@@ -104,8 +111,8 @@ pub fn tokenize(expr: &str) -> (~str, Vec<f64>) {
     // 100% fine with.
     match operator {
         "+" | "-" | "*" | "/" | "%"    => { },
-        "pow" | "sin" | "cos" | "tan"  => { },
-        "rad" => { },
+        "rad" | "sin" | "cos" | "tan"  => { },
+        "pow" | "root" | "avg" => { },
         _   => { return (BAD_OPERATOR.to_owned(), terms) }
     }
     let mut op_len = 0;
@@ -262,239 +269,7 @@ pub fn find_sub_expr_len(expr: &str) -> uint {
     len 
 }
 
-/*
-/// Adds the numbers in a vector. If there are zero terms, it returns 0.
-pub fn add(terms: &[f64]) -> ~str {
-    let  mut total = 0f64;
-    for term in terms.iter() {
-        total += *term;
-    }
-
-    total.to_str().to_owned()
-}
-
-/// Subtracts the numbers in a vector. At least one term is required. If
-/// there is only one term, it returns the negative value of that term.
-/// Otherwise, it starts subtracting from the left element. IE, if you
-/// have an expression (- 10 3 2), 3 is subtracted from 10, and 2 is
-/// subtracted from that value.
-pub fn sub(terms: &[f64]) -> ~str {
-    if terms.len() < 1 {
-        println!("Subtraction requires at least one term!");
-        return BAD_EXPR.to_owned()
-    } 
-    if terms.len() == 1 {
-        let difference = 0f64 - terms[0];
-        //negative val of first term
-        return difference.to_str().to_owned()
-    }
-    let mut difference = terms[0];
-    for term in terms.slice_from(1).iter(){ difference -= *term }
-
-    difference.to_str().to_owned()
-}
-
-/// Multiplies the numbers in a vector. Returns 1 for no terms. Otherwise
-/// it returns the product of all numbers in a vector.
-pub fn mul(terms: &[f64]) -> ~str {
-    let mut product = 1f64;
-    for term in terms.iter() { 
-        match *term {
-            0.0 => { return "0".to_owned() }
-            _   => { product *= *term } 
-        }
-    }
-    
-    product.to_str().to_owned()
-}
-
-/// Divides the numbers in a vector. Requires at least one term. If there is
-/// only one term, it returns its inverse. Otherwise, it returns the quotient
-/// of the first term by the following terms. For example, (/ 12 2 3) will
-/// be evaluated as 12 / 2 (6), divided by 3 ( 6 / 3 = 2)
-pub fn div(terms: &[f64]) -> ~str {
-    if terms.len() < 1 {
-        println!("Division requires at least one term!");
-        return BAD_EXPR.to_owned()
-    }
-    if terms.len() == 1 { 
-        match terms[0] {
-            0.0  => { return DIV_BY_ZERO.to_owned() }
-            _    => { return (1f64 / terms[0]).to_str().to_owned(); }
-        }
-    }
-    let mut quotient = terms[0];
-    if quotient == 0.0 || quotient == -0.0 { return DIV_BY_ZERO.to_owned() }
-    for term in terms.slice_from(1).iter() { 
-        match *term {
-            0.0 => { return DIV_BY_ZERO.to_owned() }
-            _   => { quotient /= *term }
-        }
-    }
-
-    quotient.to_str().to_owned()
-}
-
-/// Returns the remainder from integer division. Casts the terms to integers.
-/// Requires at least one term; if there is only one term, 1 is returned.
-/// Otherwise, it functions similarly to division and subtraction.
-pub fn rem(terms: &[f64]) -> ~str {
-    if terms.len() < 1 {
-        println!("Modulus operations require at least two terms!");
-        return BAD_EXPR.to_owned()
-    }
-    if terms.len() == 1 { 
-        match terms[0] {
-            0.0 => { return DIV_BY_ZERO.to_owned() }
-            _   => { return "1".to_owned() } // 1 % anything = 1
-        }
-    }
-    let mut remainder = terms[0] as int;
-    if terms[0] == 0.0 { return .to_owned() }
-    for term in terms.slice_from(1).iter() { 
-        match *term {
-            0.0 => { return DIV_BY_ZERO.to_owned() },
-            _   => { remainder %= *term as int }
-        }
-    }
-
-    remainder.to_str().to_owned()
-}
-*/
-
-/// Pow raises a number to a power - if there are more than one terms,
-/// it behaves like a tower of power. It uses the identity function
-/// for no terms and for the case of (pow 0 0). In the case of (pow 0 0 0),
-/// this will actually evaluate to 0, and (pow 0 0 0 0) will evaluate
-/// to one again. This behavior is periodic. Towers are evaluated recursively.
-/// If only one number is passed, the number is returned, unless it is zero,
-/// which returns zero.
-pub fn pow(terms: &[f64]) -> ~str {
-    if terms.len() == 0 { return "1".to_owned() }
-    if terms.len() == 1 { 
-        if terms.as_slice()[0] != 0.0 { 
-            return terms[0].to_str().to_owned()
-        }
-        else { return "0".to_owned() }
-    }
-    let base = terms[0];
-    let mut exponent : f64;
-    if terms.len() == 2 {
-        exponent = terms.as_slice()[1];
-    } else {
-        let temp_exponent = pow(terms.slice_from(1));
-        match from_str::<f64>(temp_exponent) {
-            Some(good_value)    => { exponent = good_value },
-            _                   => { return DESPAIR.to_owned() }
-        }
-    }
-    if base == 0.0 && exponent == 0.0 { return "1".to_owned() }
-    else if base == 0.0 { return "0".to_owned() }
-
-    let mut rootx = 1.0;
-  
-    let mut recip_flag = false;
-    if exponent < 0.0 { 
-        recip_flag = true;
-        exponent = exponent.abs();
-    }
-
-    let index = exponent - exponent.floor();
-    if index > 0.0 {
-        match from_str::<f64>(root_wrapper(&[base, index.recip()])) {
-            Some(num)   => { rootx = num },
-            _           => { return DESPAIR.to_owned() }
-        }
-    }
-
-    let mut product = 1f64;
-    for _ in range(0, exponent.floor() as int) { product *= base; }
-    product *= rootx;
-
-    if recip_flag == true { product = 1.0 / product }
-
-    product.to_str().to_owned()
-}
-
-/// Root finds a number which when raised to a power equal to the index is
-/// equal to the radicand. It requires two arguments: the index and a
-/// radicand. 
-pub fn root_wrapper(terms: &[f64]) -> ~str {
-    if terms.len() != 2 { 
-        return "A radicand and index, only, are required.".to_owned()
-    }
-    let (radicand, index) = (terms[0], terms[1]);
-
-    if index == 0.0 { return "1".to_owned() } //handles (root 0 0)
-    if radicand == 0.0 { return "0".to_owned() }
-    if index % 2.0 == 0.0 && radicand < 0.0 {
-        return "I can't handle this complexity!".to_owned()
-    }
-
-    if index != 2.0 {
-        println!("Only square roots are possible for now.");
-        return BAD_EXPR.to_owned()
-    }
-
-    let denominator = match index.floor() < index {
-        false   => 0.0, //this will be passed to pow as the power
-        true    => index - index.floor()
-    };
-
-    let mut factor_str = "1".to_owned();
-    if denominator > 0.001 {
-        factor_str = pow(&[radicand, denominator.recip()]);
-    }
-    let mut factor: f64;
-    match from_str::<f64>(factor_str) {
-        Some(num)   =>  { factor = num },
-        _           =>  { return DESPAIR.to_owned() }
-    }
-    
-    let numerator = index.floor();
-    let guess = 1.0;
-    let root_of_radicand = root(guess, radicand, numerator);
-    if root_of_radicand == -0.0 { return DESPAIR.to_owned() }
-
-    let answer = root_of_radicand * factor;
-
-    answer.to_str().to_owned()
-}
-
-/// This is the means to which the root function can attain recursion.
-/// Compares the absolute value of the difference of the guess raised to the
-/// power and the radicand to a tolerance. If it's within tolerance, that
-/// number is returned. Otherwise, it uses the average
-pub fn root(guess: f64, radicand: f64, index: f64)  -> f64 {
-    let tolerance = match index {
-        2.0 => 0.00001,
-        _   => 1.0
-    };
-    let mut guess_to_pow: f64;
-    match from_str::<f64>(pow(&[guess, index])) {
-        Some(num)   => { guess_to_pow = num },
-        _           => { return -0.0 }
-    }
-    if (guess_to_pow - radicand).abs() < tolerance {
-        return guess
-    }
-    let new_guess = (guess + radicand / guess) / 2.0;
-    root(new_guess, radicand, index)
-}
-
-/// Avg function returns the arithmetic mean of the terms.
-pub fn avg(terms: &[f64]) -> ~str {
-    if terms.len() < 1 { 
-        return "This function requires at least one term.".to_owned()
-    }
-    let average = match from_str::<f64>(add(terms)) {
-        Some(num)   => (num / terms.len() as f64).to_str(),
-        _           => DESPAIR.to_owned()
-    };
-
-    average
-}
-
+/// Returns the absolute value of the number.
 pub fn abs(terms: &[f64]) -> ~str {
     if terms.len() != 1 { return ONE_ARG_ONLY.to_owned() }
     if terms[0] > 0.0 { return terms[0].to_str().to_owned() }
@@ -502,54 +277,6 @@ pub fn abs(terms: &[f64]) -> ~str {
     return sub(terms)
 }
 
-/// Rad converts degrees to radians. Its use is not recommended and it is
-/// preferred for other functions to use radsians in the first place. In fact,
-/// all other trigonometric functions assume that radians are being used, so
-/// if the user wants to use degrees, he will have to use the rad function
-/// to convert.
-pub fn rad(terms: &[f64]) -> ~str {
-    if terms.len() != 1 { return ONE_ARG_ONLY.to_owned() }
-    let radians = terms[0] * PI / 180.0;
-
-    radians.to_str().to_owned()
-}
-
-/// The sin function. Takes either zero or one terms. For no terms,
-/// 0 is returned.
-pub fn sin(terms: &[f64]) -> ~str {
-    if terms.len() > 1 { return ONE_ARG_ONLY.to_owned() }
-    if terms.len() == 0 { return "0".to_owned() }
-    let answer = terms[0].sin();
-
-    answer.to_str().to_owned()
-}
-
-/// The cos function. Takes either zero or one terms. For no terms, 1 is 
-/// returned.
-pub fn cos(terms: &[f64]) -> ~str {
-    if terms.len() > 1 { return ONE_ARG_ONLY.to_owned() }
-    if terms.len() == 0 { return "0".to_owned() }
-    let answer = terms[0].cos();
-
-    answer.to_str().to_owned()
-}
-
-/// The tan function. Takes exactly one argument.
-pub fn tan(terms: &[f64]) -> ~str {
-    if terms.len() != 1 { return ONE_ARG_ONLY.to_owned() }
-    let answer = terms[0].tan();
-
-    answer.to_str().to_owned()
-}
-
-/*
-pub fn fac(terms: &Vec<f64>) -> ~str {
-    if terms.len() != 1 {
-        println!("Factorials only take one term!");
-        return BAD_EXPR.to_owned()
-    }
-    if terms.as_slice()[0]j
-*/
 fn main() {
     let mut reader = io::stdin();
     let mut expr;

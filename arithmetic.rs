@@ -3,6 +3,8 @@
 pub static BAD_EXPR : &'static str = "Poorly formatted expression!";
 pub static DIV_BY_ZERO : &'static str = "Division by zero is undefined";
 pub static DESPAIR: &'static str = "Laundry day is a very dangerous day.";
+pub static ONE_ARG_ONLY : &'static str = 
+    "This function only takes one argument!";
 
 /// Adds the numbers in a vector. If there are zero terms, it returns 0.
 pub fn add(terms: &[f64]) -> ~str {
@@ -100,4 +102,124 @@ pub fn rem(terms: &[f64]) -> ~str {
     }
 
     remainder.to_str().to_owned()
+}
+
+/// Pow raises a number to a power - if there are more than one terms,
+/// it behaves like a tower of power. It uses the identity function
+/// for no terms and for the case of (pow 0 0). In the case of (pow 0 0 0),
+/// this will actually evaluate to 0, and (pow 0 0 0 0) will evaluate
+/// to one again. This behavior is periodic. Towers are evaluated recursively.
+/// If only one number is passed, the number is returned, unless it is zero,
+/// which returns zero.
+pub fn pow(terms: &[f64]) -> ~str {
+    if terms.len() == 0 { return "1".to_owned() }
+    if terms.len() == 1 { 
+        if terms.as_slice()[0] != 0.0 { 
+            return terms[0].to_str().to_owned()
+        }
+        else { return "0".to_owned() }
+    }
+    let base = terms[0];
+    let mut exponent : f64;
+    if terms.len() == 2 {
+        exponent = terms.as_slice()[1];
+    } else {
+        let temp_exponent = pow(terms.slice_from(1));
+        match from_str::<f64>(temp_exponent) {
+            Some(good_value)    => { exponent = good_value },
+            _                   => { return DESPAIR.to_owned() }
+        }
+    }
+    if base == 0.0 && exponent == 0.0 { return "1".to_owned() }
+    else if base == 0.0 { return "0".to_owned() }
+
+    let mut rootx = 1.0;
+  
+    let mut recip_flag = false;
+    if exponent < 0.0 { 
+        recip_flag = true;
+        exponent = exponent.abs();
+    }
+
+    let index = exponent - exponent.floor();
+    if index > 0.0 {
+        match from_str::<f64>(root_wrapper(&[base, index.recip()])) {
+            Some(num)   => { rootx = num },
+            _           => { return DESPAIR.to_owned() }
+        }
+    }
+
+    let mut product = 1f64;
+    for _ in range(0, exponent.floor() as int) { product *= base; }
+    product *= rootx;
+
+    if recip_flag == true { product = 1.0 / product }
+
+    product.to_str().to_owned()
+}
+
+/// Root finds a number which when raised to a power equal to the index is
+/// equal to the radicand. It requires two arguments: the index and a
+/// radicand. 
+pub fn root_wrapper(terms: &[f64]) -> ~str {
+    if terms.len() != 2 { 
+        return "A radicand and index, only, are required.".to_owned()
+    }
+    let (radicand, index) = (terms[0], terms[1]);
+
+    if index == 0.0 { return "1".to_owned() } //handles (root 0 0)
+    if radicand == 0.0 { return "0".to_owned() }
+    if index % 2.0 == 0.0 && radicand < 0.0 {
+        return "I can't handle this complexity!".to_owned()
+    }
+
+    if index != 2.0 {
+        println!("Only square roots are possible for now.");
+        return BAD_EXPR.to_owned()
+    }
+
+    let denominator = match index.floor() < index {
+        false   => 0.0, //this will be passed to pow as the power
+        true    => index - index.floor()
+    };
+
+    let mut factor_str = "1".to_owned();
+    if denominator > 0.001 {
+        factor_str = pow(&[radicand, denominator.recip()]);
+    }
+    let mut factor: f64;
+    match from_str::<f64>(factor_str) {
+        Some(num)   =>  { factor = num },
+        _           =>  { return DESPAIR.to_owned() }
+    }
+    
+    let numerator = index.floor();
+    let guess = 1.0;
+    let root_of_radicand = root(guess, radicand, numerator);
+    if root_of_radicand == -0.0 { return DESPAIR.to_owned() }
+
+    let answer = root_of_radicand * factor;
+
+    answer.to_str().to_owned()
+}
+
+/// This is the means to which the root function can attain recursion.
+/// Compares the absolute value of the difference of the guess raised to the
+/// power and the radicand to a tolerance. If it's within tolerance, that
+/// number is returned. Otherwise, it uses the average
+pub fn root(guess: f64, radicand: f64, index: f64)  -> f64 {
+    let tolerance = match index {
+        2.0 => 0.00001,
+        _   => 1.0
+    };
+    let mut guess_to_pow: f64;
+    match from_str::<f64>(pow(&[guess, index])) {
+        Some(num)   => { guess_to_pow = num },
+        _           => { return -0.0 }
+    }
+    if (guess_to_pow - radicand).abs() < tolerance {
+        return guess
+    }
+    let new_guess = (guess + radicand / guess) / 2.0;
+    root(new_guess, radicand, index)
 }
