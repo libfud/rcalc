@@ -5,6 +5,9 @@
 
 use std::io;
 use std::num::Float;
+use arithmetic::{add, sub, mul, div, rem};
+
+pub mod arithmetic;
 
 static PI: f64 = 3.141592653589793;
 //most accurate representation of pi possible in f64
@@ -259,6 +262,7 @@ pub fn find_sub_expr_len(expr: &str) -> uint {
     len 
 }
 
+/*
 /// Adds the numbers in a vector. If there are zero terms, it returns 0.
 pub fn add(terms: &[f64]) -> ~str {
     let  mut total = 0f64;
@@ -294,7 +298,12 @@ pub fn sub(terms: &[f64]) -> ~str {
 /// it returns the product of all numbers in a vector.
 pub fn mul(terms: &[f64]) -> ~str {
     let mut product = 1f64;
-    for term in terms.iter() { product *= * term }
+    for term in terms.iter() { 
+        match *term {
+            0.0 => { return "0".to_owned() }
+            _   => { product *= *term } 
+        }
+    }
     
     product.to_str().to_owned()
 }
@@ -308,10 +317,20 @@ pub fn div(terms: &[f64]) -> ~str {
         println!("Division requires at least one term!");
         return BAD_EXPR.to_owned()
     }
-    if terms.len() == 1 { return (1f64 / terms[0]).to_str().to_owned(); }
-        //inverse of term
+    if terms.len() == 1 { 
+        match terms[0] {
+            0.0  => { return DIV_BY_ZERO.to_owned() }
+            _    => { return (1f64 / terms[0]).to_str().to_owned(); }
+        }
+    }
     let mut quotient = terms[0];
-    for term in terms.slice_from(1).iter() { quotient /= *term }
+    if quotient == 0.0 || quotient == -0.0 { return DIV_BY_ZERO.to_owned() }
+    for term in terms.slice_from(1).iter() { 
+        match *term {
+            0.0 => { return DIV_BY_ZERO.to_owned() }
+            _   => { quotient /= *term }
+        }
+    }
 
     quotient.to_str().to_owned()
 }
@@ -324,12 +343,24 @@ pub fn rem(terms: &[f64]) -> ~str {
         println!("Modulus operations require at least two terms!");
         return BAD_EXPR.to_owned()
     }
-    if terms.len() == 1 { return "1".to_owned() } // 1 % anything = 1 }
+    if terms.len() == 1 { 
+        match terms[0] {
+            0.0 => { return DIV_BY_ZERO.to_owned() }
+            _   => { return "1".to_owned() } // 1 % anything = 1
+        }
+    }
     let mut remainder = terms[0] as int;
-    for term in terms.slice_from(1).iter() { remainder %= *term as int }
+    if terms[0] == 0.0 { return .to_owned() }
+    for term in terms.slice_from(1).iter() { 
+        match *term {
+            0.0 => { return DIV_BY_ZERO.to_owned() },
+            _   => { remainder %= *term as int }
+        }
+    }
 
     remainder.to_str().to_owned()
 }
+*/
 
 /// Pow raises a number to a power - if there are more than one terms,
 /// it behaves like a tower of power. It uses the identity function
@@ -359,35 +390,116 @@ pub fn pow(terms: &[f64]) -> ~str {
     }
     if base == 0.0 && exponent == 0.0 { return "1".to_owned() }
     else if base == 0.0 { return "0".to_owned() }
-    let mut product = 1f64;
-    for _ in range(0, exponent as int) {
-        product *= base;
+
+    let mut rootx = 1.0;
+  
+    let mut recip_flag = false;
+    if exponent < 0.0 { 
+        recip_flag = true;
+        exponent = exponent.abs();
     }
+
+    let index = exponent - exponent.floor();
+    if index > 0.0 {
+        match from_str::<f64>(root_wrapper(&[base, index.recip()])) {
+            Some(num)   => { rootx = num },
+            _           => { return DESPAIR.to_owned() }
+        }
+    }
+
+    let mut product = 1f64;
+    for _ in range(0, exponent.floor() as int) { product *= base; }
+    product *= rootx;
+
+    if recip_flag == true { product = 1.0 / product }
 
     product.to_str().to_owned()
 }
 
 /// Root finds a number which when raised to a power equal to the index is
 /// equal to the radicand. It requires two arguments: the index and a
-/// radicand. It analyzes the index to prevent overflowing the stack with
-/// recursion. If the index is not a number whose inverse is an integer,
-/// it must be able to be expressed as a sequence of power and root
-/// expressions.
-pub fn root(radicand: f64, index: f64) -> ~str {
+/// radicand. 
+pub fn root_wrapper(terms: &[f64]) -> ~str {
+    if terms.len() != 2 { 
+        return "A radicand and index, only, are required.".to_owned()
+    }
+    let (radicand, index) = (terms[0], terms[1]);
+
     if index == 0.0 { return "1".to_owned() } //handles (root 0 0)
     if radicand == 0.0 { return "0".to_owned() }
     if index % 2.0 == 0.0 && radicand < 0.0 {
         return "I can't handle this complexity!".to_owned()
     }
+
+    if index != 2.0 {
+        println!("Only square roots are possible for now.");
+        return BAD_EXPR.to_owned()
+    }
+
     let denominator = match index.floor() < index {
         false   => 0.0, //this will be passed to pow as the power
         true    => index - index.floor()
     };
-    let factor = pow(&[base, denominator.recip()
+
+    let mut factor_str = "1".to_owned();
+    if denominator > 0.001 {
+        factor_str = pow(&[radicand, denominator.recip()]);
+    }
+    let mut factor: f64;
+    match from_str::<f64>(factor_str) {
+        Some(num)   =>  { factor = num },
+        _           =>  { return DESPAIR.to_owned() }
+    }
     
     let numerator = index.floor();
+    let guess = 1.0;
+    let root_of_radicand = root(guess, radicand, numerator);
+    if root_of_radicand == -0.0 { return DESPAIR.to_owned() }
 
-    return numerator.to_str().to_owned()
+    let answer = root_of_radicand * factor;
+
+    answer.to_str().to_owned()
+}
+
+/// This is the means to which the root function can attain recursion.
+/// Compares the absolute value of the difference of the guess raised to the
+/// power and the radicand to a tolerance. If it's within tolerance, that
+/// number is returned. Otherwise, it uses the average
+pub fn root(guess: f64, radicand: f64, index: f64)  -> f64 {
+    let tolerance = match index {
+        2.0 => 0.00001,
+        _   => 1.0
+    };
+    let mut guess_to_pow: f64;
+    match from_str::<f64>(pow(&[guess, index])) {
+        Some(num)   => { guess_to_pow = num },
+        _           => { return -0.0 }
+    }
+    if (guess_to_pow - radicand).abs() < tolerance {
+        return guess
+    }
+    let new_guess = (guess + radicand / guess) / 2.0;
+    root(new_guess, radicand, index)
+}
+
+/// Avg function returns the arithmetic mean of the terms.
+pub fn avg(terms: &[f64]) -> ~str {
+    if terms.len() < 1 { 
+        return "This function requires at least one term.".to_owned()
+    }
+    let average = match from_str::<f64>(add(terms)) {
+        Some(num)   => (num / terms.len() as f64).to_str(),
+        _           => DESPAIR.to_owned()
+    };
+
+    average
+}
+
+pub fn abs(terms: &[f64]) -> ~str {
+    if terms.len() != 1 { return ONE_ARG_ONLY.to_owned() }
+    if terms[0] > 0.0 { return terms[0].to_str().to_owned() }
+    
+    return sub(terms)
 }
 
 /// Rad converts degrees to radians. Its use is not recommended and it is
