@@ -35,7 +35,7 @@ pub fn eval(expr: &str) -> ~str {
         "avg"   => avg(terms),
         "abs"   => abs(terms),
         "<" | "<=" | "=" | ">=" | ">" => order(operator, terms),
-        "if"    => cond(terms),
+        "if"    => condit(terms),
 //        "fac"   => fac(&terms),
 //        going to add gamma function instead
         _   => operator
@@ -70,7 +70,7 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
     let mut op_len = 0; //gotta start looking at chars after the operator
     let mut last_char = ' ';
     for c in operator.chars().rev() { last_char = c; break; }
-        
+
     for c in expr.chars() {
         op_len += 1;
         if c == last_char { break }
@@ -213,19 +213,18 @@ pub fn find_sub_expr_len(expr: &str) -> uint {
     len 
 }
 
+/// Evaluates conditional statements. Currently only supports one condition,
+/// one consequent, and one alternative.
 pub fn condit(terms: &[~str]) -> ~str {
     if terms.len() != 3 {
         return "Condition, consequent, and alternative are required".to_owned()
     }
 
-    let condition = eval(terms[0]);
-    if condition != "true".to_owned() && condition != "false".to_owned() {
-        return "Non boolean condition".to_owned()
-    }
-
-    if condition == "true".to_owned() {
-        eval(terms[1]) //consequent
+    if terms[0] == "true".to_owned() { //terms[0] being the condition
+        terms[1].to_owned() //consequent
+    } else if terms[0] == "false".to_owned() {
+        terms[2].to_owned() //alternative
     } else {
-        eval(terms[2]) //alternative
+        "Non boolean condition".to_owned()
     }
 }
