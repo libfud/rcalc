@@ -173,26 +173,26 @@ pub fn root_wrapper(terms: &[f64]) -> ~str {
         return "I can't handle this complexity!".to_owned()
     }
 
-    /*if index != 2.0 {
-        println!("Only square roots are possible for now.");
-        return BAD_EXPR.to_owned()
-    }*/
+    let mut denominator = 0.0;
+    if index.floor() < index {
+        match index.recip() <= 0.5 {
+            true    => { denominator = index - index.floor() },
+            false   => { denominator = index.recip() - 0.5 }
+        }
+    }
 
-    let denominator = match index.floor() < index {
-        false   => 0.0, //this will be passed to pow as the power
-        true    => index - index.floor()
+    let dummycheck = index.recip();
+    match dummycheck <= 0.5 {
+        true    => { },
+        false   => { denominator -= 0.5 }
+    }
+
+    let factor = match denominator {
+        0.0 => { 1.0 }
+        _   => { radicand.powf(denominator) }
     };
-
-    let mut factor_str = "1".to_owned();
-    if denominator > 0.001 {
-        factor_str = pow(&[radicand, denominator.recip()]);
-    }
-    let mut factor: f64;
-    match from_str::<f64>(factor_str) {
-        Some(num)   =>  { factor = num },
-        _           =>  { return DESPAIR.to_owned() }
-    }
-    
+    //this is lazy but I can't suss out how to prevent infinite
+    //recursion on fractions > 1/2
     let numerator = index.floor();
     let guess = 1.0;
     let root_of_radicand = root(guess, radicand, numerator);
