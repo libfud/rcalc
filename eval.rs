@@ -3,7 +3,7 @@
 use arithmetic::{add, sub, mul, div, rem, pow, abs};
 use trig::{PI, rad, sin, cos, tan};
 use stats::avg;
-use common::{str_to_f64, ONE_ARG_ONLY, E};
+use common::{E};
 use logic::order;
 
 pub mod arithmetic;
@@ -35,6 +35,7 @@ pub fn eval(expr: &str) -> ~str {
         "avg"   => avg(terms),
         "abs"   => abs(terms),
         "<" | "<=" | "=" | ">=" | ">" => order(operator, terms),
+        "if"    => cond(terms),
 //        "fac"   => fac(&terms),
 //        going to add gamma function instead
         _   => operator
@@ -63,9 +64,10 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
         "rad" | "sin" | "cos" | "tan"   => { },
         "pow" | "root" | "avg" | "abs"  => { },
         "<" | "<=" | "=" | ">=" | ">"   => { },
+        "if"                            => { },
         _   => { return (BAD_OPERATOR.to_owned(), terms.as_slice().to_owned()) }
     }
-    let mut op_len = 0;
+    let mut op_len = 0; //gotta start looking at chars after the operator
     let mut last_char = ' ';
     for c in operator.chars().rev() { last_char = c; break; }
         
@@ -217,14 +219,13 @@ pub fn condit(terms: &[~str]) -> ~str {
     }
 
     let condition = eval(terms[0]);
-    let (consequent, alternative) = (terms[1], terms[2]);
-    if condition != "true" && condition != "false" {
+    if condition != "true".to_owned() && condition != "false".to_owned() {
         return "Non boolean condition".to_owned()
     }
 
-    if condition == true {
-        return eval(consequent)
+    if condition == "true".to_owned() {
+        eval(terms[1]) //consequent
     } else {
-        return eval(alternative)
+        eval(terms[2]) //alternative
     }
 }
