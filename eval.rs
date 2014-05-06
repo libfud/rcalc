@@ -217,7 +217,7 @@ pub fn condit(terms: &[~str]) -> ~str {
 
     let condition = eval(terms[0]);
     let (consequent, alternative) = (terms[1], terms[2]);
-    if condition != "true" && "condition" != "false" {
+    if condition != "true" && condition != "false" {
         return "Non boolean condition".to_owned()
     }
 
