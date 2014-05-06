@@ -221,7 +221,7 @@ pub fn condit(terms: &[~str]) -> ~str {
         return "Non boolean condition".to_owned()
     }
 
-    if condtiion == true {
+    if condition == true {
         return eval(consequent)
     } else {
         return eval(alternative)
