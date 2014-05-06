@@ -207,6 +207,7 @@ pub fn find_sub_expr_len(expr: &str) -> uint {
         len += 1;
         if rparenth == lparenth { break }
     }
+
     len 
 }
 
@@ -221,10 +222,9 @@ pub fn condit(terms: &[~str]) -> ~str {
         return "Non boolean condition".to_owned()
     }
 
-    let answer = match condition {
-        true    => eval(consequent),
-        false   => eval(alternative)
-    };
-
-    answer
+    if condition == true {
+        return eval(consequent)
+    } else {
+        return eval(alternative)
+    }
 }
