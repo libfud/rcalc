@@ -16,7 +16,7 @@ pub fn abs(terms_str: &[~str]) -> ~str {
     if message != "OK" { return message.to_owned() }
     if terms[0] > 0.0 { return terms[0].to_str().to_owned() }
     
-    return sub(terms_str)
+    sub(terms_str)
 }
 
 /// Adds the numbers in a vector. If there are zero terms, it returns 0.
@@ -28,7 +28,7 @@ pub fn add(terms_str: &[~str]) -> ~str {
         total += *term;
     }
 
-    to_str_exact(total, 10).to_owned()
+    total.to_str().to_owned()
 }
 
 /// Subtracts the numbers in a vector. At least one term is required. If
