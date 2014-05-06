@@ -1,13 +1,17 @@
 //! Arithmetic functions.
 
+use common::{DESPAIR, str_to_f64};
+pub mod common;
+
 pub static BAD_EXPR : &'static str = "Poorly formatted expression!";
 pub static DIV_BY_ZERO : &'static str = "Division by zero is undefined";
-pub static DESPAIR: &'static str = "Laundry day is a very dangerous day.";
 pub static ONE_ARG_ONLY : &'static str = 
     "This function only takes one argument!";
 
 /// Adds the numbers in a vector. If there are zero terms, it returns 0.
-pub fn add(terms: &[f64]) -> ~str {
+pub fn add(terms_str: &[~str]) -> ~str {
+    let (message, terms) = str_to_f64(terms_str);
+    if message != "OK!" { return message.to_owned() }
     let  mut total = 0f64;
     for term in terms.iter() {
         total += *term;
@@ -21,16 +25,18 @@ pub fn add(terms: &[f64]) -> ~str {
 /// Otherwise, it starts subtracting from the left element. IE, if you
 /// have an expression (- 10 3 2), 3 is subtracted from 10, and 2 is
 /// subtracted from that value.
-pub fn sub(terms: &[f64]) -> ~str {
-    if terms.len() < 1 {
+pub fn sub(terms_str: &[~str]) -> ~str {
+    if terms_str.len() < 1 {
         println!("Subtraction requires at least one term!");
         return BAD_EXPR.to_owned()
     } 
+    let (message, terms) = str_to_f64(terms_str);
+    if message != "OK!" { return message.to_owned() }
     if terms.len() == 1 {
-        let difference = 0f64 - terms[0];
+        let difference = 0.0 - terms[0];
         //negative val of first term
         return difference.to_str().to_owned()
-    }
+    };
     let mut difference = terms[0];
     for term in terms.slice_from(1).iter(){ difference -= *term }
 
@@ -39,8 +45,10 @@ pub fn sub(terms: &[f64]) -> ~str {
 
 /// Multiplies the numbers in a vector. Returns 1 for no terms. Otherwise
 /// it returns the product of all numbers in a vector.
-pub fn mul(terms: &[f64]) -> ~str {
+pub fn mul(terms_str: &[~str]) -> ~str {
     let mut product = 1f64;
+    let (message, terms) = str_to_f64(terms_str);
+    if message != "OK!" { return message.to_owned() }
     for term in terms.iter() { 
         match *term {
             0.0 => { return "0".to_owned() }
@@ -55,11 +63,13 @@ pub fn mul(terms: &[f64]) -> ~str {
 /// only one term, it returns its inverse. Otherwise, it returns the quotient
 /// of the first term by the following terms. For example, (/ 12 2 3) will
 /// be evaluated as 12 / 2 (6), divided by 3 ( 6 / 3 = 2)
-pub fn div(terms: &[f64]) -> ~str {
-    if terms.len() < 1 {
+pub fn div(terms_str: &[~str]) -> ~str {
+    if terms_str.len() < 1 {
         println!("Division requires at least one term!");
         return BAD_EXPR.to_owned()
     }
+    let (message, terms) = str_to_f64(terms_str);
+    if message != "OK!" { return message.to_owned() }
     if terms.len() == 1 { 
         match terms[0] {
             0.0  => { return DIV_BY_ZERO.to_owned() }
@@ -81,11 +91,13 @@ pub fn div(terms: &[f64]) -> ~str {
 /// Returns the remainder from integer division. Casts the terms to integers.
 /// Requires at least one term; if there is only one term, 1 is returned.
 /// Otherwise, it functions similarly to division and subtraction.
-pub fn rem(terms: &[f64]) -> ~str {
-    if terms.len() < 1 {
+pub fn rem(terms_str: &[~str]) -> ~str {
+    if terms_str.len() < 1 {
         println!("Modulus operations require at least two terms!");
         return BAD_EXPR.to_owned()
     }
+    let (message, terms) = str_to_f64(terms_str);
+    if message != "OK!" { return message.to_owned() }
     if terms.len() == 1 { 
         match terms[0] {
             0.0 => { return DIV_BY_ZERO.to_owned() }
@@ -111,8 +123,10 @@ pub fn rem(terms: &[f64]) -> ~str {
 /// to one again. This behavior is periodic. Towers are evaluated recursively.
 /// If only one number is passed, the number is returned, unless it is zero,
 /// which returns zero.
-pub fn pow(terms: &[f64]) -> ~str {
-    if terms.len() == 0 { return "1".to_owned() }
+pub fn pow(terms_str: &[~str]) -> ~str {
+    if terms_str.len() == 0 { return "1".to_owned() }
+    let (message, terms) = str_to_f64(terms_str);
+    if message != "OK!" { return message.to_owned() }
     if terms.len() == 1 { 
         if terms.as_slice()[0] != 0.0 { 
             return terms[0].to_str().to_owned()
@@ -124,7 +138,7 @@ pub fn pow(terms: &[f64]) -> ~str {
     if terms.len() == 2 {
         exponent = terms.as_slice()[1];
     } else {
-        let temp_exponent = pow(terms.slice_from(1));
+        let temp_exponent = pow(terms_str.slice_from(1));
         match from_str::<f64>(temp_exponent) {
             Some(good_value)    => { exponent = good_value },
             _                   => { return DESPAIR.to_owned() }
@@ -213,7 +227,7 @@ pub fn root(guess: f64, radicand: f64, index: f64)  -> f64 {
         _   => 0.00001,
     };
     let mut guess_to_pow: f64;
-    match from_str::<f64>(pow(&[guess, index])) {
+    match from_str::<f64>(pow(&[guess.to_str(), index.to_str()])) {
         Some(num)   => { guess_to_pow = num },
         _           => { return -0.0 }
     }
@@ -226,7 +240,8 @@ pub fn root(guess: f64, radicand: f64, index: f64)  -> f64 {
         _   => { 
             let delta = index.recip() * ((
                 radicand /
-                (from_str::<f64>(pow(&[guess, (index - 1.0)])).unwrap()) - guess));
+                (from_str::<f64>(pow(&[guess.to_str(), (index - 1.0).to_str()])
+                ).unwrap()) - guess));
             new_guess = guess + delta
         }
     }

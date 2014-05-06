@@ -1,5 +1,7 @@
 rcalc
 doc
 Base_converter
+dummy
+dummy.rs
 *.swp
 *.swo

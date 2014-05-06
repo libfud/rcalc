@@ -5,39 +5,39 @@
 
 use std::io;
 use arithmetic::{add, sub, mul, div, rem, pow};
-use trig::{rad, sin, cos, tan};
+use trig::{PI, rad, sin, cos, tan};
 use stats::avg;
+use common::{str_to_f64, ONE_ARG_ONLY};
 
 pub mod arithmetic;
 pub mod trig;
 pub mod stats;
+pub mod common;
 
-static PI: f64 = 3.141592653589793;
+//static PI: f64 = 3.141592653589793;
 //most accurate representation of pi possible in f64
 
 static BAD_OPERATOR : &'static str = "Improperly placed or missing operator!";
 static BAD_EXPR : &'static str = "Poorly formatted expression!";
 static BAD_TERM : &'static str = "Poorly formatted term!";
-static ONE_ARG_ONLY : &'static str = "This function only takes one argument!";
-static DESPAIR: &'static str = "Laundry day is a very dangerous day.";
 
 ///Wrapper to evaluate a given expression. Checks to make sure that it's a
 ///valid expression, then does the appropriate action given the operator.
 pub fn eval(expr: &str) -> ~str {
     let (operator, terms) = tokenize(expr);
-    let terms_slice = terms.as_slice();
     let answer = match operator.slice_from(0) {
-        "+"     => add(terms_slice),
-        "-"     => sub(terms_slice),
-        "*"     => mul(terms_slice),
-        "/"     => div(terms_slice),
-        "%"     => rem(terms_slice),
-        "pow"   => pow(terms_slice),
-        "rad"   => rad(terms_slice),
-        "sin"   => sin(terms_slice),
-        "cos"   => cos(terms_slice),
-        "tan"   => tan(terms_slice),
-        "avg"   => avg(terms_slice),
+        "+"     => add(terms),
+        "-"     => sub(terms),
+        "*"     => mul(terms),
+        "/"     => div(terms),
+        "%"     => rem(terms),
+        "pow"   => pow(terms),
+        "rad"   => rad(terms),
+        "sin"   => sin(terms),
+        "cos"   => cos(terms),
+        "tan"   => tan(terms),
+        "avg"   => avg(terms),
+        "abs"   => abs(terms),
 //        "fac"   => fac(&terms),
 //        going to add gamma function instead
         _   => operator
@@ -52,8 +52,8 @@ pub fn eval(expr: &str) -> ~str {
 /// the expression is bad. Then, the expression is parsed from the char
 /// following the operator, and each character is matched against valid
 /// tokens. If the character is not valid, it returns a bad expression.
-pub fn tokenize(expr: &str) -> (~str, Vec<f64>) {
-    let mut terms = Vec::new();
+pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
+    let mut terms: Vec<~str> = Vec::new();
     let mut buf = StrBuf::new();
     let mut point_flag = false;
     let mut skip = 0;
@@ -64,8 +64,8 @@ pub fn tokenize(expr: &str) -> (~str, Vec<f64>) {
     match operator {
         "+" | "-" | "*" | "/" | "%"    => { },
         "rad" | "sin" | "cos" | "tan"  => { },
-        "pow" | "root" | "avg" => { },
-        _   => { return (BAD_OPERATOR.to_owned(), terms) }
+        "pow" | "root" | "avg" | "abs" => { },
+        _   => { return (BAD_OPERATOR.to_owned(), terms.as_slice().to_owned()) }
     }
     let mut op_len = 0;
     let mut last_char = ' ';
@@ -86,40 +86,48 @@ pub fn tokenize(expr: &str) -> (~str, Vec<f64>) {
                 '-'         => {
                     pi_flag = false;
                     if buf.len() == 0 { buf.push_char(c) }
-                    else { return (BAD_TERM.to_owned(), terms) }
+                    else {
+                        return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
+                    }
                 },
 
                 '0'..'9'    => { 
                     if pi_flag == false { buf.push_char(c) }
-                    else { return (BAD_TERM.to_owned(), terms) }
+                    else {
+                        return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
+                    }
                 },
 
                 'π'         => {
-                    if buf.len() != 0 { return (BAD_TERM.to_owned(), terms) }
-                    else { terms.push(PI) }
+                    if buf.len() != 0 {
+                        return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
+                    }
+                    else { terms.push(PI.to_str().to_owned()) }
                 },
 
                 'p'         => {
                     if pi_flag == false && buf.len() == 0 {
                         pi_flag = true;
-                    } else { return (BAD_TERM.to_owned(), terms) }
+                    } else {
+                        return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
+                    }
                 }
 
                 'i'         => {
                     if pi_flag == true && buf.len() == 0 {
-                        terms.push(PI);
+                        terms.push(PI.to_str().to_owned());
                         pi_flag = false;
-                    } else { return (BAD_TERM.to_owned(), terms) }
+                    } else {
+                        return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
+                    }
                 },
 
                 '.'         => { 
                     if point_flag == false {
                         point_flag = true;
-                        //prepend a zero in preparation for the cast
-                        if buf.len() == 0 { buf.push_char('0') }
                         buf.push_char(c);
                     } else {
-                        return ("Improperly formatted term!".to_owned(), terms)
+                        return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
                     }
                 },
 
@@ -128,13 +136,7 @@ pub fn tokenize(expr: &str) -> (~str, Vec<f64>) {
                     pi_flag = false;
                     point_flag = false;
                     if buf.len() > 0 {
-                        match from_str::<f64>(buf.to_str()) {
-                            Some(num)   => terms.push(num),
-                            _           => {
-                                println!("{}", DESPAIR);
-                                return (operator.to_owned(), terms)
-                            }
-                        }
+                        terms.push(buf.to_str().to_owned());
                         buf = "".to_strbuf(); 
                     }
                 },
@@ -144,13 +146,7 @@ pub fn tokenize(expr: &str) -> (~str, Vec<f64>) {
                     //make sure to add the number in the buffer to the vector
                     //if it's present
                     if buf.len() > 0 {
-                        match from_str::<f64>(buf.to_str()) {
-                            Some(num)   => { terms.push(num) },
-                            _           => {
-                                println!("{}", DESPAIR);
-                                return (BAD_OPERATOR.to_owned(), terms);
-                            }
-                        }
+                        terms.push(buf.to_str().to_owned());
                         buf = "".to_strbuf();
                     }
 
@@ -164,16 +160,10 @@ pub fn tokenize(expr: &str) -> (~str, Vec<f64>) {
 
                     //account for failure
                     if term == BAD_EXPR.to_owned() {
-                        return (BAD_EXPR.to_owned(), terms)
+                        return (BAD_EXPR.to_owned(),terms.as_slice().to_owned())
                     }
                     
-                    match from_str::<f64>(term) {
-                        Some(num)   => { terms.push(num) },
-                        _           => {
-                            println!("{}", DESPAIR);
-                            return (operator.to_owned(), terms)
-                        }
-                    }
+                    terms.push(term);
                     
                     //Account for the subexpression's length
                     counter += term_len;
@@ -182,26 +172,20 @@ pub fn tokenize(expr: &str) -> (~str, Vec<f64>) {
 
                 ')'         => {
                     if buf.len() > 0 {
-                        match from_str::<f64>(buf.to_str()) {
-                            Some(num)   => { terms.push(num) },
-                            _           => {
-                                println!("{}", DESPAIR);
-                                return (BAD_OPERATOR.to_owned(), terms);
-                            }
-                        }
+                        terms.push(buf.to_str().to_owned());
                         buf = "".to_strbuf();
                     }
                 }
 
                 _           => {
-                    return (BAD_EXPR.to_owned(), terms);
+                    return (BAD_EXPR.to_owned(), terms.as_slice().to_owned());
                 }
             }
             counter += 1;
         }
     }
 
-    (operator.to_owned(), terms)
+    (operator.to_owned(), terms.as_slice().to_owned())
 }
 
 /// A helper function to find the length of a sub expression. 
@@ -222,11 +206,13 @@ pub fn find_sub_expr_len(expr: &str) -> uint {
 }
 
 /// Returns the absolute value of the number.
-pub fn abs(terms: &[f64]) -> ~str {
-    if terms.len() != 1 { return ONE_ARG_ONLY.to_owned() }
+pub fn abs(terms_str: &[~str]) -> ~str {
+    if terms_str.len() != 1 { return ONE_ARG_ONLY.to_owned() }
+    let (message, terms) = str_to_f64(terms_str);
+    if message != "OK" { return message.to_owned() }
     if terms[0] > 0.0 { return terms[0].to_str().to_owned() }
     
-    return sub(terms)
+    return sub(terms_str)
 }
 
 fn main() {
