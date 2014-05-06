@@ -173,10 +173,10 @@ pub fn root_wrapper(terms: &[f64]) -> ~str {
         return "I can't handle this complexity!".to_owned()
     }
 
-    if index != 2.0 {
+    /*if index != 2.0 {
         println!("Only square roots are possible for now.");
         return BAD_EXPR.to_owned()
-    }
+    }*/
 
     let denominator = match index.floor() < index {
         false   => 0.0, //this will be passed to pow as the power
@@ -208,9 +208,9 @@ pub fn root_wrapper(terms: &[f64]) -> ~str {
 /// power and the radicand to a tolerance. If it's within tolerance, that
 /// number is returned. Otherwise, it uses the average
 pub fn root(guess: f64, radicand: f64, index: f64)  -> f64 {
-    let tolerance = match index {
+    let tolerance = match index { //aka epsilon
         2.0 => 0.00001,
-        _   => 1.0
+        _   => 0.00001,
     };
     let mut guess_to_pow: f64;
     match from_str::<f64>(pow(&[guess, index])) {
@@ -220,6 +220,16 @@ pub fn root(guess: f64, radicand: f64, index: f64)  -> f64 {
     if (guess_to_pow - radicand).abs() < tolerance {
         return guess
     }
-    let new_guess = (guess + radicand / guess) / 2.0;
+    let mut new_guess: f64;
+    match index {
+        2.0 => { new_guess = (guess + radicand / guess) / 2.0 }
+        _   => { 
+            let delta = index.recip() * ((
+                radicand /
+                (from_str::<f64>(pow(&[guess, (index - 1.0)])).unwrap()) - guess));
+            new_guess = guess + delta
+        }
+    }
+
     root(new_guess, radicand, index)
 }
