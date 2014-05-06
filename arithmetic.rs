@@ -9,6 +9,16 @@ pub static DIV_BY_ZERO : &'static str = "Division by zero is undefined";
 pub static ONE_ARG_ONLY : &'static str = 
     "This function only takes one argument!";
 
+/// Returns the absolute value of the number.
+pub fn abs(terms_str: &[~str]) -> ~str {
+    if terms_str.len() != 1 { return ONE_ARG_ONLY.to_owned() }
+    let (message, terms) = str_to_f64(terms_str);
+    if message != "OK" { return message.to_owned() }
+    if terms[0] > 0.0 { return terms[0].to_str().to_owned() }
+    
+    return sub(terms_str)
+}
+
 /// Adds the numbers in a vector. If there are zero terms, it returns 0.
 pub fn add(terms_str: &[~str]) -> ~str {
     let (message, terms) = str_to_f64(terms_str);

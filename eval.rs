@@ -1,16 +1,9 @@
-#![crate_id = "rcalc"]
-#![crate_type = "bin"]
+//! The eval and parser.
 
-//! Polish notation calculator.
-
-use std::io;
-use eval::eval;
-pub mod eval;
-/*
-use arithmetic::{add, sub, mul, div, rem, pow};
+use arithmetic::{add, sub, mul, div, rem, pow, abs};
 use trig::{PI, rad, sin, cos, tan};
 use stats::avg;
-use common::{eval, str_to_f64, ONE_ARG_ONLY, E};
+use common::{str_to_f64, ONE_ARG_ONLY, E};
 use logic::order;
 
 pub mod arithmetic;
@@ -19,8 +12,6 @@ pub mod stats;
 pub mod common;
 pub mod logic;
 
-//static PI: f64 = 3.141592653589793;
-//most accurate representation of pi possible in f64
 
 static BAD_OPERATOR : &'static str = "Improperly placed or missing operator!";
 static BAD_EXPR : &'static str = "Poorly formatted expression!";
@@ -219,25 +210,20 @@ pub fn find_sub_expr_len(expr: &str) -> uint {
     len 
 }
 
+pub fn condit(terms: &[~str]) -> ~str {
+    if terms.len() != 3 {
+        return "Condition, consequent, and alternative are required".to_owned()
+    }
 
-/// Returns the absolute value of the number.
-pub fn abs(terms_str: &[~str]) -> ~str {
-    if terms_str.len() != 1 { return ONE_ARG_ONLY.to_owned() }
-    let (message, terms) = str_to_f64(terms_str);
-    if message != "OK" { return message.to_owned() }
-    if terms[0] > 0.0 { return terms[0].to_str().to_owned() }
-    
-    return sub(terms_str)
-}
-*/
-fn main() {
-    let mut reader = io::stdin();
-    let mut expr;
+    let condition = eval(terms[0]);
+    let (consequent, alternative) = (terms[1], terms[2]);
+    if condition != "true" && "condition" != "false" {
+        return "Non boolean condition".to_owned()
+    }
 
-    loop {
-        expr = reader.read_line().ok().unwrap_or("exit".to_owned());
-        if expr.trim() == "exit".to_owned() { break }
-        let output = eval(expr.trim());
-        println!("{}", output);
+    if condtiion == true {
+        return eval(consequent)
+    } else {
+        return eval(alternative)
     }
 }
