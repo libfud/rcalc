@@ -3,7 +3,7 @@
 use common::{ONE_ARG_ONLY, str_to_f64};
 pub mod common;
 
-pub static PI : f64 = 3.141592653589793;
+pub static PI : f64 = 3.14159265358979323846264338327950288_f64;
 
 /// Rad converts degrees to radians. Its use is not recommended and it is
 /// preferred for other functions to use radsians in the first place. In fact,

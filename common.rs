@@ -4,6 +4,8 @@ pub static DESPAIR: &'static str = "Laundry day is a very dangerous day.";
 pub static ONE_ARG_ONLY : &'static str =
     "This function only takes one argument!";
 
+pub static E: f64 = 2.71828182845904523536028747135266250_f64;
+
 pub fn str_to_f64(str_array: &[~str]) -> (&str, ~[f64]) {
     let mut float_vec = Vec::new();
     for elem in str_array.iter() {

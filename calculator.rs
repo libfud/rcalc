@@ -7,7 +7,7 @@ use std::io;
 use arithmetic::{add, sub, mul, div, rem, pow};
 use trig::{PI, rad, sin, cos, tan};
 use stats::avg;
-use common::{str_to_f64, ONE_ARG_ONLY};
+use common::{str_to_f64, ONE_ARG_ONLY, E};
 
 pub mod arithmetic;
 pub mod trig;
@@ -118,6 +118,13 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
                         terms.push(PI.to_str().to_owned());
                         pi_flag = false;
                     } else {
+                        return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
+                    }
+                },
+
+                'e'         => {
+                    if buf.len() == 0 { terms.push(E.to_str().to_owned()) }
+                    else {
                         return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
                     }
                 },

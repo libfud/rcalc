@@ -1,5 +1,6 @@
 //! Arithmetic functions.
 
+use std::f64::to_str_exact;
 use common::{DESPAIR, str_to_f64};
 pub mod common;
 
@@ -17,7 +18,7 @@ pub fn add(terms_str: &[~str]) -> ~str {
         total += *term;
     }
 
-    total.to_str().to_owned()
+    to_str_exact(total, 10).to_owned()
 }
 
 /// Subtracts the numbers in a vector. At least one term is required. If
@@ -40,7 +41,7 @@ pub fn sub(terms_str: &[~str]) -> ~str {
     let mut difference = terms[0];
     for term in terms.slice_from(1).iter(){ difference -= *term }
 
-    difference.to_str().to_owned()
+    to_str_exact(difference, 10).to_owned()
 }
 
 /// Multiplies the numbers in a vector. Returns 1 for no terms. Otherwise
@@ -56,7 +57,7 @@ pub fn mul(terms_str: &[~str]) -> ~str {
         }
     }
     
-    product.to_str().to_owned()
+    to_str_exact(product, 10).to_owned()
 }
 
 /// Divides the numbers in a vector. Requires at least one term. If there is
@@ -85,7 +86,7 @@ pub fn div(terms_str: &[~str]) -> ~str {
         }
     }
 
-    quotient.to_str().to_owned()
+    to_str_exact(quotient, 10).to_owned()
 }
 
 /// Returns the remainder from integer division. Casts the terms to integers.
@@ -169,7 +170,7 @@ pub fn pow(terms_str: &[~str]) -> ~str {
 
     if recip_flag == true { product = 1.0 / product }
 
-    product.to_str().to_owned()
+    to_str_exact(product, 50).to_owned()
 }
 
 /// Root finds a number which when raised to a power equal to the index is
@@ -214,7 +215,7 @@ pub fn root_wrapper(terms: &[f64]) -> ~str {
 
     let answer = root_of_radicand * factor;
 
-    answer.to_str().to_owned()
+    to_str_exact(answer, 50).to_owned()
 }
 
 /// This is the means to which the root function can attain recursion.
