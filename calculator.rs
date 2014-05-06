@@ -24,7 +24,6 @@ static DESPAIR: &'static str = "Laundry day is a very dangerous day.";
 ///Wrapper to evaluate a given expression. Checks to make sure that it's a
 ///valid expression, then does the appropriate action given the operator.
 pub fn eval(expr: &str) -> ~str {
-    if validate(expr) == false { return BAD_EXPR.to_owned() }
     let (operator, terms) = tokenize(expr);
     let terms_slice = terms.as_slice();
     let answer = match operator.slice_from(0) {
@@ -45,53 +44,6 @@ pub fn eval(expr: &str) -> ~str {
     };
 
     answer
-}
-
-/// Checks an expression. The expression must have an equal number of 
-/// parentheses, and for each set of parentheses, must be an operator.
-/// This does not check for the number of terms for each expression, as
-/// some expressions may have zero terms. Additionally, it can't check
-/// for bad tokens, instead passing the buck to tokenize.
-pub fn validate(expr: &str) -> bool {
-    if expr.len() <= 1 { return false }
-    let mut lparenth = 0;
-    let mut rparenth = 0;
-    let mut operators = 0;
-    let mut char_counter = 0;
-    for c in expr.chars() {
-        match c {
-            '0'..'9' | ' ' | 'π' => { },
-            '(' => { lparenth += 1 },
-            ')' => { 
-                if lparenth - 1 == rparenth && char_counter + 1 < expr.len() {
-                    return false
-                } else {
-                    rparenth += 1;
-                }
-            },
-            '+' | '-' | '*' | '/' | '%' => { operators += 1 },
-            _   => { }  //can't catch bad letters here now since we have to
-                        //also look for operators which are words
-        }
-        char_counter += 1;
-    }
-    if lparenth != rparenth || lparenth < 1 { return false }
-    for w in expr.words() {
-        let word = match w.slice_to(1) {
-            "(" => w.slice_from(1),
-            _   => w
-        };
-        match word {
-            "pow" | "root"  => { operators += 1 },
-            "avg"           => { operators += 1 },
-            "sin" | "cos" | "tan" | "rad" => { operators += 1 },
-            _   => { }  //do nothing still because this kind of filter is
-                        //impossible
-        }
-    }
-    if lparenth > operators { return false } //- is an operator and a sign
-
-    true
 }
 
 /// Parses an expression and returns a tuple containing its operator and
