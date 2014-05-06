@@ -221,9 +221,10 @@ pub fn condit(terms: &[~str]) -> ~str {
         return "Non boolean condition".to_owned()
     }
 
-    if condition == true {
-        return eval(consequent)
-    } else {
-        return eval(alternative)
-    }
+    let answer = match condition {
+        true    => eval(consequent),
+        false   => eval(alternative)
+    };
+
+    answer
 }
