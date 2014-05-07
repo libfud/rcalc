@@ -29,6 +29,7 @@ pub fn abs(terms_str: &[~str]) -> ~str {
 pub fn add(terms_str: &[~str]) -> ~str {
     let (message, terms) = str_to_rational(terms_str);
     if message != "OK!" { return message.to_owned() }
+
     let  mut total = from_str::<BigRational>("0/1").unwrap();
     for term in terms.iter() {
         total = total.add(term);
@@ -68,17 +69,15 @@ pub fn sub(terms_str: &[~str]) -> ~str {
 /// Multiplies the numbers in a vector. Returns 1 for no terms. Otherwise
 /// it returns the product of all numbers in a vector.
 pub fn mul(terms_str: &[~str]) -> ~str {
-    let mut product = 1f64;
-    let (message, terms) = str_to_f64(terms_str);
+    let (message, terms) = str_to_rational(terms_str);
     if message != "OK!" { return message.to_owned() }
+
+    let mut product = from_str::<BigRational>("1/1").unwrap();
     for term in terms.iter() { 
-        match *term {
-            0.0 => { return "0".to_owned() }
-            _   => { product *= *term } 
-        }
+        product = product.mul(term);
     }
     
-    to_str_exact(product, 10).to_owned()
+    product.to_str().to_owned()
 }
 
 /// Divides the numbers in a vector. Requires at least one term. If there is
@@ -90,24 +89,27 @@ pub fn div(terms_str: &[~str]) -> ~str {
         println!("Division requires at least one term!");
         return BAD_EXPR.to_owned()
     }
-    let (message, terms) = str_to_f64(terms_str);
+
+    let (message, terms) = str_to_rational(terms_str);
     if message != "OK!" { return message.to_owned() }
+
+    let zeero = from_str::<BigRational>("0/1").unwrap();
     if terms.len() == 1 { 
-        match terms[0] {
-            0.0  => { return DIV_BY_ZERO.to_owned() }
-            _    => { return (1f64 / terms[0]).to_str().to_owned(); }
+        match terms[0] == zeero {
+            true    => { return DIV_BY_ZERO.to_owned() }
+            false   => { return terms[0].recip().to_str().to_owned(); }
         }
     }
-    let mut quotient = terms[0];
-    if quotient == 0.0 || quotient == -0.0 { return DIV_BY_ZERO.to_owned() }
+    let mut quotient = terms[0].clone();
+    if quotient == zeero { return DIV_BY_ZERO.to_owned() }
     for term in terms.slice_from(1).iter() { 
-        match *term {
-            0.0 => { return DIV_BY_ZERO.to_owned() }
-            _   => { quotient /= *term }
+        match *term == zeero {
+            true    => { return DIV_BY_ZERO.to_owned() }
+            false   => { quotient = quotient.div(term) }
         }
     }
 
-    to_str_exact(quotient, 10).to_owned()
+    quotient.to_str().to_owned()
 }
 
 /// Returns the remainder from integer division. Casts the terms to integers.
@@ -118,20 +120,30 @@ pub fn rem(terms_str: &[~str]) -> ~str {
         println!("Modulus operations require at least two terms!");
         return BAD_EXPR.to_owned()
     }
-    let (message, terms) = str_to_f64(terms_str);
+
+    let (message, terms) = str_to_rational(terms_str);
     if message != "OK!" { return message.to_owned() }
+
+    let zeero = from_str::<BigRational>("0/1").unwrap();
     if terms.len() == 1 { 
-        match terms[0] {
-            0.0 => { return DIV_BY_ZERO.to_owned() }
-            _   => { return "1".to_owned() } // 1 % anything = 1
+        match terms[0] == zeero {
+            true    => { return DIV_BY_ZERO.to_owned() }
+            false   => { return "1".to_owned() } // 1 % anything = 1
         }
     }
-    let mut remainder = terms[0] as int;
-    if terms[0] == 0.0 { return "0".to_owned() }
+
+    let mut remainder = terms[0].clone();
+    if remainder.is_integer() == false { 
+        return "Non integer modulus is forbidden!".to_owned()
+    }
+
     for term in terms.slice_from(1).iter() { 
-        match *term {
-            0.0 => { return DIV_BY_ZERO.to_owned() },
-            _   => { remainder %= *term as int }
+        if term.is_integer() == false {
+            return "Non integer modulus is forbidden!".to_owned()
+        }
+        match *term == zeero {
+            true    => { return DIV_BY_ZERO.to_owned() },
+            false   => { remainder = remainder.rem(term)}
         }
     }
 
