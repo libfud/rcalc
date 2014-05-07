@@ -20,6 +20,9 @@ static BAD_TERM : &'static str = "Poorly formatted term!";
 ///Wrapper to evaluate a given expression. Checks to make sure that it's a
 ///valid expression, then does the appropriate action given the operator.
 pub fn eval(expr: &str) -> ~str {
+    if expr.slice_to(1) != "(" || expr.slice_from(expr.len() - 1) != ")" {
+        return BAD_EXPR.to_owned()
+    }
     let (operator, terms) = tokenize(expr);
     let answer = match operator.slice_from(0) {
         "+"     => add(terms),
