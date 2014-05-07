@@ -1,9 +1,13 @@
 //! Trigonometric functions. 
+extern crate num;
 
-use common::{ONE_ARG_ONLY, str_to_f64};
+use self::num::rational::BigRational;
+use std::num;
+use common::{ONE_ARG_ONLY, str_to_f64, str_to_rational};
 pub mod common;
 
-pub static PI : f64 = 3.14159265358979323846264338327950288_f64;
+pub static PI : &'static str = "3126535/995207";
+pub static HALF_CIRC: &'static str = "180/1";
 
 /// Rad converts degrees to radians. Its use is not recommended and it is
 /// preferred for other functions to use radsians in the first place. In fact,
@@ -12,18 +16,27 @@ pub static PI : f64 = 3.14159265358979323846264338327950288_f64;
 /// to convert.
 pub fn rad(terms_str: &[~str]) -> ~str {
     if terms_str.len() != 1 { return ONE_ARG_ONLY.to_owned() }
-    let (message, terms) = str_to_f64(terms_str);
+    let (message, terms) = str_to_rational(terms_str);
     if message != "OK!" { return message.to_owned() }
-    let radians = terms[0] * PI / 180.0;
+
+    let pi = from_str::<BigRational>(PI).unwrap();
+    let half_circ = from_str::<BigRational>(HALF_CIRC).unwrap();
+
+    let radians = terms[0].mul(&(pi.div(&half_circ)));
 
     radians.to_str().to_owned()
 }
 
+/// Converst radians to degrees
 pub fn deg(terms_str: &[~str]) -> ~str {
     if terms_str.len() != 1 { return ONE_ARG_ONLY.to_owned() }
-    let (message, terms) = str_to_f64(terms_str);
+    let (message, terms) = str_to_rational(terms_str);
     if message != "OK!" { return message.to_owned() }
-    let degrees = terms[0] * 180.0 / PI;
+
+    let pi = from_str::<BigRational>(PI).unwrap();
+    let half_circ = from_str::<BigRational>(HALF_CIRC).unwrap();
+
+    let degrees = terms[0].mul(&(half_circ.div(&pi)));
 
     degrees.to_str().to_owned()
 }
@@ -32,10 +45,42 @@ pub fn deg(terms_str: &[~str]) -> ~str {
 /// 0 is returned.
 pub fn sin(terms_str: &[~str]) -> ~str {
     if terms_str.len() > 1 { return ONE_ARG_ONLY.to_owned() }
-    let (message, terms) = str_to_f64(terms_str);
+    let (message, terms) = str_to_rational(terms_str);
     if message != "OK!" { return message.to_owned() }
-    if terms.len() == 0 { return "0".to_owned() }
-    let answer = terms[0].sin();
+    if terms.len() == 0 { return "0/1".to_owned() }
+
+    let zero = num::zero();
+    let two = from_str::<BigRational>("2/1").unwrap();
+    let neg_two = from_str::<BigRational>("-2/1").unwrap();
+    let pi = from_str::<BigRational>(PI).unwrap();
+    let mut bigrational = terms[0].clone();
+
+    //I feel horrible about the atrocity I'm about to commit.
+    match bigrational > zero {
+        true    => {
+            loop {
+                if bigrational < two.mul(&pi) { break }
+                bigrational = bigrational.sub(&two.mul(&pi));
+            }
+        },
+        false   => {
+            loop {
+                if bigrational > neg_two.mul(&pi) { break }
+                bigrational = bigrational.add(&two.mul(&pi));
+            }
+        }
+    }
+
+    // please forgive me
+    let numer_str = bigrational.numer().to_str();
+    let denom_str = bigrational.denom().to_str();
+
+    // oh god
+    let numer = from_str::<f64>(numer_str).unwrap();
+    let denom = from_str::<f64>(denom_str).unwrap();
+    let ration_as_frac = numer / denom;
+
+    let answer = ration_as_frac.sin();
 
     answer.to_str().to_owned()
 }
