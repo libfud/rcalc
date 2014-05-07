@@ -12,23 +12,31 @@ pub static ONE_ARG_ONLY : &'static str =
 /// Returns the absolute value of the number.
 pub fn abs(terms_str: &[~str]) -> ~str {
     if terms_str.len() != 1 { return ONE_ARG_ONLY.to_owned() }
-    let (message, terms) = str_to_f64(terms_str);
-    if message != "OK" { return message.to_owned() }
-    if terms[0] > 0.0 { return terms[0].to_str().to_owned() }
-    
-    sub(terms_str)
+    let result = str_to_f64(terms_str);
+    match result {
+        Ok(ref terms) => {
+            if terms[0] > 0.0 {
+                return terms[0].to_str().to_owned();
+            }
+            sub(terms_str)
+        }
+        Err(msg) => { return msg.to_owned(); }
+    }
 }
 
 /// Adds the numbers in a vector. If there are zero terms, it returns 0.
 pub fn add(terms_str: &[~str]) -> ~str {
-    let (message, terms) = str_to_f64(terms_str);
-    if message != "OK!" { return message.to_owned() }
-    let  mut total = 0f64;
-    for term in terms.iter() {
-        total += *term;
+    let result = str_to_f64(terms_str);
+    match result {
+        Ok(ref terms) => {
+            let mut total = 0f64;
+            for term in terms.iter() {
+                total += *term;
+            }
+            total.to_str().to_owned()
+        }
+        Err(msg) => { return msg.to_owned(); }
     }
-
-    total.to_str().to_owned()
 }
 
 /// Subtracts the numbers in a vector. At least one term is required. If
@@ -41,33 +49,39 @@ pub fn sub(terms_str: &[~str]) -> ~str {
         println!("Subtraction requires at least one term!");
         return BAD_EXPR.to_owned()
     } 
-    let (message, terms) = str_to_f64(terms_str);
-    if message != "OK!" { return message.to_owned() }
-    if terms.len() == 1 {
-        let difference = 0.0 - terms[0];
-        //negative val of first term
-        return difference.to_str().to_owned()
-    };
-    let mut difference = terms[0];
-    for term in terms.slice_from(1).iter(){ difference -= *term }
-
-    to_str_exact(difference, 10).to_owned()
+    let result = str_to_f64(terms_str);
+    match result {
+        Ok(ref terms) if terms.len() == 1 => {
+            let difference = 0.0 - terms[0];
+            //negative val of first term
+            return difference.to_str().to_owned()
+        }
+        Ok (terms) => {
+            let mut difference = terms[0];
+            for term in terms.slice_from(1).iter(){ difference -= *term }
+            to_str_exact(difference, 10).to_owned()
+        }
+        Err(msg) => { return msg.to_owned(); }
+    }
 }
 
 /// Multiplies the numbers in a vector. Returns 1 for no terms. Otherwise
 /// it returns the product of all numbers in a vector.
 pub fn mul(terms_str: &[~str]) -> ~str {
     let mut product = 1f64;
-    let (message, terms) = str_to_f64(terms_str);
-    if message != "OK!" { return message.to_owned() }
-    for term in terms.iter() { 
-        match *term {
-            0.0 => { return "0".to_owned() }
-            _   => { product *= *term } 
+    let result = str_to_f64(terms_str);
+    match result {
+        Ok(ref terms) => {
+            for term in terms.iter() { 
+                match *term {
+                    0.0 => { return "0".to_owned() }
+                    _   => { product *= *term } 
+                }
+            }
+            to_str_exact(product, 10).to_owned()
         }
+        Err(msg) => { return msg.to_owned(); }
     }
-    
-    to_str_exact(product, 10).to_owned()
 }
 
 /// Divides the numbers in a vector. Requires at least one term. If there is
@@ -79,24 +93,29 @@ pub fn div(terms_str: &[~str]) -> ~str {
         println!("Division requires at least one term!");
         return BAD_EXPR.to_owned()
     }
-    let (message, terms) = str_to_f64(terms_str);
-    if message != "OK!" { return message.to_owned() }
-    if terms.len() == 1 { 
-        match terms[0] {
-            0.0  => { return DIV_BY_ZERO.to_owned() }
-            _    => { return (1f64 / terms[0]).to_str().to_owned(); }
-        }
-    }
-    let mut quotient = terms[0];
-    if quotient == 0.0 || quotient == -0.0 { return DIV_BY_ZERO.to_owned() }
-    for term in terms.slice_from(1).iter() { 
-        match *term {
-            0.0 => { return DIV_BY_ZERO.to_owned() }
-            _   => { quotient /= *term }
-        }
-    }
+    let result = str_to_f64(terms_str);
+    match result {
+        Ok(ref terms) => {
+            if terms.len() == 1 { 
+                match terms[0] {
+                    0.0  => { return DIV_BY_ZERO.to_owned() }
+                    _    => { return (1f64 / terms[0]).to_str().to_owned(); }
+                }
+            }
+            
+            let mut quotient = terms[0];
+            if quotient == 0.0 || quotient == -0.0 { return DIV_BY_ZERO.to_owned() }
+            for term in terms.slice_from(1).iter() { 
+                match *term {
+                    0.0 => { return DIV_BY_ZERO.to_owned() }
+                    _   => { quotient /= *term }
+                }
+            }
 
-    to_str_exact(quotient, 10).to_owned()
+            to_str_exact(quotient, 10).to_owned()
+        }
+        Err(msg) => { return msg.to_owned(); }
+    }
 }
 
 /// Returns the remainder from integer division. Casts the terms to integers.
@@ -107,24 +126,28 @@ pub fn rem(terms_str: &[~str]) -> ~str {
         println!("Modulus operations require at least two terms!");
         return BAD_EXPR.to_owned()
     }
-    let (message, terms) = str_to_f64(terms_str);
-    if message != "OK!" { return message.to_owned() }
-    if terms.len() == 1 { 
-        match terms[0] {
-            0.0 => { return DIV_BY_ZERO.to_owned() }
-            _   => { return "1".to_owned() } // 1 % anything = 1
-        }
-    }
-    let mut remainder = terms[0] as int;
-    if terms[0] == 0.0 { return "0".to_owned() }
-    for term in terms.slice_from(1).iter() { 
-        match *term {
-            0.0 => { return DIV_BY_ZERO.to_owned() },
-            _   => { remainder %= *term as int }
-        }
-    }
+    let result = str_to_f64(terms_str);
+    match result {
+        Ok(ref terms) => {
+            if terms.len() == 1 { 
+                match terms[0] {
+                    0.0 => { return DIV_BY_ZERO.to_owned() }
+                    _   => { return "1".to_owned() } // 1 % anything = 1
+                }
+            }
+            let mut remainder = terms[0] as int;
+            if terms[0] == 0.0 { return "0".to_owned() }
+            for term in terms.slice_from(1).iter() { 
+                match *term {
+                    0.0 => { return DIV_BY_ZERO.to_owned() },
+                    _   => { remainder %= *term as int }
+                }
+            }
 
-    remainder.to_str().to_owned()
+            remainder.to_str().to_owned()
+        }
+        Err(msg) => { return msg.to_owned(); }
+    }
 }
 
 /// Pow raises a number to a power - if there are more than one terms,
@@ -136,8 +159,10 @@ pub fn rem(terms_str: &[~str]) -> ~str {
 /// which returns zero.
 pub fn pow(terms_str: &[~str]) -> ~str {
     if terms_str.len() == 0 { return "1".to_owned() }
-    let (message, terms) = str_to_f64(terms_str);
-    if message != "OK!" { return message.to_owned() }
+    let result = str_to_f64(terms_str);
+    if result.is_err() { return result.unwrap_err().to_owned(); }
+    
+    let terms = result.ok().unwrap();
     if terms.len() == 1 { 
         if terms.as_slice()[0] != 0.0 { 
             return terms[0].to_str().to_owned()
