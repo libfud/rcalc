@@ -3,7 +3,7 @@ extern crate num;
 
 use self::num::rational::BigRational;
 use std::num;
-use common::{ONE_ARG_ONLY, str_to_f64, str_to_rational};
+use common::{ONE_ARG_ONLY, str_to_rational};
 pub mod common;
 
 pub static PI : &'static str = "3126535/995207";
@@ -41,19 +41,13 @@ pub fn deg(terms_str: &[~str]) -> ~str {
     degrees.to_str().to_owned()
 }
 
-/// The sin function. Takes either zero or one terms. For no terms,
-/// 0 is returned.
-pub fn sin(terms_str: &[~str]) -> ~str {
-    if terms_str.len() > 1 { return ONE_ARG_ONLY.to_owned() }
-    let (message, terms) = str_to_rational(terms_str);
-    if message != "OK!" { return message.to_owned() }
-    if terms.len() == 0 { return "0/1".to_owned() }
-
-    let zero = num::zero();
+/// The shame function.
+pub fn rational_to_f64_trig(bigrational_orig: &BigRational) -> f64 {
+    let mut bigrational = bigrational_orig.clone();
     let two = from_str::<BigRational>("2/1").unwrap();
+    let zero = num::zero();
     let neg_two = from_str::<BigRational>("-2/1").unwrap();
     let pi = from_str::<BigRational>(PI).unwrap();
-    let mut bigrational = terms[0].clone();
 
     //I feel horrible about the atrocity I'm about to commit.
     match bigrational > zero {
@@ -78,9 +72,23 @@ pub fn sin(terms_str: &[~str]) -> ~str {
     // oh god
     let numer = from_str::<f64>(numer_str).unwrap();
     let denom = from_str::<f64>(denom_str).unwrap();
-    let ration_as_frac = numer / denom;
+    let ration_as_float = numer / denom;
 
-    let answer = ration_as_frac.sin();
+    ration_as_float
+}
+
+/// The sin function. Takes either zero or one terms. For no terms,
+/// 0 is returned.
+pub fn sin(terms_str: &[~str]) -> ~str {
+    if terms_str.len() > 1 { return ONE_ARG_ONLY.to_owned() }
+
+    let (message, terms) = str_to_rational(terms_str);
+    if message != "OK!" { return message.to_owned() }
+    if terms.len() == 0 { return "0/1".to_owned() }
+
+    let ration_as_float = rational_to_f64_trig(&terms[0]);
+    
+    let answer = ration_as_float.sin();
 
     answer.to_str().to_owned()
 }
@@ -89,10 +97,14 @@ pub fn sin(terms_str: &[~str]) -> ~str {
 /// returned.
 pub fn cos(terms_str: &[~str]) -> ~str {
     if terms_str.len() > 1 { return ONE_ARG_ONLY.to_owned() }
-    let (message, terms) = str_to_f64(terms_str);
+
+    let (message, terms) = str_to_rational(terms_str);
     if message != "OK!" { return message.to_owned() }
-    if terms.len() == 0 { return "0".to_owned() }
-    let answer = terms[0].cos();
+    if terms.len() == 0 { return "0/1".to_owned() }
+
+    let ration_as_float = rational_to_f64_trig(&terms[0]);
+
+    let answer = ration_as_float.cos();
 
     answer.to_str().to_owned()
 }
@@ -100,9 +112,17 @@ pub fn cos(terms_str: &[~str]) -> ~str {
 /// The tan function. Takes exactly one argument.
 pub fn tan(terms_str: &[~str]) -> ~str {
     if terms_str.len() != 1 { return ONE_ARG_ONLY.to_owned() }
-    let (message, terms) = str_to_f64(terms_str);
-    if message != "OK!" { return message.to_owned() }
-    let answer = terms[0].tan();
 
-    answer.to_str().to_owned()
+    let (message, terms) = str_to_rational(terms_str);
+    if message != "OK!" { return message.to_owned() }
+    if terms.len() == 0 { return "0/1".to_owned() }
+
+    let ration_as_float = rational_to_f64_trig(&terms[0]);
+    let sin_numer = ration_as_float.sin();
+    let cos_denom = ration_as_float.cos();
+
+    let tangent = sin_numer/cos_denom;
+
+
+    tangent.to_str().to_owned()
 }

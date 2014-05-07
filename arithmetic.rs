@@ -197,7 +197,10 @@ pub fn pow(terms_str: &[~str]) -> ~str {
     let mut recip_flag = false;
     if exponent < zeero { 
         recip_flag = true;
-        exponent = from_str::<BigRational>( abs(&[exponent.to_str()])).unwrap()
+        match from_str::<BigRational>(abs(&[exponent.to_str()])) {
+            Some(bignum)    => { exponent = bignum },
+            _               => { return "fail".to_owned() }
+        }
     }
 
     let index = exponent - exponent.floor();
@@ -269,9 +272,12 @@ pub fn root_wrapper(terms: &[BigRational]) -> ~str {
         true    => { factor = wun.clone() }
         false   => {
             let inv_denom = denominator.recip();
-            println!("{}", inv_denom);
             let answer_str = pow(&[radicand.to_str(), inv_denom.to_str()]);
-            let answer = from_str::<BigRational>(answer_str).unwrap();
+            let mut answer: BigRational;
+            match from_str::<BigRational>(answer_str) {
+                Some(bignum)    => { answer = bignum },
+                _               => { return "fail".to_owned() }
+            }
             factor = answer
         }
     };
