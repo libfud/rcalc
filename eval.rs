@@ -1,7 +1,7 @@
 //! The eval and parser.
 
 use arithmetic::{add, sub, mul, div, rem, pow, abs};
-use trig::{PI, rad, sin, cos, tan};
+use trig::{PI, rad, deg, sin, cos, tan};
 use stats::avg;
 use common::{E};
 use logic::order;
@@ -29,6 +29,7 @@ pub fn eval(expr: &str) -> ~str {
         "%"     => rem(terms),
         "pow"   => pow(terms),
         "rad"   => rad(terms),
+        "deg"   => deg(terms),
         "sin"   => sin(terms),
         "cos"   => cos(terms),
         "tan"   => tan(terms),
@@ -61,7 +62,8 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
     // 100% fine with.
     match operator {
         "+" | "-" | "*" | "/" | "%"     => { },
-        "rad" | "sin" | "cos" | "tan"   => { },
+        "rad" | "deg"                   => { },
+        "sin" | "cos" | "tan"           => { },
         "pow" | "root" | "avg" | "abs"  => { },
         "<" | "<=" | "=" | ">=" | ">"   => { },
         "if"                            => { },

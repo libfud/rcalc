@@ -19,6 +19,15 @@ pub fn rad(terms_str: &[~str]) -> ~str {
     radians.to_str().to_owned()
 }
 
+pub fn deg(terms_str: &[~str]) -> ~str {
+    if terms_str.len() != 1 { return ONE_ARG_ONLY.to_owned() }
+    let (message, terms) = str_to_f64(terms_str);
+    if message != "OK!" { return message.to_owned() }
+    let degrees = terms[0] * 180.0 / PI;
+
+    degrees.to_str().to_owned()
+}
+
 /// The sin function. Takes either zero or one terms. For no terms,
 /// 0 is returned.
 pub fn sin(terms_str: &[~str]) -> ~str {
