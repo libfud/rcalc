@@ -53,7 +53,7 @@ pub fn str_to_rational(str_array: &[~str]) -> (&str, ~[BigRational]) {
         big_vec.push(rational);
     }
 
-    ("OK", big_vec.as_slice().to_owned())
+    ("OK!", big_vec.as_slice().to_owned())
 }
 
 /// Determines if a number is a decimal representation or a fractional
@@ -103,8 +103,4 @@ pub fn str_to_f64(str_array: &[~str]) -> (&str, ~[f64]) {
     }
 
     ("OK!", float_vec.as_slice().to_owned())
-}
-
-fn main() {
-    println!("test")
 }

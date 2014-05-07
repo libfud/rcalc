@@ -1,7 +1,10 @@
 //! Arithmetic functions.
 
+extern crate num;
+
+use self::num::rational::BigRational;
 use std::f64::to_str_exact;
-use common::{DESPAIR, str_to_f64};
+use common::{DESPAIR, str_to_f64, str_to_rational};
 pub mod common;
 
 pub static BAD_EXPR : &'static str = "Poorly formatted expression!";
@@ -12,20 +15,23 @@ pub static ONE_ARG_ONLY : &'static str =
 /// Returns the absolute value of the number.
 pub fn abs(terms_str: &[~str]) -> ~str {
     if terms_str.len() != 1 { return ONE_ARG_ONLY.to_owned() }
-    let (message, terms) = str_to_f64(terms_str);
-    if message != "OK" { return message.to_owned() }
-    if terms[0] > 0.0 { return terms[0].to_str().to_owned() }
+
+    let zeero = from_str::<BigRational>("0/1").unwrap();
+    let (message, terms) = str_to_rational(terms_str);
+    if message != "OK!" { return message.to_owned() }
+
+    if terms[0] > zeero { return terms[0].to_str().to_owned() }
     
     sub(terms_str)
 }
 
 /// Adds the numbers in a vector. If there are zero terms, it returns 0.
 pub fn add(terms_str: &[~str]) -> ~str {
-    let (message, terms) = str_to_f64(terms_str);
+    let (message, terms) = str_to_rational(terms_str);
     if message != "OK!" { return message.to_owned() }
-    let  mut total = 0f64;
+    let  mut total = from_str::<BigRational>("0/1").unwrap();
     for term in terms.iter() {
-        total += *term;
+        total = total.add(term);
     }
 
     total.to_str().to_owned()
@@ -41,17 +47,22 @@ pub fn sub(terms_str: &[~str]) -> ~str {
         println!("Subtraction requires at least one term!");
         return BAD_EXPR.to_owned()
     } 
-    let (message, terms) = str_to_f64(terms_str);
+
+    let (message, terms) = str_to_rational(terms_str);
     if message != "OK!" { return message.to_owned() }
+
+    let zeero = from_str::<BigRational>("0/1").unwrap();
     if terms.len() == 1 {
-        let difference = 0.0 - terms[0];
+        let difference = zeero.sub(&terms[0]);
         //negative val of first term
         return difference.to_str().to_owned()
     };
-    let mut difference = terms[0];
-    for term in terms.slice_from(1).iter(){ difference -= *term }
+    let mut difference = terms[0].clone();
+    for term in terms.slice_from(1).iter() {
+        difference = difference.sub(term)
+    }
 
-    to_str_exact(difference, 10).to_owned()
+    difference.to_str().to_owned()
 }
 
 /// Multiplies the numbers in a vector. Returns 1 for no terms. Otherwise
