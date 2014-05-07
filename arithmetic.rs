@@ -3,8 +3,7 @@
 extern crate num;
 
 use self::num::rational::BigRational;
-use std::f64::to_str_exact;
-use common::{DESPAIR, str_to_f64, str_to_rational};
+use common::{DESPAIR, str_to_rational};
 pub mod common;
 
 pub static BAD_EXPR : &'static str = "Poorly formatted expression!";
@@ -158,123 +157,168 @@ pub fn rem(terms_str: &[~str]) -> ~str {
 /// If only one number is passed, the number is returned, unless it is zero,
 /// which returns zero.
 pub fn pow(terms_str: &[~str]) -> ~str {
-    if terms_str.len() == 0 { return "1".to_owned() }
-    let (message, terms) = str_to_f64(terms_str);
+    let zeero = from_str::<BigRational>("0/1").unwrap(); //ZERO
+    let wun = from_str::<BigRational>("1/1").unwrap(); //ONE
+
+    if terms_str.len() == 0 { return wun.to_str().to_owned() }
+
+    let (message, terms) = str_to_rational(terms_str);
     if message != "OK!" { return message.to_owned() }
+
+
     if terms.len() == 1 { 
-        if terms.as_slice()[0] != 0.0 { 
+        if terms[0] != zeero { 
             return terms[0].to_str().to_owned()
         }
-        else { return "0".to_owned() }
+        else { return zeero.to_str().to_owned() }
     }
-    let base = terms[0];
-    let mut exponent : f64;
+
+    let base = terms[0].clone();
+    let mut exponent : BigRational;
+
     if terms.len() == 2 {
-        exponent = terms.as_slice()[1];
+        exponent = terms[1].clone();
     } else {
         let temp_exponent = pow(terms_str.slice_from(1));
-        match from_str::<f64>(temp_exponent) {
+        match from_str::<BigRational>(temp_exponent) {
             Some(good_value)    => { exponent = good_value },
             _                   => { return DESPAIR.to_owned() }
         }
     }
-    if base == 0.0 && exponent == 0.0 { return "1".to_owned() }
-    else if base == 0.0 { return "0".to_owned() }
 
-    let mut rootx = 1.0;
+    if base == zeero && exponent == zeero { 
+        return wun.to_str().to_owned()
+    } else if base == zeero {
+        return zeero.to_str().to_owned()
+    }
+
+    let mut rootx = wun.clone();
   
     let mut recip_flag = false;
-    if exponent < 0.0 { 
+    if exponent < zeero { 
         recip_flag = true;
-        exponent = exponent.abs();
+        exponent = from_str::<BigRational>( abs(&[exponent.to_str()])).unwrap()
     }
 
     let index = exponent - exponent.floor();
-    if index > 0.0 {
-        match from_str::<f64>(root_wrapper(&[base, index.recip()])) {
-            Some(num)   => { rootx = num },
+    if index > zeero {
+        let rootx_str = root_wrapper(&[base.clone(), index.recip()]);
+        if rootx_str == "fail".to_owned() { return rootx_str }
+        match from_str::<BigRational>(rootx_str) {
+            Some(num)   => { rootx = num.clone() },
             _           => { return DESPAIR.to_owned() }
         }
     }
 
-    let mut product = 1f64;
-    for _ in range(0, exponent.floor() as int) { product *= base; }
-    product *= rootx;
+    let mut product = wun.clone();
+    let mut i = zeero.clone();
+    //for _ in range(0, exponent.floor() as int) { product *= base; }
+    loop {
+        if i >= exponent.floor() { break }
+        product = product.mul(&base);
+        i = i.add(&wun);
+    }
 
-    if recip_flag == true { product = 1.0 / product }
+    product = product.mul(&rootx);
 
-    to_str_exact(product, 50).to_owned()
+    if recip_flag == true { product = product.recip() }
+
+    product.to_str().to_owned()
 }
 
 /// Root finds a number which when raised to a power equal to the index is
 /// equal to the radicand. It requires two arguments: the index and a
 /// radicand. 
-pub fn root_wrapper(terms: &[f64]) -> ~str {
+pub fn root_wrapper(terms: &[BigRational]) -> ~str {
+    let zeero = from_str::<BigRational>("0/1").unwrap(); //ZERO
+    let wun = from_str::<BigRational>("1/1").unwrap(); //ONE
+    let two = from_str::<BigRational>("2/1").unwrap(); 
+    let half = from_str::<BigRational>("1/2").unwrap();
+
     if terms.len() != 2 { 
         return "A radicand and index, only, are required.".to_owned()
     }
-    let (radicand, index) = (terms[0], terms[1]);
 
-    if index == 0.0 { return "1".to_owned() } //handles (root 0 0)
-    if radicand == 0.0 { return "0".to_owned() }
-    if index % 2.0 == 0.0 && radicand < 0.0 {
+    let (radicand, index) = (terms[0].clone(), terms[1].clone());
+
+    if index == zeero { return "1".to_owned() } //handles (root 0 0)
+    if radicand == zeero { return "0".to_owned() }
+    if index % two == zeero && radicand < zeero {
         return "I can't handle this complexity!".to_owned()
     }
 
-    let mut denominator = 0.0;
+    let mut denominator = zeero.clone();
     if index.floor() < index {
-        match index.recip() <= 0.5 {
-            true    => { denominator = index - index.floor() },
-            false   => { denominator = index.recip() - 0.5 }
+        match index.recip() <= half {
+            true    => { denominator = index.sub(&index.floor()) },
+            false   => { denominator = index.recip().sub(&half) }
         }
     }
 
     let dummycheck = index.recip();
-    match dummycheck <= 0.5 {
+    match dummycheck <= half {
         true    => { },
-        false   => { denominator -= 0.5 }
+        false   => {
+            println!("Sorry. No fractions > 1/2 for now.");
+            return "fail".to_owned();
+        }
     }
 
-    let factor = match denominator {
-        0.0 => { 1.0 }
-        _   => { radicand.powf(denominator) }
+    let factor: BigRational;
+    match denominator == zeero {
+        true    => { factor = wun.clone() }
+        false   => {
+            let inv_denom = denominator.recip();
+            println!("{}", inv_denom);
+            let answer_str = pow(&[radicand.to_str(), inv_denom.to_str()]);
+            let answer = from_str::<BigRational>(answer_str).unwrap();
+            factor = answer
+        }
     };
-    //this is lazy but I can't suss out how to prevent infinite
-    //recursion on fractions > 1/2
+
     let numerator = index.floor();
-    let guess = 1.0;
+    let guess = wun.clone();
     let root_of_radicand = root(guess, radicand, numerator);
-    if root_of_radicand == -0.0 { return DESPAIR.to_owned() }
 
-    let answer = root_of_radicand * factor;
+    let answer = root_of_radicand.mul(&factor);
 
-    to_str_exact(answer, 50).to_owned()
+    answer.to_str().to_owned()
 }
 
 /// This is the means to which the root function can attain recursion.
 /// Compares the absolute value of the difference of the guess raised to the
 /// power and the radicand to a tolerance. If it's within tolerance, that
 /// number is returned. Otherwise, it uses the average
-pub fn root(guess: f64, radicand: f64, index: f64)  -> f64 {
-    let tolerance = match index { //aka epsilon
-        2.0 => 0.00001,
-        _   => 0.00001,
-    };
-    let mut guess_to_pow: f64;
-    match from_str::<f64>(pow(&[guess.to_str(), index.to_str()])) {
+pub fn root(guess: BigRational, radicand: BigRational, index: BigRational) 
+    -> BigRational {
+
+    let zeero = from_str::<BigRational>("0/1").unwrap(); //ZERO
+    let wun = from_str::<BigRational>("1/1").unwrap(); //ONE
+    let two = from_str::<BigRational>("2/1").unwrap(); 
+
+    let tolerance = from_str::<BigRational>("1/1000").unwrap();
+    let mut guess_to_pow: BigRational;
+
+    match from_str::<BigRational>(pow(&[guess.to_str(), index.to_str()])) {
         Some(num)   => { guess_to_pow = num },
-        _           => { return -0.0 }
+        _           => { return zeero}
     }
-    if (guess_to_pow - radicand).abs() < tolerance {
+
+    let good_enough = match from_str::<BigRational>(
+        abs(&[(guess_to_pow - radicand).to_str()])) {
+        Some(bignum)    => bignum,
+        _               => tolerance.clone()
+    };
+    if good_enough < tolerance {
         return guess
     }
-    let mut new_guess: f64;
-    match index {
-        2.0 => { new_guess = (guess + radicand / guess) / 2.0 }
-        _   => { 
+    let mut new_guess: BigRational;
+    match index == two {
+        true    => { new_guess = (guess + radicand / guess) / two }
+        false   => { 
             let delta = index.recip() * ((
                 radicand /
-                (from_str::<f64>(pow(&[guess.to_str(), (index - 1.0).to_str()])
+                (from_str::<BigRational>(pow(&[guess.to_str(), (index - wun).to_str()])
                 ).unwrap()) - guess));
             new_guess = guess + delta
         }
