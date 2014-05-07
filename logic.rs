@@ -7,8 +7,9 @@ pub mod common;
 /// A function for ordering
 pub fn order(comparator: &str, terms: &[~str]) -> ~str {
     if terms.len() != 2 { return TWO_ARGS_ERR.to_owned() }
-    let (message, comparators) = str_to_f64(terms);
-    if message != "OK!" { return message.to_owned() }
+    let result = str_to_f64(terms);
+    if result.is_err() { return result.unwrap_err().to_owned() }
+    let comparators = result.ok().unwrap();
     let (lcomp, rcomp) = (comparators[0], comparators[1]);
 
     match comparator {
