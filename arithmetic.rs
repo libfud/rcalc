@@ -302,7 +302,7 @@ pub fn root(guess: BigRational, radicand: BigRational, index: BigRational)
     let wun = from_str::<BigRational>("1/1").unwrap(); //ONE
     let two = from_str::<BigRational>("2/1").unwrap(); 
 
-    let tolerance = from_str::<BigRational>("1/1000").unwrap();
+    let tolerance = from_str::<BigRational>("1/100000").unwrap();
     let mut guess_to_pow: BigRational;
 
     match from_str::<BigRational>(pow(&[guess.to_str(), index.to_str()])) {

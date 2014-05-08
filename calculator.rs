@@ -12,6 +12,7 @@ pub mod trig;
 pub mod stats;
 pub mod common;
 pub mod logic;
+pub mod search;
 
 //static PI: f64 = 3.141592653589793;
 //most accurate representation of pi possible in f64
