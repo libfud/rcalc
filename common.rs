@@ -151,7 +151,7 @@ pub fn write_bignums_to_file(bignum_vec: &[BigRational], strpath: &str)
     let path = Path::new(strpath);
     if path.exists() == false { return "Path does not exist" }
 
-    let file = File::open_mode(&path, Append, Write);
+    let file = File::open_mode(&path, Open, Write);
     let mut writer = BufferedWriter::new(file);
 
     for bignum in bignum_vec.iter() {
@@ -231,16 +231,18 @@ pub fn is_prime(arbitrary_num: BigRational) -> bool {
     let one: BigRational = num::one();
 
     if arbitrary_num == one { return false } // 1 is not prime.
-    let mut search_begin: uint = 0;
-    let mut search_end: uint = 1;
+    let search_begin: uint = 0;
+    let mut search_end: uint;
 
     match read_bignums_from_file("primes.txt") {
         Ok(list_o_primes)   => {
             primelist = list_o_primes;
+            search_end = primelist.len() - 1;
         },
         Err(_)              => {
             primelist = prime_gen(primelist, arbitrary_num.clone());
-            search_end = primelist.len();
+            search_end = primelist.len() - 1;
+            write_bignums_to_file(primelist.as_slice(), "primes.txt");
         }
     }
 
@@ -248,8 +250,8 @@ pub fn is_prime(arbitrary_num: BigRational) -> bool {
     if arbitrary_num == primelist.as_slice()[primelist.len() - 1] {
         return false // it's prime
     } else if arbitrary_num > primelist.as_slice()[primelist.len() - 1] {
-        search_begin = primelist.len();
         primelist = prime_gen(primelist, arbitrary_num.clone());
+        write_bignums_to_file(primelist.slice_from(search_end), "primes.txt");
         search_end = primelist.len() - 1;
     }
 
