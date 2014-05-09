@@ -3,7 +3,7 @@
 extern crate num;
 
 use self::num::rational::{BigRational, Ratio};
-use std::io::{BufferedReader, BufferedWriter, File, Open, Append};
+use std::io::{BufferedReader, BufferedWriter, File, Open };
 use std::io::{Read, Write};
 use std::num;
 use search::binary_search;
@@ -145,11 +145,9 @@ pub fn read_bignums_from_file(strpath: &str) ->
 /// append mode, slices of new numbers added to the vector should be used;
 /// ie, if you had 3 primes in the file to begin with, and you added two
 /// more, give it a slice of the last two elements.
-pub fn write_bignums_to_file(bignum_vec: &[BigRational], strpath: &str)
-    -> &str {
+pub fn write_bignums_to_file(bignum_vec: &[BigRational], strpath: &str) {
 
     let path = Path::new(strpath);
-    if path.exists() == false { return "Path does not exist" }
 
     let file = File::open_mode(&path, Open, Write);
     let mut writer = BufferedWriter::new(file);
@@ -166,7 +164,6 @@ pub fn write_bignums_to_file(bignum_vec: &[BigRational], strpath: &str)
         }
     }
 
-    "success"
 }
 
 /// Generates a list of prime numbers. If given an empty vector, starts from
@@ -204,13 +201,14 @@ pub fn prime_gen(mut prime_vec: Vec<BigRational>, end_at: BigRational) ->
          * prime numbers */
     };
 
-    while pos_prime <= end_at {
+    while pos_prime <= end_at.mul(&two) {
         let mut index: uint = 0;
         let lim = pos_prime.div(&two);
         loop {
             if index >= prime_vec.len() || prime_vec.as_slice()[index] > lim {
                 //pos_prime is indivisible by any element in the array
                 prime_vec.push(pos_prime.clone());
+                break;
             }
             if pos_prime.rem(&prime_vec.as_slice()[index]) == zero { break }
             index += 1;
@@ -220,7 +218,6 @@ pub fn prime_gen(mut prime_vec: Vec<BigRational>, end_at: BigRational) ->
 
     prime_vec
 }
-
 
 /// Function to determine if a number is prime. Compares it to a list
 /// of known primes. If no list is available, a new one is generated.
@@ -232,16 +229,13 @@ pub fn is_prime(arbitrary_num: BigRational) -> bool {
 
     if arbitrary_num == one { return false } // 1 is not prime.
     let search_begin: uint = 0;
-    let mut search_end: uint;
 
     match read_bignums_from_file("primes.txt") {
         Ok(list_o_primes)   => {
             primelist = list_o_primes;
-            search_end = primelist.len() - 1;
         },
         Err(_)              => {
             primelist = prime_gen(primelist, arbitrary_num.clone());
-            search_end = primelist.len() - 1;
             write_bignums_to_file(primelist.as_slice(), "primes.txt");
         }
     }
@@ -251,10 +245,10 @@ pub fn is_prime(arbitrary_num: BigRational) -> bool {
         return false // it's prime
     } else if arbitrary_num > primelist.as_slice()[primelist.len() - 1] {
         primelist = prime_gen(primelist, arbitrary_num.clone());
-        write_bignums_to_file(primelist.slice_from(search_end), "primes.txt");
-        search_end = primelist.len() - 1;
+        write_bignums_to_file(primelist.as_slice(), "primes.txt");
     }
 
+    let search_end = primelist.len() - 1;
     assert!(search_begin < search_end);
 
     let (found, _) = binary_search(primelist, arbitrary_num, search_begin,

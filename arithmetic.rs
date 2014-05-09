@@ -5,7 +5,7 @@ extern crate num;
 use self::num::rational::BigRational;
 use std::num;
 use self::num::bigint::BigInt;
-use common::{DESPAIR, str_to_rational, is_prime};
+use common::{DESPAIR, str_to_rational};
 pub mod common;
 
 pub static BAD_EXPR : &'static str = "Poorly formatted expression!";
@@ -252,13 +252,18 @@ pub fn root_wrapper(terms: &[BigRational]) -> ~str {
         return "I can't handle this complexity!".to_owned()
     }
 
+    let mut guess = one.clone();
+
     let one_bigint: BigInt = num::one();
     if *index.denom() == one_bigint && *radicand.denom() == one_bigint {
         let possible_answer_result = dumb_root(radicand.clone(),
             index.clone());
         match possible_answer_result {
-            Ok(good_val)    => { return good_val.to_str().to_owned() }
-            _               => { // don't care right now
+            Ok(good_val)                => {
+                return good_val.to_str().to_owned()
+            },
+            Err(good_guess)   => {
+                guess = good_guess
             }
         }
     }
@@ -296,7 +301,8 @@ pub fn root_wrapper(terms: &[BigRational]) -> ~str {
     };
 
     let numerator = index.floor();
-    let guess = one.clone();
+    //let guess = one.clone();
+    // guess is now defined further above as a result from dumb_root
     let root_of_radicand = root(guess, radicand, numerator);
 
     let answer = root_of_radicand.mul(&factor);
@@ -348,14 +354,22 @@ pub fn root(guess: BigRational, radicand: BigRational, index: BigRational)
 
 /// dumb root method, just like you did in elementary school
 pub fn dumb_root(radicand: BigRational, index: BigRational) ->
-    Result<BigRational, (&str, BigRational)> {
+    Result<BigRational, BigRational> {
 
     let one: BigRational = num::one();
     let mut guess = one.clone();
 
+/*
     if is_prime(radicand.clone()) == true {
         return Err(("Prime number", guess))
     }
+    * This is simply too expensive. It's actually considerably less work to
+    * not know if the number is prime or not.  The algorithm will work
+    * similarly anyway, it'll just be applied in cases where the number is
+    * prime, which are considerably fewer than non prime numbers. Of course,
+    * as to which numbers people want the roots for anyway, that doesn't
+    * hardly matter.
+*/
 
     loop {
         let mut guess_to_pow;
@@ -363,14 +377,16 @@ pub fn dumb_root(radicand: BigRational, index: BigRational) ->
             pow(&[guess.to_str(), index.to_str()])) {
             Some(bignum)    => { guess_to_pow = bignum }
             _               => {
-                return Err(("Something bad.", guess))
+                return Err(guess)
+                //this is okay, because originally guess for newton's method
+                //was one anyway
             }
         }
         if guess_to_pow == radicand {
             break
         }
         if guess_to_pow > radicand {
-            return Err(("Dumb was too dumb.", guess))
+            return Err(guess)
         }
         guess = guess.add(&one);
     }
