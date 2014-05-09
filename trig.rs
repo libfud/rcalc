@@ -16,8 +16,12 @@ pub static HALF_CIRC: &'static str = "180/1";
 /// to convert.
 pub fn rad(terms_str: &[~str]) -> ~str {
     if terms_str.len() != 1 { return ONE_ARG_ONLY.to_owned() }
-    let (message, terms) = str_to_rational(terms_str);
-    if message != "OK!" { return message.to_owned() }
+
+    let mut terms;
+    match str_to_rational(terms_str) {
+        Ok(bigrat_array)    => { terms = bigrat_array }
+        Err(msg)            => { return msg.to_owned() }
+    }
 
     let pi = from_str::<BigRational>(PI).unwrap();
     let half_circ = from_str::<BigRational>(HALF_CIRC).unwrap();
@@ -30,8 +34,13 @@ pub fn rad(terms_str: &[~str]) -> ~str {
 /// Converst radians to degrees
 pub fn deg(terms_str: &[~str]) -> ~str {
     if terms_str.len() != 1 { return ONE_ARG_ONLY.to_owned() }
-    let (message, terms) = str_to_rational(terms_str);
-    if message != "OK!" { return message.to_owned() }
+    
+    let mut terms;
+    match str_to_rational(terms_str) {
+        Ok(bigrat_array)    => { terms = bigrat_array }
+        Err(msg)            => { return msg.to_owned() }
+    }
+
 
     let pi = from_str::<BigRational>(PI).unwrap();
     let half_circ = from_str::<BigRational>(HALF_CIRC).unwrap();
@@ -82,12 +91,14 @@ pub fn rational_to_f64_trig(bigrational_orig: &BigRational) -> f64 {
 pub fn sin(terms_str: &[~str]) -> ~str {
     if terms_str.len() > 1 { return ONE_ARG_ONLY.to_owned() }
 
-    let (message, terms) = str_to_rational(terms_str);
-    if message != "OK!" { return message.to_owned() }
+    let mut terms;
+    match str_to_rational(terms_str) {
+        Ok(bigrat_array)    => { terms = bigrat_array }
+        Err(msg)            => { return msg.to_owned() }
+    }
     if terms.len() == 0 { return "0/1".to_owned() }
 
     let ration_as_float = rational_to_f64_trig(&terms[0]);
-    
     let answer = ration_as_float.sin();
 
     answer.to_str().to_owned()
@@ -98,12 +109,16 @@ pub fn sin(terms_str: &[~str]) -> ~str {
 pub fn cos(terms_str: &[~str]) -> ~str {
     if terms_str.len() > 1 { return ONE_ARG_ONLY.to_owned() }
 
-    let (message, terms) = str_to_rational(terms_str);
-    if message != "OK!" { return message.to_owned() }
+    let mut terms;
+    match str_to_rational(terms_str) {
+        Ok(bigrat_array)    => { terms = bigrat_array }
+        Err(msg)            => { return msg.to_owned() }
+    }
+
+
     if terms.len() == 0 { return "0/1".to_owned() }
 
     let ration_as_float = rational_to_f64_trig(&terms[0]);
-
     let answer = ration_as_float.cos();
 
     answer.to_str().to_owned()
@@ -113,16 +128,17 @@ pub fn cos(terms_str: &[~str]) -> ~str {
 pub fn tan(terms_str: &[~str]) -> ~str {
     if terms_str.len() != 1 { return ONE_ARG_ONLY.to_owned() }
 
-    let (message, terms) = str_to_rational(terms_str);
-    if message != "OK!" { return message.to_owned() }
-    if terms.len() == 0 { return "0/1".to_owned() }
+    let mut terms;
+    match str_to_rational(terms_str) {
+        Ok(bigrat_array)    => { terms = bigrat_array }
+        Err(msg)            => { return msg.to_owned() }
+    }
 
     let ration_as_float = rational_to_f64_trig(&terms[0]);
     let sin_numer = ration_as_float.sin();
     let cos_denom = ration_as_float.cos();
 
     let tangent = sin_numer/cos_denom;
-
 
     tangent.to_str().to_owned()
 }

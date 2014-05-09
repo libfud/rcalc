@@ -18,8 +18,12 @@ pub fn abs(terms_str: &[~str]) -> ~str {
     if terms_str.len() != 1 { return ONE_ARG_ONLY.to_owned() }
 
     let zero: BigRational = num::zero();
-    let (message, terms) = str_to_rational(terms_str);
-    if message != "OK!" { return message.to_owned() }
+    let mut terms: ~[BigRational];
+    
+    match str_to_rational(terms_str) {
+        Ok(bigrat_array)    => { terms = bigrat_array },
+        Err(msg)            => { return msg.to_owned() }
+    }
 
     if terms[0] > zero { return terms[0].to_str().to_owned() }
     
@@ -28,8 +32,11 @@ pub fn abs(terms_str: &[~str]) -> ~str {
 
 /// Adds the numbers in a vector. If there are zero terms, it returns 0.
 pub fn add(terms_str: &[~str]) -> ~str {
-    let (message, terms) = str_to_rational(terms_str);
-    if message != "OK!" { return message.to_owned() }
+    let mut terms;
+    match str_to_rational(terms_str) {
+        Ok(bigrat_array)    => { terms = bigrat_array },
+        Err(msg)            => { return msg.to_owned() }
+    }
 
     let  mut total: BigRational = num::zero();
     for term in terms.iter() {
@@ -50,8 +57,11 @@ pub fn sub(terms_str: &[~str]) -> ~str {
         return BAD_EXPR.to_owned()
     } 
 
-    let (message, terms) = str_to_rational(terms_str);
-    if message != "OK!" { return message.to_owned() }
+    let mut terms;
+    match str_to_rational(terms_str) {
+        Ok(bigrat_array)    => { terms = bigrat_array },
+        Err(msg)            => { return msg.to_owned() }
+    }
 
     let zero: BigRational = num::zero();
     if terms.len() == 1 {
@@ -59,6 +69,7 @@ pub fn sub(terms_str: &[~str]) -> ~str {
         //negative val of first term
         return difference.to_str().to_owned()
     };
+
     let mut difference = terms[0].clone();
     for term in terms.slice_from(1).iter() {
         difference = difference.sub(term)
@@ -70,8 +81,13 @@ pub fn sub(terms_str: &[~str]) -> ~str {
 /// Multiplies the numbers in a vector. Returns 1 for no terms. Otherwise
 /// it returns the product of all numbers in a vector.
 pub fn mul(terms_str: &[~str]) -> ~str {
-    let (message, terms) = str_to_rational(terms_str);
-    if message != "OK!" { return message.to_owned() }
+
+    let mut terms;
+    match str_to_rational(terms_str) {
+        Ok(bigrat_array)    => { terms = bigrat_array },
+        Err(msg)            => { return msg.to_owned() }
+    }
+
 
     let mut product: BigRational = num::one();
     for term in terms.iter() { 
@@ -90,19 +106,24 @@ pub fn div(terms_str: &[~str]) -> ~str {
         println!("Division requires at least one term!");
         return BAD_EXPR.to_owned()
     }
-
-    let (message, terms) = str_to_rational(terms_str);
-    if message != "OK!" { return message.to_owned() }
+    let mut terms;
+    match str_to_rational(terms_str) {
+        Ok(bigrat_array)    => { terms = bigrat_array },
+        Err(msg)            => { return msg.to_owned() }
+    }
 
     let zero: BigRational = num::zero();
+
     if terms.len() == 1 { 
         match terms[0] == zero {
             true    => { return DIV_BY_ZERO.to_owned() }
             false   => { return terms[0].recip().to_str().to_owned(); }
         }
     }
+
     let mut quotient = terms[0].clone();
     if quotient == zero { return DIV_BY_ZERO.to_owned() }
+
     for term in terms.slice_from(1).iter() { 
         match *term == zero {
             true    => { return DIV_BY_ZERO.to_owned() }
@@ -122,8 +143,11 @@ pub fn rem(terms_str: &[~str]) -> ~str {
         return BAD_EXPR.to_owned()
     }
 
-    let (message, terms) = str_to_rational(terms_str);
-    if message != "OK!" { return message.to_owned() }
+    let mut terms;
+    match str_to_rational(terms_str) {
+        Ok(bigrat_array)    => { terms = bigrat_array },
+        Err(msg)            => { return msg.to_owned() }
+    }
 
     let zero: BigRational = num::zero();
     if terms.len() == 1 { 
@@ -164,8 +188,12 @@ pub fn pow(terms_str: &[~str]) -> ~str {
 
     if terms_str.len() == 0 { return one.to_str().to_owned() }
 
-    let (message, terms) = str_to_rational(terms_str);
-    if message != "OK!" { return message.to_owned() }
+    let mut terms;
+    match str_to_rational(terms_str) {
+        Ok(bigrat_array)    => { terms = bigrat_array },
+        Err(msg)            => { return msg.to_owned() }
+    }
+
 
 
     if terms.len() == 1 { 

@@ -19,21 +19,21 @@ pub static E: f64 = 2.71828182845904523536028747135266250_f64;
 
 /// Function to convert an array of owned strings into BigRationals for work.
 /// A message is included to indicate the success of the operation.
-pub fn str_to_rational(str_array: &[~str]) -> (&str, ~[BigRational]) {
+pub fn str_to_rational(str_array: &[~str]) -> Result<~[BigRational], &str> {
     let mut big_vec: Vec<BigRational> = Vec::new();
     let mut rational: BigRational;
 
     for elem in str_array.iter() {
         let number_type = get_number_type(*elem);
         if number_type == "invalid representation" {
-            return (number_type, big_vec.as_slice().to_owned())
+            return Err(number_type)
         }
         match number_type {
             "fraction"      => {
                 match from_str::<BigRational>(*elem) {
                     Some(bignum)    => { rational = bignum }
                     _               => { 
-                        return (DESPAIR, big_vec.as_slice().to_owned())
+                        return Err(DESPAIR)
                     }
                 }
             },
@@ -43,25 +43,25 @@ pub fn str_to_rational(str_array: &[~str]) -> (&str, ~[BigRational]) {
                 match from_str::<f64>(*elem) {
                     Some(num)   => { floated = num },
                     _           => {
-                        return (DESPAIR, big_vec.as_slice().to_owned())
+                        return Err(DESPAIR)
                     }
                 }
                 match Ratio::from_float(floated) {
                     Some(bignum)    => { rational = bignum }
                     _               => { 
-                        return (DESPAIR, big_vec.as_slice().to_owned())
+                        return Err(DESPAIR)
                     }
                 }
             },
 
             _               => {
-                return (DESPAIR, big_vec.as_slice().to_owned())
+                return Err(DESPAIR)
             }
         }
         big_vec.push(rational);
     }
 
-    ("OK!", big_vec.as_slice().to_owned())
+    Ok(big_vec.as_slice().to_owned())
 }
 
 /// Determines if a number is a decimal representation or a fractional

@@ -15,8 +15,11 @@ pub fn avg(terms_str: &[~str]) -> ~str {
         return "This function requires at least one term.".to_owned()
     }
 
-    let (message, terms) = str_to_rational(terms_str);
-    if message != "OK!" { return message.to_owned() }
+    let mut terms: ~[BigRational];
+    match str_to_rational(terms_str) {
+        Ok(bigrat_array)    => { terms = bigrat_array }
+        Err(msg)            => { return msg.to_owned() }
+    }
 
     let length: BigRational = Ratio::new(
         (terms.len() as int).to_bigint().unwrap(), 1i.to_bigint().unwrap());

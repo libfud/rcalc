@@ -5,11 +5,14 @@ use common::{str_to_rational, TWO_ARGS_ERR, DESPAIR};
 pub mod common;
 
 /// A function for ordering
-pub fn order(comparator: &str, terms: &[~str]) -> ~str {
-    if terms.len() != 2 { return TWO_ARGS_ERR.to_owned() }
+pub fn order(comparator: &str, terms_str: &[~str]) -> ~str {
+    if terms_str.len() != 2 { return TWO_ARGS_ERR.to_owned() }
 
-    let (message, comparators) = str_to_rational(terms);
-    if message != "OK!" { return message.to_owned() }
+    let mut comparators;
+    match str_to_rational(terms_str) {
+        Ok(bigrat_array)    => { comparators = bigrat_array }
+        Err(msg)            => { return msg.to_owned() }
+    }
     let (lcomp, rcomp) = (comparators[0].clone(), comparators[1].clone());
 
     match comparator {
