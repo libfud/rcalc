@@ -93,12 +93,11 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
             _           => { }, //it's likely a numeric literal
         }
 
-        let word_len = word_buffer.len() - 1;
         let mut negative_sign_counter = 0;
         let mut radix_point_counter = 0;
         let mut fraction_counter = 0;
 
-        if word_buffer.slice_to(1) == "/" || word_buffer.slice_to(word_len) == "/" {
+        if word_buffer.starts_with("/") || word_buffer.ends_with("/") {
             return (false, BAD_TERM.to_owned())
         }
 
@@ -117,17 +116,15 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
 
             (0, 0, 1) | (0, 1, 1) | (1, 0, 1)   => {
                 if word_buffer.slice_to(1) == "-" {
-                    return (true, word_buffer.to_owned())
+                    (true, word_buffer.to_owned())
                 } else {
-                    return (false, BAD_TERM.to_owned())
+                    (false, BAD_TERM.to_owned())
                 }
             },
 
-            _   => { return (false, BAD_TERM.to_owned()) }
+            _   => { (false, BAD_TERM.to_owned()) }
         }
     };
-
-
 
     for c in expr.slice_from(op_len).chars() {
         if skip != 0 { skip -= 1 }
