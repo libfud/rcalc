@@ -12,40 +12,25 @@ pub mod stats;
 pub mod common;
 pub mod logic;
 
-
-static BAD_OPERATOR : &'static str = "Improperly placed or missing operator!";
 static BAD_EXPR : &'static str = "Poorly formatted expression!";
 static BAD_TERM : &'static str = "Poorly formatted term!";
 
-///Wrapper to evaluate a given expression. Checks to make sure that it's a
-///valid expression, then does the appropriate action given the operator.
-pub fn eval(expr: &str) -> ~str {
-    if expr.slice_to(1) != "(" || expr.slice_from(expr.len() - 1) != ")" {
-        return BAD_EXPR.to_owned()
+/// A helper function to find the length of a sub expression. 
+pub fn find_sub_expr_len(expr: &str) -> uint {
+    let mut len = 1;
+    let mut lparenth = 1;
+    let mut rparenth = 0;
+    for c in expr.slice_from(1).chars() {
+        match c {
+            '(' => { lparenth += 1; },
+            ')' => { rparenth += 1; },
+            _   => { }
+        }
+        len += 1;
+        if rparenth == lparenth { break }
     }
-    let (operator, terms) = tokenize(expr);
-    let answer = match operator.slice_from(0) {
-        "+"     => add(terms),
-        "-"     => sub(terms),
-        "*"     => mul(terms),
-        "/"     => div(terms),
-        "%"     => rem(terms),
-        "pow"   => pow(terms),
-        "rad"   => rad(terms),
-        "deg"   => deg(terms),
-        "sin"   => sin(terms),
-        "cos"   => cos(terms),
-        "tan"   => tan(terms),
-        "avg"   => avg(terms),
-        "abs"   => abs(terms),
-        "<" | "<=" | "=" | ">=" | ">" => order(operator, terms),
-        "if"    => condit(terms),
-//        "fac"   => fac(&terms),
-//        going to add gamma function instead
-        _   => operator
-    };
 
-    answer
+    len 
 }
 
 /// Parses an expression and returns a tuple containing its operator and
@@ -54,33 +39,12 @@ pub fn eval(expr: &str) -> ~str {
 /// the expression is bad. Then, the expression is parsed from the char
 /// following the operator, and each character is matched against valid
 /// tokens. If the character is not valid, it returns a bad expression.
-pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
+pub fn tokenize(expr: &str) -> Result<~[~str], &str> {
     let mut terms: Vec<~str> = Vec::new();
     let mut buf = StrBuf::new();
     let mut skip = 0;
 
-    let operator: &str = expr.slice_from(1).words().next().unwrap_or("oops");
-    // This essentially forbids terms from touching operators. Which I am
-    // 100% fine with.
-    match operator {
-        "+" | "-" | "*" | "/" | "%"     => { },
-        "rad" | "deg"                   => { },
-        "sin" | "cos" | "tan"           => { },
-        "pow" | "root" | "avg" | "abs"  => { },
-        "<" | "<=" | "=" | ">=" | ">"   => { },
-        "if"                            => { },
-        _   => { return (BAD_OPERATOR.to_owned(), terms.as_slice().to_owned()) }
-    }
-    let mut op_len = 0; //gotta start looking at chars after the operator
-    let mut last_char = ' ';
-    for c in operator.chars().rev() { last_char = c; break; }
-
-    for c in expr.chars() {
-        op_len += 1;
-        if c == last_char { break }
-    }
-
-    let mut counter = op_len;
+    let mut counter = 0;
 
     let inspect_string = |word_buffer: &str| -> (bool, ~str) {
         assert!(word_buffer.len() > 0);
@@ -126,7 +90,7 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
         }
     };
 
-    for c in expr.slice_from(op_len).chars() {
+    for c in expr.chars() {
         if skip != 0 { skip -= 1 }
         else  {
             match c {
@@ -135,7 +99,7 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
                     if buf.len() > 0 {
                         let (valid_token, token) = inspect_string(buf.to_str());
                         if valid_token == false {
-                            return (BAD_EXPR.to_owned(), terms.as_slice().to_owned())
+                            return Err(BAD_EXPR)
                         }
 
                         terms.push(token);
@@ -150,7 +114,7 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
                     if buf.len() > 0 {
                         let (valid_token, token) = inspect_string(buf.to_str());
                         if valid_token == false { 
-                            return (BAD_EXPR.to_owned(), terms.as_slice().to_owned())
+                            return Err(BAD_EXPR)
                         }
 
                         terms.push(token);
@@ -167,7 +131,7 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
 
                     //account for failure
                     if term == BAD_EXPR.to_owned() {
-                        return (BAD_EXPR.to_owned(), terms.as_slice().to_owned())
+                        return Err(BAD_EXPR)
                     }
                     
                     terms.push(term);
@@ -190,30 +154,13 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
         }
     }
 
-    (operator.to_owned(), terms.as_slice().to_owned())
-}
-
-/// A helper function to find the length of a sub expression. 
-pub fn find_sub_expr_len(expr: &str) -> uint {
-    let mut len = 1;
-    let mut lparenth = 1;
-    let mut rparenth = 0;
-    for c in expr.slice_from(1).chars() {
-        match c {
-            '(' => { lparenth += 1; },
-            ')' => { rparenth += 1; },
-            _   => { }
-        }
-        len += 1;
-        if rparenth == lparenth { break }
-    }
-
-    len 
+    Ok(terms.as_slice().to_owned())
 }
 
 /// Evaluates conditional statements. Currently only supports one condition,
 /// one consequent, and one alternative.
 pub fn condit(terms: &[~str]) -> ~str {
+
     if terms.len() != 3 {
         return "Condition, consequent, and alternative are required".to_owned()
     }
@@ -225,4 +172,44 @@ pub fn condit(terms: &[~str]) -> ~str {
     } else {
         "Non boolean condition".to_owned()
     }
+}
+
+///Wrapper to evaluate a given expression. Checks to make sure that it's a
+///valid expression, then does the appropriate action given the operator.
+pub fn eval(expr: &str) -> ~str {
+    if expr.slice_to(1) != "(" || expr.slice_from(expr.len() - 1) != ")" {
+        return BAD_EXPR.to_owned()
+    }
+
+    let operator = expr.slice_from(1).words().next().unwrap_or("oops");
+    let op_len = operator.len() + 1;
+
+    let terms = match tokenize(expr.slice_from(op_len+1)) {
+        Ok(good_terms)  => good_terms,
+        Err(msg)        => return msg.to_owned()
+    };
+
+    let answer = match operator {
+        "+"     => add(terms),
+        "-"     => sub(terms),
+        "*"     => mul(terms),
+        "/"     => div(terms),
+        "%"     => rem(terms),
+        "pow"   => pow(terms),
+        "rad"   => rad(terms),
+        "deg"   => deg(terms),
+        "sin"   => sin(terms),
+        "cos"   => cos(terms),
+        "tan"   => tan(terms),
+        "avg"   => avg(terms),
+        "abs"   => abs(terms),
+        "<" | "<=" | "=" | ">=" | ">" =>
+            order(operator, terms),
+        "if"    => condit(terms),
+//        "fac"   => fac(&terms),
+//        going to add gamma function instead
+        _   => operator.to_owned()
+    };
+
+    answer
 }
