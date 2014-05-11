@@ -57,7 +57,6 @@ pub fn eval(expr: &str) -> ~str {
 pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
     let mut terms: Vec<~str> = Vec::new();
     let mut buf = StrBuf::new();
-    let mut point_flag = false;
     let mut skip = 0;
 
     let operator: &str = expr.slice_from(1).words().next().unwrap_or("oops");
@@ -82,74 +81,68 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
     }
 
     let mut counter = op_len;
-    let mut pi_flag = false;
+
+    let inspect_string = |word_buffer: &str| -> (bool, ~str) {
+        assert!(word_buffer.len() > 0);
+
+        match word_buffer {
+            "π" | "pi"  => { return (true, PI.to_str().to_owned()) },
+            "e"         => { return (true, E.to_str().to_owned()) },
+            "true"      => { return (true, "true".to_owned()) },
+            "false"     => { return (true, "false".to_owned()) },
+            _           => { }, //it's likely a numeric literal
+        }
+
+        let word_len = word_buffer.len() - 1;
+        let mut negative_sign_counter = 0;
+        let mut radix_point_counter = 0;
+        let mut fraction_counter = 0;
+
+        if word_buffer.slice_to(1) == "/" || word_buffer.slice_to(word_len) == "/" {
+            return (false, BAD_TERM.to_owned())
+        }
+
+        for c in word_buffer.chars() {
+            match c {
+                '0'..'9'    => { }, //do nothing
+                '-'         => { negative_sign_counter += 1 },
+                '.'         => { radix_point_counter += 1 },
+                '/'         => { fraction_counter += 1 }
+                _           => { return (false, BAD_TERM.to_owned()) },
+            }
+        }
+
+        match (fraction_counter, radix_point_counter, negative_sign_counter) {
+            (0, 0, 0) | (1, 0, 0) | (0, 1, 0)   => { return (true, word_buffer.to_owned()) },
+
+            (0, 0, 1) | (0, 1, 1) | (1, 0, 1)   => {
+                if word_buffer.slice_to(1) == "-" {
+                    return (true, word_buffer.to_owned())
+                } else {
+                    return (false, BAD_TERM.to_owned())
+                }
+            },
+
+            _   => { return (false, BAD_TERM.to_owned()) }
+        }
+    };
+
+
 
     for c in expr.slice_from(op_len).chars() {
         if skip != 0 { skip -= 1 }
         else  {
             match c {
-                '-'         => {
-                    pi_flag = false;
-                    if buf.len() == 0 { buf.push_char(c) }
-                    else {
-                        return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
-                    }
-                },
-
-                '0'..'9'    => { 
-                    if pi_flag == false { buf.push_char(c) }
-                    else {
-                        return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
-                    }
-                },
-
-                'π'         => {
-                    if buf.len() != 0 {
-                        return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
-                    }
-                    else { terms.push(PI.to_str().to_owned()) }
-                },
-
-                'p'         => {
-                    if pi_flag == false && buf.len() == 0 {
-                        pi_flag = true;
-                    } else {
-                        return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
-                    }
-                }
-
-                'i'         => {
-                    if pi_flag == true && buf.len() == 0 {
-                        terms.push(PI.to_str().to_owned());
-                        pi_flag = false;
-                    } else {
-                        return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
-                    }
-                },
-
-                'e'         => {
-                    if buf.len() == 0 { terms.push(E.to_str().to_owned()) }
-                    else {
-                        return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
-                    }
-                },
-
-                '.'         => { 
-                    if point_flag == false {
-                        point_flag = true;
-                        buf.push_char(c);
-                    } else {
-                        return (BAD_TERM.to_owned(),terms.as_slice().to_owned())
-                    }
-                },
-
                 //This potentially signifies the end of a number.
                 ' '         => {
-                    pi_flag = false;
-                    point_flag = false;
                     if buf.len() > 0 {
-                        terms.push(buf.to_str().to_owned());
-                        buf = "".to_strbuf(); 
+                        let (valid_token, token) = inspect_string(buf.to_str());
+                        if valid_token == false {
+                            return (BAD_EXPR.to_owned(), terms.as_slice().to_owned())
+                        }
+
+                        terms.push(token);
+                        buf = "".to_strbuf();
                     }
                 },
                 
@@ -158,7 +151,12 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
                     //make sure to add the number in the buffer to the vector
                     //if it's present
                     if buf.len() > 0 {
-                        terms.push(buf.to_str().to_owned());
+                        let (valid_token, token) = inspect_string(buf.to_str());
+                        if valid_token == false { 
+                            return (BAD_EXPR.to_owned(), terms.as_slice().to_owned())
+                        }
+
+                        terms.push(token);
                         buf = "".to_strbuf();
                     }
 
@@ -172,7 +170,7 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
 
                     //account for failure
                     if term == BAD_EXPR.to_owned() {
-                        return (BAD_EXPR.to_owned(),terms.as_slice().to_owned())
+                        return (BAD_EXPR.to_owned(), terms.as_slice().to_owned())
                     }
                     
                     terms.push(term);
@@ -189,9 +187,7 @@ pub fn tokenize(expr: &str) -> (~str, ~[~str]) {
                     }
                 }
 
-                _           => {
-                    return (BAD_EXPR.to_owned(), terms.as_slice().to_owned());
-                }
+                _           => { buf.push_char(c) }
             }
             counter += 1;
         }
