@@ -25,7 +25,6 @@ pub fn lexer(expr: &str) -> Result<~[(Token, ~str)], &str> {
 
     let mut lparens = 0;
     let mut rparens = 0;
-    let mut point_flag = false;
 
     //Check to see if the first and last characters are lparen and rparen.
     if expr.slice_to(1) != "(" || expr.slice_from(expr.len() -1) != ")" {
@@ -70,7 +69,7 @@ pub fn lexer(expr: &str) -> Result<~[(Token, ~str)], &str> {
 pub fn tokenizer(expr: &str) -> Result<~[(Token, ~str)], &str> {
 
     let mut tokens: Vec<(Token, ~str)> = Vec::new();
-    let mut current_word_buffer = StrBuf::new();
+    let mut word_buffer = StrBuf::new();
 
     let inspect_string = |word_buffer: &str| -> (bool, Token) {
         for operator in OPERATORS.iter() {
@@ -93,37 +92,26 @@ pub fn tokenizer(expr: &str) -> Result<~[(Token, ~str)], &str> {
         (true, Numeric) //it's a numeric expression
     };
 
-    {
-        let push_strbuf = |word_buffer: StrBuf| -> &str {
-            let (valid_token, token_type) = inspect_string(word_buffer.to_str());
-            if valid_token == false { return "Invalid token" }
-
-            tokens.push((token_type, current_word_buffer.to_str().to_owned()));
-            current_word_buffer = "".to_strbuf();
-
-           "OK"
-        };
-    }
-
     for current_char in expr.chars() {
         match current_char {
-            'a'..'z'|'A'..'Z'|'0'..'9'  => {
-                current_word_buffer.push_char(current_char)
+            'a'..'z'|'A'..'Z'|'0'..'9' | '.' => {
+                word_buffer.push_char(current_char)
             }
 
-            '+' | '-' | '*' | '/' | '%' => current_word_buffer.push_char(current_char),
+            '+' | '-' | '*' | '/' | '%' => word_buffer.push_char(current_char),
 
             ' '         => {
-                let msg = push_strbuf(current_word_buffer);
-                if msg != "OK"  { return Err(msg) }
+                let (valid_token, token_type) = inspect_string(word_buffer.to_str());
+                if valid_token == false { return Err("Invalid token") }
+                tokens.push((token_type, word_buffer.to_str().to_owned()));
             }
 
             '('         => {
-                match current_word_buffer.len() {
+                match word_buffer.len() {
                     0   => { tokens.push((Lparen, "(".to_owned() )) },
                     _   => { 
-                        let msg = push_strbuf(current_word_buffer);
-                        if msg != "OK" { return Err(msg) }
+                        let (valid_token, token_type) = inspect_string(word_buffer.to_str());
+                        if valid_token == false { return Err("Invalid token") }
 
                         tokens.push((Lparen, "(".to_owned() ))
                     }
@@ -131,11 +119,11 @@ pub fn tokenizer(expr: &str) -> Result<~[(Token, ~str)], &str> {
             }
 
             ')'         => {
-                match current_word_buffer.len() {
+                match word_buffer.len() {
                     0   => { tokens.push((Lparen, "(".to_owned() )) },
                     _   => {
-                        let msg = push_strbuf(current_word_buffer);
-                        if msg != "Ok" { return Err(msg) }
+                        let (valid_token, token_type) = inspect_string(word_buffer.to_str());
+                        if valid_token == false { return Err("Invalid token") }
 
                         tokens.push((Rparen, ")".to_owned() ))
                     }

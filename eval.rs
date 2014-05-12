@@ -165,12 +165,48 @@ pub fn condit(terms: &[~str]) -> ~str {
         return "Condition, consequent, and alternative are required".to_owned()
     }
 
-    if terms[0] == "true".to_owned() { //terms[0] being the condition
-        terms[1].to_owned() //consequent
-    } else if terms[0] == "false".to_owned() {
-        terms[2].to_owned() //alternative
+    let condition = eval(terms[0]);
+
+    if condition  == "true".to_owned() { //terms[0] being the condition
+        eval(terms[1]) //consequent
+    } else if condition == "false".to_owned() {
+        eval(terms[2]) //alternative
     } else {
         "Non boolean condition".to_owned()
+    }
+}
+
+/// Parses conditional statements into an array of strings consisting of
+/// a conditon, a consequent and an alternative. If unsuccessful, returns
+/// an error message.
+pub fn condit_parse(expr: &str) -> Result<~[~str], &str> {
+    if expr.len() < 2 { return Err("Invalid conditional statement") }
+    if expr.starts_with("(") == true { 
+        return Err("Misuse of condit_parse detected! Use proper slicing!")
+    }
+
+    let mut skip = 0;
+    let mut counter = 0;
+    let mut condit_vec: Vec<~str> = Vec::new();
+
+    for c in expr.chars() {
+        if skip != 0 { skip -= 1 }
+
+        else { 
+            if c == '(' {
+                let subexpr_len = find_sub_expr_len(expr.slice_from(counter + 1));
+                condit_vec.push(expr.slice(counter, counter + subexpr_len + 1).to_owned());
+
+                skip = subexpr_len;
+            }
+        }
+        counter += 1;
+    }
+
+    if condit_vec.len() != 3 { 
+        Err("Improper amount of arguments for a conditional statement.")
+    } else {
+        Ok(condit_vec.as_slice().to_owned())
     }
 }
 
@@ -182,12 +218,32 @@ pub fn eval(expr: &str) -> ~str {
     }
 
     let operator = expr.slice_from(1).words().next().unwrap_or("oops");
-    let op_len = operator.len() + 1;
+    let last_operator_char =  operator.slice_from(operator.len() - 1);
+    let mut op_len = 0;
+    for c in expr.chars() {
+        op_len += 1;
+        if c.to_str().as_slice() == last_operator_char { break }
+    }
 
-    let terms = match tokenize(expr.slice_from(op_len+1)) {
-        Ok(good_terms)  => good_terms,
-        Err(msg)        => return msg.to_owned()
-    };
+    if operator == "if" {
+        match condit_parse(expr.slice_from(op_len)) {
+            Ok(good_terms)  => {
+                let conditional_terms = good_terms;
+                //condit_parse returns an array of strings vs one string
+                return condit(conditional_terms);
+            },
+            Err(msg)        => { return msg.to_owned() }
+        }
+    }
+
+    if operator == "oops" { return BAD_EXPR.to_owned() }
+
+    let terms;
+
+    match tokenize(expr.slice_from(op_len)) {
+        Ok(good_terms)  => { terms = good_terms },
+        Err(msg)        => { return msg.to_owned() }
+    }
 
     let answer = match operator {
         "+"     => add(terms),
@@ -203,9 +259,7 @@ pub fn eval(expr: &str) -> ~str {
         "tan"   => tan(terms),
         "avg"   => avg(terms),
         "abs"   => abs(terms),
-        "<" | "<=" | "=" | ">=" | ">" =>
-            order(operator, terms),
-        "if"    => condit(terms),
+        "<" | "<=" | "=" | ">=" | ">" => order(operator, terms),
 //        "fac"   => fac(&terms),
 //        going to add gamma function instead
         _   => operator.to_owned()

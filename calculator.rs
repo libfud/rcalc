@@ -14,9 +14,6 @@ pub mod common;
 pub mod logic;
 pub mod search;
 
-//static PI: f64 = 3.141592653589793;
-//most accurate representation of pi possible in f64
-
 fn main() {
     let mut reader = io::stdin();
     let mut expr;
