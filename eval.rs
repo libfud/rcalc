@@ -3,7 +3,7 @@
 use arithmetic::{add, sub, mul, div, rem, pow, abs};
 use trig::{PI, rad, deg, sin, cos, tan};
 use stats::avg;
-use common::{E};
+use common::{E, help};
 use logic::order;
 
 pub mod arithmetic;
@@ -213,6 +213,12 @@ pub fn condit_parse(expr: &str) -> Result<~[~str], &str> {
 ///Wrapper to evaluate a given expression. Checks to make sure that it's a
 ///valid expression, then does the appropriate action given the operator.
 pub fn eval(expr: &str) -> ~str {
+
+    if expr == "(help)" {
+        help("");
+        return "".to_owned()
+    }
+
     if expr.slice_to(1) != "(" || expr.slice_from(expr.len() - 1) != ")" {
         return BAD_EXPR.to_owned()
     }
@@ -237,6 +243,11 @@ pub fn eval(expr: &str) -> ~str {
     }
 
     if operator == "oops" { return BAD_EXPR.to_owned() }
+
+    if operator == "help" || operator == "help)" {
+        help(expr.slice(op_len, expr.len() - 1));
+        return "".to_owned();
+    }
 
     let terms;
 
