@@ -194,8 +194,6 @@ pub fn pow(terms_str: &[~str]) -> ~str {
         Err(msg)            => { return msg.to_owned() }
     }
 
-
-
     if terms.len() == 1 { 
         if terms[0] != zero { 
             return terms[0].to_str().to_owned()
