@@ -17,6 +17,46 @@ pub static TWO_ARGS_ERR : &'static str = "This function only takes two terms!";
 
 pub static E: f64 = 2.71828182845904523536028747135266250_f64;
 
+pub fn help(list: &str) {
+    let help_help =
+    "The help function has the form(help term1, term2, term3...) and prints out\n\
+    and prints out examples of how operators are used. You can use help \n\
+    for individual operators, and you can list operators by group with the \n\
+    following terms: arithmetic, logic, trigonometry (or trig), and statistics\n\
+    and statistics (or stats). If you are new to lisp's style, try (help use)";
+
+    let use_help = "rcalc is a polish notation, or prefix notation calculator.\n\
+    It requires that expressions are wrapped in parentheses ( \"( and \") ).\n\
+    This means that the operator goes first, followed by its terms; rcalc\n\
+    evaluates subexpression recursively. For example, the following returns\n\
+    -3/2: (/ (- 6 (pow 9 (/ 2)) (+ -4.5 13/2)))";
+    
+    let arithmetic_help = "The arithmetic operators are +, -, *, /, %, and pow.\n\
+    In general, the arithmetic operators can take 0 terms, or as many \
+    terms as you like. For example, pow acts like a tower of power.\n \
+    (pow 2 3 4) is equivalent to (pow 2 81).\n \
+    To see more help, use help with the appropriate arithmetic operator.";
+
+    let add_help = "The addition operator. If no terms are supplied, returns \
+    the additive identity, 0. The example below is a valid expression:\n \
+    (+ 2 -7 ";
+
+    if list.len() < 2 { println!("{}", help_help) }
+
+    for term in list.words() {
+        println!("{}", match term {
+            "help"  => help_help,
+            "use"   => use_help,
+            "arithmetic"    => arithmetic_help,
+            "+"|"add"       => add_help,
+            _               => "More help is not available at this time."
+            }
+        );
+    }
+}
+
+
+
 /// Function to convert an array of owned strings into BigRationals for work.
 /// A message is included to indicate the success of the operation.
 pub fn str_to_rational(str_array: &[~str]) -> Result<~[BigRational], &str> {
