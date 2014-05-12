@@ -57,14 +57,14 @@ pub fn tokenize(expr: &str) -> Result<~[~str], &str> {
             _           => { }, //it's likely a numeric literal
         }
 
-        let mut negative_sign_counter = 0;
-        let mut radix_point_counter = 0;
-        let mut fraction_counter = 0;
-
         if word_buffer.starts_with("/") || word_buffer.ends_with("/") {
             return (false, BAD_TERM.to_owned())
         }
 
+        let mut negative_sign_counter = 0;
+        let mut radix_point_counter = 0;
+        let mut fraction_counter = 0;
+        
         for c in word_buffer.chars() {
             match c {
                 '0'..'9'    => { }, //do nothing
@@ -72,6 +72,20 @@ pub fn tokenize(expr: &str) -> Result<~[~str], &str> {
                 '.'         => { radix_point_counter += 1 },
                 '/'         => { fraction_counter += 1 }
                 _           => { return (false, BAD_TERM.to_owned()) },
+            }
+        }
+
+        if negative_sign_counter == 1 && word_buffer.starts_with("-") == false {
+            let mut prev_char = 'Z'; //any non numeric value suffices
+            for c in word_buffer.chars() {
+               if c == '-' {
+                   match prev_char {
+                       'Z'      => {}, //initial value
+                       '/'      => { break } //potentially good numeric val
+                       _        => { return (false, BAD_TERM.to_owned()) },
+                   }
+               }
+               prev_char = c;
             }
         }
 
@@ -95,7 +109,7 @@ pub fn tokenize(expr: &str) -> Result<~[~str], &str> {
         else  {
             match c {
                 //This potentially signifies the end of a number.
-                ' '         => {
+                ' '|')'     => {
                     if buf.len() > 0 {
                         let (valid_token, token) = inspect_string(buf.to_str());
                         if valid_token == false {
@@ -140,13 +154,6 @@ pub fn tokenize(expr: &str) -> Result<~[~str], &str> {
                     counter += term_len;
                     skip = term_len; //an inelegant, ugly hack
                 },
-
-                ')'         => {
-                    if buf.len() > 0 {
-                        terms.push(buf.to_str().to_owned());
-                        buf = "".to_strbuf();
-                    }
-                }
 
                 _           => { buf.push_char(c) }
             }
