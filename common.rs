@@ -19,27 +19,112 @@ pub static E: f64 = 2.71828182845904523536028747135266250_f64;
 
 pub fn help(list: &str) {
     let help_help =
-    "The help function has the form(help term1, term2, term3...) and prints out\n\
-    and prints out examples of how operators are used. You can use help \n\
-    for individual operators, and you can list operators by group with the \n\
-    following terms: arithmetic, logic, trigonometry (or trig), and statistics\n\
-    and statistics (or stats). If you are new to lisp's style, try (help use)";
+"The help function has the form (help term1, term2, term3...) and prints out
+examples of how operators are used. You can use help for individual operators
+for individual operators, and you can list operators by group with the 
+following terms: arithmetic, logic, trigonometry (or trig), and statistics
+(or stats). See also (help use).";
 
-    let use_help = "rcalc is a polish notation, or prefix notation calculator.\n\
-    It requires that expressions are wrapped in parentheses ( \"( and \") ).\n\
-    This means that the operator goes first, followed by its terms; rcalc\n\
-    evaluates subexpression recursively. For example, the following returns\n\
-    -3/2: (/ (- 6 (pow 9 (/ 2)) (+ -4.5 13/2)))";
+    let use_help =
+"rcalc is an arbitrary precision polish notation (lisp style) calculator.
+It requires that expressions are wrapped in parentheses ( \"( and \") ).
+The operator goes first in any expression, followed by its terms.
+For an  example, the following returns -3/2:
+
+(/ (- 6 (pow 9 (/ 2)) (+ -4.5 13/2)))
+
+As you can see, you can nest expressions. Not all expressions are evaluated:
+
+(+ 2 (if (> 3 2) (+ 7 3) (* 2)))
+
+only (> 3 2) and (+ 7 3) are evaluated in that case, and then added to 2.
+
+There are a variety of acceptable input formats for numebers. You can prepend
+a negative symbol to the numerator or denominator, use fractions, or numbers
+that have a explicit radix (decimal) point. However, mixing explicit radix
+points with fractional notation is disallowed, and the preferred method
+is either just an integer as a numerator or an explicit fraction. If you
+want to express the reciprocal of a number, either input it as 1/n, where n is
+a numeric literal, or as (/ n). Input as numbers with an explicit radix 
+is quite buggy due to the limitations of IEEE754.";
     
-    let arithmetic_help = "The arithmetic operators are +, -, *, /, %, and pow.\n\
-    In general, the arithmetic operators can take 0 terms, or as many \
-    terms as you like. For example, pow acts like a tower of power.\n \
-    (pow 2 3 4) is equivalent to (pow 2 81).\n \
-    To see more help, use help with the appropriate arithmetic operator.";
+    let arithmetic_help =
+"The arithmetic operators are +, -, *, /, %, and pow.
+In general, the arithmetic operators can take 0 terms, or as many terms as you
+like. For example, pow acts like a tower of power.
 
-    let add_help = "The addition operator. If no terms are supplied, returns \
-    the additive identity, 0. The example below is a valid expression:\n \
-    (+ 2 -7 ";
+(pow 2 3 4)
+
+is equivalent to (pow 2 81).
+To see more help, use help with the appropriate arithmetic operator.";
+
+    let add_help =
+"The addition operator. If no terms are supplied, returns the the additive
+identity, 0. The examples below are valid expressions:
+
+(+ ) -> 0/1
+(+ 7) -> 7/1
+(+ 2 2) -> 4/1
+(+ 3 4 (/ 25 5) 6) -> 18/1
+(+ -3.5) -> -7/2 ";
+
+    let sub_help = 
+"The subtraction operator. Requires at least one term. If only one term is
+given, it returns the negation of that term. The following are examples of
+valid expressions:
+
+(- 2) -> -2/1
+(- -1.5) -> 3/2
+(- 3 2) -> 1/1
+(- 10 3 3) -> 4/1
+(- (+ 2 2) 1) -> 3/1";
+
+    let mul_help =
+"The multiplication operator. If zero terms are given, returns the
+multiplicative identity, one. The following are examples of valid
+expressions:
+
+(* ) -> 1/1
+(* -2/3 -3/2) -> 1/1
+(* 2 3 4) -> 24/1
+(* .5 .25) -> 1/8
+(* 0.75 100) -> 750";
+
+    let div_help =
+"The division operator. Requires at least one term. If only one term is
+given, Division by zero is undefined. it returns that term's reciprocal.
+Valid examples of expressions:
+
+(/ 2) -> 1/2
+(/ 4/5 -1.25) -> -16/25
+(/ 24 6 2) -> 2
+(/ (pow 2 2 2) 4) -> 4
+(/ 144 12 4 3) -> 1";
+
+    let pow_help =
+"The exponentiation operator. If supplied no arguments, returns the
+multiplcative identity, 1. If only one term is supplied, the implied power is
+1. Exponentiation with zero as a base is allowed, but has some notable
+behavior:
+
+(pow 0) -> 0/1     | 0 to any non zero power is 0.
+(pow 0 0) -> 1/1   | 0^0 is one.
+(pow 0 0 0) -> 0/1 | Problem?
+
+If you are asking what's going on with 0, it's because pow is evaluated
+recursively from left to right: if more than two terms are supplied, it
+essentially evaluates from the rightmost two terms, treating the very
+last as the power and the second to last as the base.
+
+(pow 0 0 0) -> (pow 0 (pow 0 0)) -> (pow 0 1) -> 0/1
+
+That's all I have to say on that matter. Below are valid expressions:
+
+(pow 2 2 2 2) -> 65536/1
+(pow 2 3 4)   -> 24178851639229258349412352/1
+(pow 2 .5)    -> 577/408
+(pow 27 1/3)  -> 3/1
+(pow 256 1/8) -> 2/1";
 
     if list.len() < 2 { println!("{}", help_help) }
 
@@ -49,6 +134,10 @@ pub fn help(list: &str) {
             "use"   => use_help,
             "arithmetic"    => arithmetic_help,
             "+"|"add"       => add_help,
+            "-"|"subtraction" => sub_help,
+            "*"|"multiply"  => mul_help,
+            "/"|"division"  => div_help,
+            "pow"|"power"   => pow_help,
             _               => "More help is not available at this time."
             }
         );
