@@ -27,4 +27,4 @@ rcalc will not be considered complete until it has the following:
 *logarithms and exp
 *limits
 
-The current release is 0.3.0
+The current release is 0.4.0
