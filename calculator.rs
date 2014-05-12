@@ -21,6 +21,7 @@ fn main() {
     loop {
         expr = reader.read_line().ok().unwrap_or("exit".to_owned());
         if expr.trim() == "exit".to_owned() { break }
+        if expr.trim() == "help".to_owned() { println!("Please use (help)"); }
         let output = eval(expr.trim());
         println!("{}", output);
     }
