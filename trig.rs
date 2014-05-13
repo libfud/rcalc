@@ -116,7 +116,7 @@ pub fn cos(terms_str: &[~str]) -> ~str {
     }
 
 
-    if terms.len() == 0 { return "0/1".to_owned() }
+    if terms.len() == 0 { return "1/1".to_owned() }
 
     let ration_as_float = rational_to_f64_trig(&terms[0]);
     let answer = ration_as_float.cos();
