@@ -8,11 +8,11 @@ pub mod common;
 pub fn order(comparator: &str, terms_str: &[~str]) -> ~str {
     if terms_str.len() != 2 { return TWO_ARGS_ERR.to_owned() }
 
-    let comparators;
-    match str_to_rational(terms_str) {
-        Ok(bigrat_array)    => { comparators = bigrat_array }
+    let comparators = match str_to_rational(terms_str) {
+        Ok(bigrat_array)    =>  bigrat_array,
         Err(msg)            => { return msg.to_owned() }
-    }
+    };
+
     let (lcomp, rcomp) = (comparators[0].clone(), comparators[1].clone());
 
     match comparator {
