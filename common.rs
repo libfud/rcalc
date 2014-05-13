@@ -47,6 +47,12 @@ is either just an integer as a numerator or an explicit fraction. If you
 want to express the reciprocal of a number, either input it as 1/n, where n is
 a numeric literal, or as (/ n). Input as numbers with an explicit radix 
 is quite buggy due to the limitations of IEEE754.";
+
+    let abs_help =
+"The absolute function. Takes only one term, and returns its absolute value.
+
+(abs -5.5) -> 11/2
+(abs 17/7) -> 17/7";
     
     let arithmetic_help =
 "The arithmetic operators are +, -, *, /, %, and pow.
@@ -56,7 +62,15 @@ like. For example, pow acts like a tower of power.
 (pow 2 3 4)
 
 is equivalent to (pow 2 81).
-To see more help, use help with the appropriate arithmetic operator.";
+To see more help, use help with the appropriate arithmetic operator.
+Aadditionally, see (help abs), as I have not classified it yet.";
+
+    let stats_help =
+"Statistical functions. Currently only comprised of avg, which returns the
+arithmetic mean of a list of terms.
+
+(avg 42) -> 42/1
+(avg 7.5 12 -13.25 4/5) -> 161/80";
 
     let add_help =
 "The addition operator. If no terms are supplied, returns the the additive
@@ -126,18 +140,43 @@ That's all I have to say on that matter. Below are valid expressions:
 (pow 27 1/3)  -> 3/1
 (pow 256 1/8) -> 2/1";
 
+    let trig_help =
+"Trigonometric functions. Currently only comprised of sin, cos, tan, rad and
+deg. Each function only takes one term, or an expression which is evaluated to
+a single term.";
+
+    let sin_help =
+"The sine function. Takes one term. If no terms are supplied, it evaluates
+zero, which is still zero. Uses radians, not degrees. If you want to
+express the angle in degrees, convert with rad.
+
+(sin pi)    -> 0
+(sin (* 1/2 pi)) -> 1
+(sin (/ (* 2 pi) 3)) -> 0.866025
+(sin (rad 90)) -> 1";
+
+    let cos_help =
+"The cosine function. Takes on term. If no terms are supplied, it evaluates
+zero, ";
+
     if list.len() < 2 { println!("{}", help_help) }
 
     for term in list.words() {
         println!("{}", match term {
             "help"  => help_help,
             "use"   => use_help,
+            "abs"           => abs_help,
             "arithmetic"    => arithmetic_help,
             "+"|"add"       => add_help,
             "-"|"subtraction" => sub_help,
             "*"|"multiply"  => mul_help,
             "/"|"division"  => div_help,
             "pow"|"power"   => pow_help,
+            "sin"|"sine"    => sin_help,
+            "cos"|"cosine"  => cos_help,
+            "trig"          => trig_help,
+            "trigonometry"  => trig_help,
+            "stats"         => stats_help,
             _               => "More help is not available at this time."
             }
         );
