@@ -8,7 +8,7 @@ pub mod common;
 pub fn order(comparator: &str, terms_str: &[~str]) -> ~str {
     if terms_str.len() != 2 { return TWO_ARGS_ERR.to_owned() }
 
-    let mut comparators;
+    let comparators;
     match str_to_rational(terms_str) {
         Ok(bigrat_array)    => { comparators = bigrat_array }
         Err(msg)            => { return msg.to_owned() }
