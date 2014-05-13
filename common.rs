@@ -23,7 +23,9 @@ pub fn help(list: &str) {
 examples of how operators are used. You can use help for individual operators
 for individual operators, and you can list operators by group with the 
 following terms: arithmetic, logic, trigonometry (or trig), and statistics
-(or stats). See also (help use).";
+(or stats). See also (help use). An example of usage is
+
+(+ 2 2)";
 
     let use_help =
 "rcalc is an arbitrary precision polish notation (lisp style) calculator.
@@ -138,7 +140,9 @@ That's all I have to say on that matter. Below are valid expressions:
 (pow 2 3 4)   -> 24178851639229258349412352/1
 (pow 2 .5)    -> 577/408
 (pow 27 1/3)  -> 3/1
-(pow 256 1/8) -> 2/1";
+(pow 256 1/8) -> 2/1
+(pow 2 -1)    -> 1/2
+(pow 8 -2)    -> 1/64";
 
     let trig_help =
 "Trigonometric functions. Currently only comprised of sin, cos, tan, rad and
@@ -156,28 +160,102 @@ express the angle in degrees, convert with rad.
 (sin (rad 90)) -> 1";
 
     let cos_help =
-"The cosine function. Takes on term. If no terms are supplied, it evaluates
-zero, ";
+"The cosine function. Takes one term. If no terms are supplied, it evaluates
+zero. Uss radians. If you want to express the angle in degrees, convert with
+the rad function
+
+(cod ) -> 1/1
+(cos pi) -> -1
+(cos (rad 270)) -> 0/1
+(cos (rad 60)) -> 0.5";
+
+    let tan_help =
+"The tangent function. Takes exactly one term.
+
+(tan 1) -> 1.55
+(tan pi) -> 0
+(tan 0) -> 0
+(tan (rad 45)) -> 1";
+
+    let avg_help =
+"Returns the arithmetic mean of a set of numbers. Requires at least one term.
+
+(avg 2 3 4) -> 3/1
+(avg 12.25 -7/3 -14) -> -49/36
+(avg 42 6 7 13 9 9 9) -> 95/7";
+
+    let logic_help =
+"The ordering operators are <, <=, =, >=, >. Additionally, you can compose
+conditional statements with if.
+
+(> 3 2) -> true
+(= 7 3) -> false
+(if (> 3 2) (+ 7 3) (/ 10 2)) -> 10/1";
+
+    let condit_help =
+"The if statement takes three expressions as arguments: a conditional
+statement, a consequent, and an alternative.
+
+(if (> 3 2) (+ 7 3) (/ 10 2)) -> 10/1
+(+ 2 (if (= (pow 2 2 2) (abs -16)) (+ 1 1) (* pi 2)) 2) -> 6/1";
+
+    let lt_help =
+"The ordering operator, <, takes two terms, and returns either true or false.
+
+(< 3 2) -> true
+(< 3 pi) -> false";
+
+    let lte_help =
+"The ordering operator, <=, takes two terms, and returns either true or false.
+
+(<= 7 6) -> true
+(<= 6/3 3/2) -> false";
+
+    let eq_help =
+"The ordering operator, =, takes two terms, and returns either true or false.
+
+(= 13 13) -> true
+(= pi e) -> false";
+
+    let gte_help =
+"The ordering operator, >=, takes two terms, and returns either true or false.
+
+(>= 7 6) -> true
+(>= pi 13/2) -> false";
+
+    let gt_help =
+"The ordering operator, >, takes two terms, and returns either true or false.
+
+(> 9 5/4) -> true
+(> e pi) -> false";
 
     if list.len() < 2 { println!("{}", help_help) }
 
     for term in list.words() {
         println!("{}", match term {
-            "help"  => help_help,
-            "use"   => use_help,
-            "abs"           => abs_help,
-            "arithmetic"    => arithmetic_help,
-            "+"|"add"       => add_help,
-            "-"|"subtraction" => sub_help,
-            "*"|"multiply"  => mul_help,
-            "/"|"division"  => div_help,
-            "pow"|"power"   => pow_help,
-            "sin"|"sine"    => sin_help,
-            "cos"|"cosine"  => cos_help,
-            "trig"          => trig_help,
-            "trigonometry"  => trig_help,
-            "stats"         => stats_help,
-            _               => "More help is not available at this time."
+            "help"              => help_help,
+            "use"               => use_help,
+            "abs"               => abs_help,
+            "arithmetic"        => arithmetic_help,
+            "+"|"add"           => add_help,
+            "-"|"subtraction"   => sub_help,
+            "*"|"multiply"      => mul_help,
+            "/"|"division"      => div_help,
+            "pow"|"power"       => pow_help,
+            "sin"|"sine"        => sin_help,
+            "cos"|"cosine"      => cos_help,
+            "tan"|"tangent"     => tan_help,
+            "trig"              => trig_help,
+            "stats"             => stats_help,
+            "avg"               => avg_help,
+            "<"                 => lt_help,
+            "<="                => lte_help,
+            "="                 => eq_help,
+            ">="                => gte_help,
+            ">"                 => gt_help,
+            "if"                => condit_help,
+            "logic"             => logic_help,
+            _                   => "More help is not available at this time."
             }
         );
     }
@@ -281,6 +359,19 @@ pub fn str_to_f64(str_array: &[~str]) -> (&str, ~[f64]) {
     ("OK!", float_vec.as_slice().to_owned())
 }
 
+/// Function to convert an array of owned strings into f32 for work.
+/// A message is included to indicate the success of the operation.
+pub fn str_to_f32(str_array: &[~str]) -> (&str, ~[f32]) {
+    let mut float_vec = Vec::new();
+    for elem in str_array.iter() {
+        match from_str::<f32>(*elem) {
+            Some(num)   => { float_vec.push(num) },
+            _           => { return (DESPAIR, [0f32].to_owned()) }
+        }
+    }
+
+    ("OK!", float_vec.as_slice().to_owned())
+}
 
 /// Reads an array from file into a vector of strings
 pub fn read_bignums_from_file(strpath: &str) ->

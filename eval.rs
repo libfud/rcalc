@@ -34,7 +34,7 @@ pub fn find_sub_expr_len(expr: &str) -> uint {
 }
 
 /// Parses an expression and returns a tuple containing its operator and
-/// a vector of terms (f64 currently). The operator is found first. If no
+/// a vector of terms. The operator is found first. If no
 /// operator is found before a term, it returns a flag letting eval know
 /// the expression is bad. Then, the expression is parsed from the char
 /// following the operator, and each character is matched against valid

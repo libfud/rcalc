@@ -86,6 +86,41 @@ pub fn rational_to_f64_trig(bigrational_orig: &BigRational) -> f64 {
     ration_as_float
 }
 
+/// The 32-bit shame function.
+pub fn rational_to_f32_trig(bigrational_orig: &BigRational) -> f32 {
+    let mut bigrational = bigrational_orig.clone();
+    let two = from_str::<BigRational>("2/1").unwrap();
+    let zero = num::zero();
+    let neg_two = from_str::<BigRational>("-2/1").unwrap();
+    let pi = from_str::<BigRational>(PI).unwrap();
+
+    //I feel horrible about the atrocity I'm about to commit.
+    match bigrational > zero {
+        true    => {
+            loop {
+                if bigrational < two.mul(&pi) { break }
+                bigrational = bigrational.sub(&two.mul(&pi));
+            }
+        },
+        false   => {
+            loop {
+                if bigrational > neg_two.mul(&pi) { break }
+                bigrational = bigrational.add(&two.mul(&pi));
+            }
+        }
+    }
+
+    // please forgive me
+    let numer_str = bigrational.numer().to_str();
+    let denom_str = bigrational.denom().to_str();
+
+    // oh god
+    let numer = from_str::<f32>(numer_str).unwrap();
+    let denom = from_str::<f32>(denom_str).unwrap();
+    let ration_as_float = numer / denom;
+
+    ration_as_float
+}
 /// The sin function. Takes either zero or one terms. For no terms,
 /// 0 is returned.
 pub fn sin(terms_str: &[~str]) -> ~str {
