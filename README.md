@@ -26,5 +26,7 @@ rcalc will not be considered complete until it has the following:
 *hyperbolic sin, cos and tan
 *logarithms and exp
 *limits
+*lists, matrix math
+*help message for every feature
 
-The current release is 0.4.0
+The current release is 0.5.0
