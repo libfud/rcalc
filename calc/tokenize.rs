@@ -5,13 +5,19 @@
 extern crate num;
 
 use self::num::rational::BigRational;
+use std::num;
+use std::str::Owned;
+use super::common::str_to_rational;
+use super::CalcResult;
+use super::operator;
+use super::operator::{OperatorType};
 
 ///Enumeration of valid tokens. Valid tokens are Operators, Literals, LParens,
 ///RParens, and Names.
 #[deriving(Show)]
+#[deriving(Clone)]
 pub enum Token {
     Literal(BigRational),
-    Boolean(bool),
     LParen,
     RParen,
     Operator(OperatorType),
@@ -38,6 +44,7 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
         let token = match slice.chars().next().unwrap() {
             '(' => Some(LParen),
             ')' => Some(RParen),
+            _   => None
         };
         if token.is_some() {
             tokens.push(token.unwrap());
@@ -52,40 +59,21 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
 
         //Discard dangling parens
         let word = word.slice(0, word.find(|c: char| c == ')' || c == '(').unwrap_or(word.len()));
-        
-        let token = match word {
-            "+"     => Some(Operator(Add)),
-            "-"     => Some(Operator(Sub)),
-            "*"     => Some(Operator(Mul)),
-            "/"     => Some(Operator(Div)),
-            "%"     => Some(Operator(Rem)),
-            "pow"   => Some(Operator(Pow)),
-            "sin"   => Some(Operator(Sin)),
-            "cos"   => Some(Operator(Cos)),
-            "tan"   => Some(Operator(Tan)),
-            "deg"   => Some(Operator(Deg)),
-            "rad"   => Some(Operator(Rad)),
-            "avg"   => Some(Operator(Avg)),
-            "abs"   => Some(Operator(Abs)),
-            "<"     => Some(Operator(Lt)),
-            "<="    => Some(Operator(Lte)),
-            "="     => Some(Operator(Equ)),
-            ">="    => Some(Operator(Gte)),
-            ">"     => Some(Operator(Gt)),
-            "if"    => Some(Operator(Cond)),
-            _       => None
-        };
-        if token.is_some() {
-            tokens.push(token.unwrap());
-            i += word.len(); //not all operators have a len of 1 ;)
-            continue;
-        }
 
+        match operator::from_str(word) {
+            Some(op_type) => {
+                tokens.push(Operator(op_type));
+                i += word.len();
+                continue;
+            }
+            _       => {}
+        };
+        
         //Booleans
        
         let token = match word {
-            "true"  => Some(Boolean(true)),
-            "false" => Some(Boolean(false)),
+            "true"  => Some(Literal(num::one())),
+            "false" => Some(Literal(num::zero())),
             _       => None
         };
         if token.is_some() {
@@ -94,22 +82,6 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
             continue;
         }
 
-        //Constants
-       
-        //token may be a numeric constant like pi or e or c
-        let token = match word {
-            "π" | "pi"  => Some(PI),
-            "e"         => Some(E),
-            _           => None
-        }
-        if token.is_some() {
-            //constants should never fail a conversion, or something is really wrong
-            let literal_token = from_str::<BigRational>(token).unwrap();
-            tokens.push(Literal(literal_token));
-            i += word.len();
-            continue;
-        }
-        
         //Literals
 
         //no number should ever start or end with /
@@ -137,16 +109,16 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
             (0, 0, 0) | (1, 0, 0) | (0, 1, 0) => Some(word),
 
             (0, 0, 1) | (0, 1, 1) | (1, 0, 1) => {
-                if word.starts_with("-") == true { Some(word) },
+                if word.starts_with("-") == true { Some(word) }
                 else { return Err(Owned(format!("Unrecognized token '{}'", word))) }
             },
 
-            _   => = None
+            _   => None
         };
         if token.is_some() {
-            match str_to_rational(token) {
+            match str_to_rational(&[token.unwrap().to_owned()]) {
                 Ok(literal_val)    => {
-                    tokens.push(literal_val);
+                    tokens.push(Literal(literal_val[0]));
                     i += word.len();
                     continue;
                 }
@@ -154,6 +126,14 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
                     return Err(Owned(format!("Unrecognized token '{}'", word)))
                 }
             }
+        }
+
+        let c = word.chars().next().unwrap();
+
+        if c.is_alphabetic() {
+            tokens.push(Name(word.to_strbuf()));
+            i += word.len();
+            continue;
         }
         
         //This point is reached if every other kind of token has not been matched

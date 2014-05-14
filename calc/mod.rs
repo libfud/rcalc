@@ -1,7 +1,21 @@
+//! Filler text 
+
 extern crate num;
 
 use std::str;
 use self::num::rational::BigRational;
+use self::tokenize::tokenize;
+use self::translate::translate;
+pub use self::number::Number;
+
+mod tokenize;
+mod translate;
+mod expression;
+mod number;
+mod constant;
+mod operator;
+mod function;
+mod common;
 
 // A shortcut for the result type that is used everywhere
 pub type CalcResult<T = BigRational> = Result<T, str::MaybeOwned<'static>>;
