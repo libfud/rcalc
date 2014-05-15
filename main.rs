@@ -4,20 +4,60 @@
 
 //! Polish notation calculator.
 
-use std::io;
+extern crate libc;
+
+use libc::c_char;
+use std::c_str::CString;
 use calc::eval;
 use calc::common::help;
 
 pub mod calc;
 
+#[link(name = "readline")]
+extern {
+    fn readline(p: *c_char) -> *c_char;
+    fn add_history(l: *c_char);
+}
+
+pub fn rust_readline(prompt: &str) -> Option<StrBuf> {
+    if prompt.len() == 0 { return None }
+    let c_prompt = prompt.to_c_str();
+
+    c_prompt.with_ref(|c_buf| {
+        unsafe {
+            let ret_str = CString::new(readline(c_buf), true);
+            if ret_str.is_not_null() {
+                ret_str.as_str().map(|ret_str| ret_str.to_strbuf())
+            } else {
+                None
+            }
+        }
+    })
+}
+
+pub fn rust_add_history(line: &str) {
+    if line.len() == 0 { return }
+
+    let c_line = line.to_c_str();
+    c_line.with_ref(|c_line| {
+        unsafe {
+            add_history(c_line);
+        }
+    });
+}
+
 fn main() {
-    let mut reader = io::stdin();
-    let mut expr;
 
     loop {
-        expr = reader.read_line().ok().unwrap_or("exit".to_owned());
-        let result;
+        let expr = match rust_readline(">>> ") {
+            Some(val)   => { val.to_str() }
+            None        => { continue }
+        };
+        rust_add_history(expr);
+
         let help_exit_or_eval: Vec<&str> = expr.words().collect();
+        let result;
+
         match help_exit_or_eval.as_slice()[0] {
             "exit" | "(exit" | "(exit)" => { break },
 
