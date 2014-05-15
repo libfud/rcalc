@@ -21,12 +21,19 @@ functions are present.
 
 rcalc will not be considered complete until it has the following:
 *~~arbitrary precision~~
+
 * proper rational exponentiation (currently only works for powers which are either an integer or a multiple of 1/2)
+
 *arcsine, arccosine, arctangent
+
 *hyperbolic sin, cos and tan
+
 *logarithms and exp
+
 *limits
+
 *lists, matrix math
+
 *help message for every feature
 
 The current release is 0.5.0
