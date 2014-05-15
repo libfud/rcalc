@@ -5,7 +5,6 @@
 extern crate num;
 
 use self::num::rational::BigRational;
-use std::num;
 use std::str::Owned;
 use super::common::str_to_rational;
 use super::CalcResult;
@@ -17,11 +16,22 @@ use super::operator::{OperatorType};
 #[deriving(Show)]
 #[deriving(Clone)]
 pub enum Token {
-    Literal(BigRational),
+//    Literal(BigRational),
+    Literal(LiteralType),
     LParen,
     RParen,
+    LBracket,
+    RBracket,
     Operator(OperatorType),
     Name(StrBuf)
+}
+
+#[deriving(Show)]
+#[deriving(Clone)]
+pub enum LiteralType {
+    Boolean(bool),
+    BigNum(BigRational),
+    List(Vec<BigRational>)
 }
 
 /// Tokenizs a string into 
@@ -40,10 +50,12 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
             continue;
         }
 
-        //Parentheses
+        //Parentheses and Brackets
         let token = match slice.chars().next().unwrap() {
             '(' => Some(LParen),
             ')' => Some(RParen),
+            '[' => Some(LBracket),
+            ']' => Some(RBracket),
             _   => None
         };
         if token.is_some() {
@@ -72,8 +84,8 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
         //Booleans
        
         let token = match word {
-            "true"  => Some(Literal(num::one())),
-            "false" => Some(Literal(num::zero())),
+            "true"  => Some(Literal(Boolean(true))),
+            "false" => Some(Literal(Boolean(false))),
             _       => None
         };
         if token.is_some() {
@@ -118,7 +130,7 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
         if token.is_some() {
             match str_to_rational(&[token.unwrap().to_owned()]) {
                 Ok(literal_val)    => {
-                    tokens.push(Literal(literal_val[0]));
+                    tokens.push(Literal(BigNum(literal_val[0])));
                     i += word.len();
                     continue;
                 }

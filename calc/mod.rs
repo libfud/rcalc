@@ -1,4 +1,4 @@
-//! Filler text 
+//! The parent module to every other module in calc.
 
 extern crate num;
 

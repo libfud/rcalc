@@ -8,7 +8,7 @@ use std::io;
 use calc::eval;
 use calc::common::help;
 
-mod calc;
+pub mod calc;
 
 fn main() {
     let mut reader = io::stdin();

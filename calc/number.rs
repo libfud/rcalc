@@ -1,4 +1,5 @@
-//! Filler
+//! implementation of the eval() method for Number (BigRational)
+//! used by translate for boxing individual numbers
 
 extern crate num;
 

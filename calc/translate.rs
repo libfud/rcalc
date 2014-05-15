@@ -5,6 +5,7 @@ use std::str::{Slice, Owned};
 use super::{CalcResult, Evaluate, Number};
 use super::constant::{Constant};
 use super::tokenize::{Token, Literal, LParen, RParen, Operator, Name};
+use super::tokenize::{LBracket, RBracket, Boolean, BigNum, List};
 use super::expression;
 use super::expression::{Expression, Function};
 use super::function;
@@ -32,7 +33,7 @@ pub fn translate(tokens: &[Token]) -> CalcResult<Box<Evaluate>> {
             LParen  => {
                 let limit = try!(find_rparen(tokens, i, top)) + 1;
                 
-                //recursively to build subexpressions into AST
+                //recurse to build subexpressions into AST
                 let sub_expr = try!(translate(tokens.slice(i, limit)));
 
                 args.push(sub_expr);
@@ -40,9 +41,23 @@ pub fn translate(tokens: &[Token]) -> CalcResult<Box<Evaluate>> {
                 //skip over the sub expression we just added
                 i = limit;
             },
-            
+
             RParen => {
                 //make a new expression based on its type and arguments
+                return Ok(box Expression{ expr_type: top_expr, args: args } as Box<Evaluate>)
+            },
+
+            LBracket    => {
+                let limit = try!(find_rbracket(tokens, i, top)) + 1;
+                
+                let list = try!(translate(tokens.slice(i, limit)));
+
+                args.push(list);
+
+                i = limit;
+            },
+
+            RBracket => {
                 return Ok(box Expression{ expr_type: top_expr, args: args } as Box<Evaluate>)
             },
 
@@ -50,9 +65,21 @@ pub fn translate(tokens: &[Token]) -> CalcResult<Box<Evaluate>> {
                 return Err(Owned(format!("Operator '{}' in wrong position", op)))
             },
 
-            Literal(x)  => {
-                args.push(box Number(x) as Box<Evaluate>);
-                i += 1;
+            Literal(literaltype)  => {
+                match literaltype {
+                    BigNum(x)   => {
+                        args.push(box Number(x) as Box<Evaluate>);
+                        i += 1;
+                    },
+                    Boolean(x) => {
+                        println!("I dunno yet lol");
+                        i += 1;
+                    },
+                    List(x) => {
+                        println!("I dunno yet lol");
+                        i += 1;
+                    }
+                }
             }
 
             Name(ref c_name) => {
@@ -87,3 +114,21 @@ fn find_rparen(tokens: &[Token], begin: uint, end: uint) -> Result<uint, str::Ma
     Err(Slice("Parentheses not present or wrongly formatted."))
 }
 
+fn find_rbracket(tokens: &[Token], begin: uint, end: uint) -> Result<uint, str::MaybeOwned> {
+
+    let mut i = begin;
+    let mut delimiter_count = 0;
+    while i <= end {
+        match tokens[i] {
+            LBracket => delimiter_count += 1,
+            RBracket => delimiter_count -= 1,
+            _        => { } //do nothing
+        }
+        if delimiter_count == 0 {
+            return Ok(i);
+        }
+        i += 1;
+    }
+
+    Err(Slice("Delimiter not present or wrongly formatted."))
+}
