@@ -10,12 +10,14 @@ infix, and these would be respectively written as `2 + 2` and
 This is being written with the nightly version of rust, so if you're using an
 older version, you may not be able to compile it.
 
-In order to build it, ensure that you have downloaded or built the latest nightly
-version of rust, and simply run
+## Compiling
 
-rustc main.rs
+In order to build it, ensure that you have downloaded or built the latest nightly
+version of rust, and simply run `rustc main.rs`
 
 This will compile a binary file called rcalc.
+
+## Goals
 
 rcalc is still immature, and lacks many features. It currently can perform
 the arithmatic operations (addition, subtraction, multiplication, and division),
