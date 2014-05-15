@@ -15,13 +15,13 @@ This will compile a binary file called rcalc.
 
 rcalc is still immature, and lacks many features. It currently can perform
 the arithmatic operations (addition, subtraction, multiplication, and division),
-perform exponentiation with ~~rational~~ integer exponents, and perform sine, 
+perform exponentiation with (some) rational integer exponents, and perform sine, 
 cosine and tangent functions. Additionally, ordering and equality for boolean 
 functions are present.
 
 rcalc will not be considered complete until it has the following:
 *~~arbitrary precision~~
-* rational exponentiation
+* proper rational exponentiation (currently only works for powers which are either an integer or a multiple of 1/2)
 *arcsine, arccosine, arctangent
 *hyperbolic sin, cos and tan
 *logarithms and exp
