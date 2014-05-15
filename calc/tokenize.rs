@@ -122,7 +122,7 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
                     i += word.len();
                     continue;
                 }
-                Err(msg)        => {
+                Err(_)        => {
                     return Err(Owned(format!("Unrecognized token '{}'", word)))
                 }
             }

@@ -8,16 +8,12 @@ use std::str::Owned;
 use self::num::bigint::BigInt;
 use super::super::{Evaluate, CalcResult};
 
-pub static BAD_EXPR : &'static str = "Poorly formatted expression!";
-pub static DIV_BY_ZERO : &'static str = "Division by zero is undefined";
-pub static ONE_ARG_ONLY : &'static str = 
-    "This function only takes one argument!";
-
 pub fn pow_wrapper(args: &Vec<Box<Evaluate>>) -> CalcResult {
     let mut args_vec: Vec<BigRational> = Vec::new();
     let mut i = 0;
     while i < args.len() {
-        args_vec.push(try!(args.get(i).eval()))
+        args_vec.push(try!(args.get(i).eval()));
+        i += 1;
     }
 
     pow(args_vec.as_slice())
@@ -67,7 +63,7 @@ pub fn pow(args: &[BigRational]) -> CalcResult {
 
     let index = exponent - exponent.floor();
     if index > zero {
-        let rootx = match root_wrapper(&[base.clone(), index.recip()]) {
+        rootx = match root_wrapper(&[base.clone(), index.recip()]) {
             Ok(value)   => value,
             Err(msg)    => { return Err(msg) }
         };
@@ -159,12 +155,10 @@ pub fn root_wrapper(terms: &[BigRational]) -> CalcResult {
 pub fn root(guess: BigRational, radicand: BigRational, index: BigRational) 
     -> CalcResult {
 
-    let zero: BigRational = num::zero();
     let one: BigRational = num::one();
     let two = one.add(&one);
 
     let tolerance = from_str::<BigRational>("1/100000").unwrap();
-    let mut guess_to_pow: BigRational;
 
     let guess_to_pow = try!(pow(&[guess.clone(), index.clone()]));
 
@@ -214,7 +208,7 @@ pub fn dumb_root(radicand: BigRational, index: BigRational) ->
         let mut guess_to_pow;
         match pow(&[guess.clone(), index.clone()]) {
             Ok(bignum)  => { guess_to_pow = bignum }
-            Err(msg)    => { return Err(guess) }
+            Err(_)    => { return Err(guess) }
                 //this is okay, because originally guess for newton's method
                 //was one anyway
         }

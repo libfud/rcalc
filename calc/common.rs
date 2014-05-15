@@ -6,11 +6,10 @@ use self::num::rational::{BigRational, Ratio};
 use std::num;
 
 pub static DESPAIR: &'static str = "Laundry day is a very dangerous day.";
-pub static ONE_ARG_ONLY : &'static str =
-    "This function only takes one argument!";
-pub static TWO_ARGS_ERR : &'static str = "This function only takes two terms!";
+static PI: &'static str = "3126535/995207";
 
-pub fn help(list: &str) {
+
+pub fn help(list: &[&str]) {
     let help_help =
 "The help function has the form (help term1, term2, term3...) and prints out
 examples of how operators are used. You can use help for individual operators
@@ -142,6 +141,14 @@ That's all I have to say on that matter. Below are valid expressions:
 deg. Each function only takes one term, or an expression which is evaluated to
 a single term.";
 
+    let deg_help =
+"Converts a single constant or expression from radians to degrees using the
+formula (* radians (/ 180 pi))";
+
+    let rad_help =
+"Converts a single constant or expression from degrees to radians using the
+formula (* degrees (/ pi 180))";
+
     let sin_help =
 "The sine function. Takes one term. If no terms are supplied, it evaluates
 zero, which is still zero. Uses radians, not degrees. If you want to
@@ -222,10 +229,21 @@ statement, a consequent, and an alternative.
 (> 9 5/4) -> true
 (> e pi) -> false";
 
-    if list.len() < 2 { println!("{}", help_help) }
+    if list.len() == 0 {
+        println!("{}", help_help)
+        return
+    }
 
-    for term in list.words() {
-        println!("{}", match term {
+    for &term in list.iter() {
+        let word = match term.ends_with(")") {
+            false   => term,
+            true    => {
+                if term.len() > 1 { term.slice_to(term.len() - 1) }
+                else { term }
+            }
+        };
+
+        println!("{}", match word {
             "help"              => help_help,
             "use"               => use_help,
             "abs"               => abs_help,
@@ -235,6 +253,8 @@ statement, a consequent, and an alternative.
             "*"|"multiply"      => mul_help,
             "/"|"division"      => div_help,
             "pow"|"power"       => pow_help,
+            "deg"|"degrees"     => deg_help,
+            "rad"|"radians"     => rad_help,
             "sin"|"sine"        => sin_help,
             "cos"|"cosine"      => cos_help,
             "tan"|"tangent"     => tan_help,
@@ -253,8 +273,6 @@ statement, a consequent, and an alternative.
         );
     }
 }
-
-
 
 /// Function to convert an array of owned strings into BigRationals for work.
 /// A message is included to indicate the success of the operation.
@@ -338,32 +356,39 @@ pub fn get_number_type(num_str: &str) -> &str {
     }
 }
 
-/// Function to convert an array of owned strings into f64 for work.
-/// A message is included to indicate the success of the operation.
-pub fn str_to_f64(str_array: &[~str]) -> (&str, ~[f64]) {
-    let mut float_vec = Vec::new();
-    for elem in str_array.iter() {
-        match from_str::<f64>(*elem) {
-            Some(num)   => { float_vec.push(num) },
-            _           => { return (DESPAIR, [0.0].to_owned()) }
+pub fn rational_to_f64_trig(bigrational_orig: &BigRational) -> f64 {
+    let mut bigrational = bigrational_orig.clone();
+
+    let zero: BigRational = num::zero();
+    let one: BigRational = num::one();
+    let two = one.add(&one);
+    let pi = from_str::<BigRational>(PI).unwrap();
+    let twopi = pi.mul(&two);
+
+    match bigrational > zero {
+        true    => {
+            loop {
+                if bigrational < twopi { break }
+                bigrational = bigrational.sub(&twopi);
+            }
+        },
+        false   => {
+            loop {
+                if bigrational > twopi { break }
+                bigrational = bigrational.add(&twopi);
+            }
         }
     }
 
-    ("OK!", float_vec.as_slice().to_owned())
+    let numer = bigrational.numer().clone();
+    let denom = bigrational.denom().clone();
+
+    //This is cruddy
+    let numer_f64: f64 = from_str::<f64>(numer.to_str()).unwrap();
+    let denom_f64: f64 = from_str::<f64>(denom.to_str()).unwrap();
+
+    numer_f64 / denom_f64
 }
 
-/// Function to convert an array of owned strings into f32 for work.
-/// A message is included to indicate the success of the operation.
-pub fn str_to_f32(str_array: &[~str]) -> (&str, ~[f32]) {
-    let mut float_vec = Vec::new();
-    for elem in str_array.iter() {
-        match from_str::<f32>(*elem) {
-            Some(num)   => { float_vec.push(num) },
-            _           => { return (DESPAIR, [0f32].to_owned()) }
-        }
-    }
-
-    ("OK!", float_vec.as_slice().to_owned())
-}
-
-
+pub fn big_pi() -> BigRational { from_str::<BigRational>(PI).unwrap() }
+pub fn half_circ() -> BigRational { from_str::<BigRational>("180/1").unwrap() }

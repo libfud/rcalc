@@ -6,6 +6,7 @@
 
 use std::io;
 use calc::eval;
+use calc::common::help;
 
 mod calc;
 
@@ -15,9 +16,38 @@ fn main() {
 
     loop {
         expr = reader.read_line().ok().unwrap_or("exit".to_owned());
-        if expr.trim() == "exit".to_owned() { break }
-        if expr.trim() == "help".to_owned() { println!("Please use (help)"); }
-        let output = eval(expr.trim());
-        println!("{}", output);
+        let result;
+        let help_exit_or_eval: Vec<&str> = expr.words().collect();
+        match help_exit_or_eval.as_slice()[0] {
+            "exit" | "(exit" | "(exit)" => { break },
+
+            "help" | "(help" | "(help)" => {
+                help(help_exit_or_eval.slice_from(1));
+                continue;
+            },
+
+            "(" => {
+                if help_exit_or_eval.len() >= 2 {
+                    match help_exit_or_eval.as_slice()[1] {
+                        "exit" | "exit)"    => { break },
+
+                        "help" | "help)"    => {
+                            help(help_exit_or_eval.slice_from(2));
+                            continue;
+                        }
+
+                        _                   => { result = eval(expr.trim()) }
+                    }
+                }
+                else { result = eval(expr.trim()) }
+            },
+
+            _   => { result = eval(expr.trim()) }
+        }
+
+        match result {
+            Err(msg)    => println!("Error: {}", msg),
+            Ok(result)  => println!(" {}", result)
+        }
     }
 }
