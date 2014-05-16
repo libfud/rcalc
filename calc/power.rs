@@ -4,7 +4,6 @@ extern crate num;
 
 use self::num::rational::BigRational;
 use std::num;
-use std::str::Owned;
 use self::num::bigint::BigInt;
 use super::super::{Evaluate, CalcResult};
 
@@ -45,7 +44,7 @@ pub fn pow(args: &[BigRational]) -> CalcResult {
     } else {
         exponent = match pow(args.slice_from(1)) {
             Ok(good_val)    => good_val,
-            Err(msg)        => { return Err(msg) }
+            Err(msg)        => { return Err(msg.to_strbuf()) }
         };
     }
 
@@ -65,7 +64,7 @@ pub fn pow(args: &[BigRational]) -> CalcResult {
     if index > zero {
         rootx = match root_wrapper(&[base.clone(), index.recip()]) {
             Ok(value)   => value,
-            Err(msg)    => { return Err(msg) }
+            Err(msg)    => { return Err(msg.to_strbuf()) }
         };
     }
 
@@ -88,7 +87,7 @@ pub fn pow(args: &[BigRational]) -> CalcResult {
 /// equal to the radicand. It requires two arguments: the index and a
 /// radicand. 
 pub fn root_wrapper(terms: &[BigRational]) -> CalcResult {
-    if terms.len() != 2 { return Err(Owned("A radicand and index are required.".to_owned())) }
+    if terms.len() != 2 { return Err("A radicand and index are required.".to_strbuf()) }
 
     let zero = from_str::<BigRational>("0/1").unwrap(); 
     let one = from_str::<BigRational>("1/1").unwrap(); 
@@ -101,7 +100,7 @@ pub fn root_wrapper(terms: &[BigRational]) -> CalcResult {
     if radicand == zero { return Ok(zero) }
 
     if index % two == zero && radicand < zero {
-        return Err(Owned("I can't handle this complexity!".to_owned()))
+        return Err("I can't handle this complexity!".to_strbuf())
     }
 
     let mut guess = one.clone();
@@ -127,7 +126,7 @@ pub fn root_wrapper(terms: &[BigRational]) -> CalcResult {
         true    => { },
         false   => {
             println!("Sorry. I'm just too dumb to handle that for now.");
-            return Err(Owned("me too dum".to_owned()))
+            return Err("me too dum".to_strbuf())
         }
     }
 
@@ -191,18 +190,6 @@ pub fn dumb_root(radicand: BigRational, index: BigRational) ->
 
     let one: BigRational = num::one();
     let mut guess = one.clone();
-
-/*
-    if is_prime(radicand.clone()) == true {
-        return Err(("Prime number", guess))
-    }
-    * This is simply too expensive. It's actually considerably less work to
-    * not know if the number is prime or not.  The algorithm will work
-    * similarly anyway, it'll just be applied in cases where the number is
-    * prime, which are considerably fewer than non prime numbers. Of course,
-    * as to which numbers people want the roots for anyway, that doesn't
-    * hardly matter.
-*/
 
     loop {
         let mut guess_to_pow;

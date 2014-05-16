@@ -2,13 +2,14 @@
 
 extern crate num;
 
-use std::str;
+use self::literal::LiteralType;
 use self::num::rational::BigRational;
 use self::tokenize::tokenize;
 use self::translate::translate;
 pub use self::number::Number;
 pub use self::common::help;
 
+mod literal;
 mod tokenize;
 mod translate;
 mod expression;
@@ -19,7 +20,7 @@ mod function;
 pub mod common;
 
 // A shortcut for the result type that is used everywhere
-pub type CalcResult<T = BigRational> = Result<T, str::MaybeOwned<'static>>;
+pub type CalcResult<T = LiteralType> = Result<T, StrBuf>;
 
 pub trait Evaluate {
     fn eval(&self) -> CalcResult;

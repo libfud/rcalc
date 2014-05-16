@@ -1,6 +1,5 @@
 extern crate num;
 
-use std::str::Owned;
 use self::num::rational::BigRational;
 use super::{Evaluate, CalcResult};
 
@@ -17,7 +16,7 @@ impl Constant {
         match s {
             "pi"    => Ok(Constant(Pi)),
             "e"     => Ok(Constant(E)),
-            _       => Err(Owned(format!("Undefined Constant '{}'", s)))
+            _       => Err(("Undefined Constant '" + s  + "'").to_strbuf())
         }
     }
 }

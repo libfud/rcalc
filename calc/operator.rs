@@ -4,10 +4,10 @@ extern crate num;
 
 use self::num::rational::BigRational;
 use std::num;
-use std::str::Slice;
 use super::{Evaluate, CalcResult};
 use super::expression::combine;
 use super::common::{rational_to_f64_trig, big_pi, half_circ, str_to_rational};
+use super::literal::{LiteralType, Boolean, Matrix, BigNum};
 
 pub mod power;
 
@@ -30,10 +30,6 @@ pub enum OperatorType {
     Gt,
     GtEq,
     If,
-}
-
-fn bool_to_bigrational(b: bool) -> BigRational {
-    if b { num::one() } else { num::zero() }
 }
 
 pub fn from_str(s: &str) -> Option<OperatorType> {
@@ -69,7 +65,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Sub => {
             if args.len() < 1 {
-                return Err(Slice("Subtraction requires at least one argument"))
+                return Err("Subtraction requires at least one argument".to_strbuf())
             }
 
             let zero: BigRational = num::zero();
@@ -93,7 +89,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Div => {
             if args.len() < 1 {
-                return Err(Slice("Division requires at least one argument!"))
+                return Err("Division requires at least one argument!".to_strbuf())
             }
 
             let zero: BigRational = num::zero();
@@ -103,7 +99,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
             let first_arg = args.get(0).eval();
             if args.slice_from(1).iter().any(|x| x.eval() == Ok(zero.clone())) {
-                return Err(Slice("Cannot divide by 0"));
+                return Err("Cannot divide by 0".to_strbuf());
             }
             args.slice_from(1).iter().fold(first_arg, |acc, x| {
                 combine(acc, x.eval(), |v1, v2| v1.div(&v2))
@@ -115,7 +111,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         If  => {
             if args.len() != 3 {
-                Err(Slice("[if' requires three arguments"))
+                Err("'if' requires three arguments".to_strbuf())
             } else {
                 let condition = try!(args.get(0).eval());
                 
@@ -129,11 +125,11 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Sin => {
             if args.len() > 1 {
-                return Err(Slice("'sin' takes one argument"))
+                return Err("'sin' takes one argument".to_strbuf())
             }
             let evaluated = match args.get(0).eval() {
                 Ok(value)    => value,
-                Err(_)    => { return Err(Slice("Something went wrong")) }
+                Err(_)    => { return Err("Something went wrong".to_strbuf()) }
             };
                 
             let ration_as_float = rational_to_f64_trig(&evaluated);
@@ -141,7 +137,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             let penult_answer = ration_as_float.sin().to_str();
             let answer = match str_to_rational(&[penult_answer]) {
                 Ok(array)   => array[0],
-                Err(msg)    => { return Err(Slice(msg)) }
+                Err(msg)    => { return Err(msg.to_strbuf()) }
             };
             
             Ok(answer)
@@ -149,11 +145,11 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Cos => {
             if args.len() > 1 {
-                return Err(Slice("'cos' takes one argument"))
+                return Err("'cos' takes one argument".to_strbuf())
             }
             let evaluated = match args.get(0).eval() {
                 Ok(value)    => value,
-                Err(_)    => { return Err(Slice("Something went wrong")) }
+                Err(_)    => { return Err("Something went wrong".to_strbuf()) }
             };
                 
             let ration_as_float = rational_to_f64_trig(&evaluated);
@@ -161,7 +157,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             let penult_answer = ration_as_float.cos().to_str();
             let answer = match str_to_rational(&[penult_answer]) {
                 Ok(array)   => array[0],
-                Err(msg)    => { return Err(Slice(msg)) }
+                Err(msg)    => { return Err(msg.to_strbuf()) }
             };
             
             Ok(answer)
@@ -169,11 +165,11 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Tan => {
             if args.len() > 1 {
-                return Err(Slice("'cos' takes one argument"))
+                return Err("'cos' takes one argument".to_strbuf())
             }
             let evaluated = match args.get(0).eval() {
                 Ok(value)    => value,
-                Err(_)    => { return Err(Slice("Something went wrong")) }
+                Err(_)    => { return Err("Something went wrong".to_strbuf()) }
             };
 
             let ration_as_float = rational_to_f64_trig(&evaluated);
@@ -181,7 +177,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             let penult_answer = (ration_as_float.sin() / ration_as_float.cos()).to_str();
             let answer = match str_to_rational(&[penult_answer]) {
                 Ok(array)   => array[0],
-                Err(msg)    => { return Err(Slice(msg)) }
+                Err(msg)    => { return Err(msg.to_strbuf()) }
             };
             
             Ok(answer)
@@ -189,7 +185,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Rad => {
             if args.len() != 1 {
-                return Err(Slice("'rad' takes one argument"))
+                return Err("'rad' takes one argument".to_strbuf())
             }
             
             let degrees = try!(args.get(0).eval());
@@ -203,7 +199,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Deg => {
             if args.len() != 1 {
-                return Err(Slice("'rad' takes one argument"))
+                return Err("'rad' takes one argument".to_strbuf())
             }
 
             let radians = try!(args.get(0).eval());
@@ -217,48 +213,48 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Lt  => {
             if args.len() != 2 {
-                return Err(Slice("< requires two arguments"))
+                return Err("< requires two arguments".to_strbuf())
             }
 
             let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
-            Ok(bool_to_bigrational(arg1 < arg2))
+            Ok(Boolean(true))
         },
 
         LtEq => {
             if args.len() != 2 {
-                return Err(Slice("<= requires two arguments"))
+                return Err("<= requires two arguments".to_strbuf())
             }
             let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
-            Ok(bool_to_bigrational(arg1 <= arg2))
+            Ok(Boolean(arg1 <= arg2))
         },
 
         Eq  => {
             if args.len() != 2 {
-                return Err(Slice("= requires two arguments"))
+                return Err("= requires two arguments".to_strbuf())
             }
 
             let arg1 = try!(args.get(0).eval());
             let arg2 = try!(args.get(1).eval());
 
-            Ok(bool_to_bigrational(arg1 == arg2))
+            Ok(Boolean(arg1 == arg2))
         },
 
         GtEq => {
             if args.len() != 2 {
-                return Err(Slice(">= requires two arguments"))
+                return Err(">= requires two arguments".to_strbuf())
             }
 
             let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
-            Ok(bool_to_bigrational(arg1 >= arg2))
+            Ok(Boolean(arg1 >= arg2))
         },
         
         Gt   => {
              if args.len() != 2 {
-                return Err(Slice(">= requires two arguments"))
+                return Err(">= requires two arguments".to_strbuf())
             }
 
             let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
-            Ok(bool_to_bigrational(arg1 > arg2))
+            Ok(Boolean(arg1 > arg2))
         }
     }
 }

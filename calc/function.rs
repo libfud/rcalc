@@ -1,6 +1,5 @@
 
 use std::num;
-use std::str::{Slice, Owned};
 use super::{Evaluate, CalcResult};
 
 pub mod power;
@@ -19,7 +18,7 @@ pub fn eval(f_type: FunctionType, args: &Vec<Box<Evaluate>>) -> CalcResult {
         Pow => { power::pow_wrapper(args) }
         If  => {
             if args.len() != 3 {
-                Err(Slice("'if' requires three arguments"))
+                Err(("'if' requires three arguments").to_strbuf())
             } else {
                 let condition = try!(args.get(0).eval());
 
@@ -37,6 +36,6 @@ pub fn from_str(name: &str) -> CalcResult<FunctionType> {
     match name {
         "pow"   => Ok(Pow),
         "if"    => Ok(If),
-        _       => Err(Owned(format!("Unknown function '{}'", name)))
+        _       => Err(("Unknown function '"+ name +"'").to_strbuf())
     }
 }

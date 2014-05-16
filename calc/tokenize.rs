@@ -4,8 +4,8 @@
 
 extern crate num;
 
+use super::literal::{LiteralType, Boolean, BigNum, Matrix};
 use self::num::rational::BigRational;
-use std::str::Owned;
 use super::common::str_to_rational;
 use super::CalcResult;
 use super::operator;
@@ -24,14 +24,6 @@ pub enum Token {
     RBracket,
     Operator(OperatorType),
     Name(StrBuf)
-}
-
-#[deriving(Show)]
-#[deriving(Clone)]
-pub enum LiteralType {
-    Boolean(bool),
-    BigNum(BigRational),
-    List(Vec<BigRational>)
 }
 
 /// Tokenizs a string into 
@@ -98,7 +90,7 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
 
         //no number should ever start or end with /
         if word.starts_with("/") || word.ends_with("/") {
-            return Err(Owned(format!("Unrecognized token '{}'", word)))
+            return Err(("Unrecognized token '"+ word + "'").to_strbuf())
         }
 
         let mut negative_sign_counter = 0;
@@ -111,7 +103,7 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
                 '-'         => { negative_sign_counter += 1 },
                 '.'         => { radix_point_counter += 1 },
                 '/'         => { fraction_counter += 1 },
-                _           => { return Err(Owned(format!("Unrecognized token '{}'", word))) }
+                _           => { return Err(("Unrecognized token '" + word + "'").to_strbuf()) }
             }
         }
 
@@ -122,7 +114,7 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
 
             (0, 0, 1) | (0, 1, 1) | (1, 0, 1) => {
                 if word.starts_with("-") == true { Some(word) }
-                else { return Err(Owned(format!("Unrecognized token '{}'", word))) }
+                else { return Err(("Unrecognized token '" + word + "'").to_strbuf()) }
             },
 
             _   => None
@@ -135,7 +127,7 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
                     continue;
                 }
                 Err(_)        => {
-                    return Err(Owned(format!("Unrecognized token '{}'", word)))
+                    return Err(("Unrecognized token '" + word + "'").to_strbuf())
                 }
             }
         }
@@ -149,7 +141,7 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
         }
         
         //This point is reached if every other kind of token has not been matched
-        return Err(Owned(format!("Unrecognized token '{}'", word)));
+        return Err(("Unrecognized token '"+ word.to_str() + "'").to_strbuf());
     }
 
     Ok(tokens)
