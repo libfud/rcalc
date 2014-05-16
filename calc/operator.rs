@@ -5,11 +5,10 @@ extern crate num;
 use self::num::rational::BigRational;
 use std::num;
 use super::{Evaluate, CalcResult};
-use super::expression::combine;
 use super::common::{rational_to_f64_trig, big_pi, half_circ, str_to_rational};
 use super::literal::{LiteralType, Boolean, Matrix, BigNum};
 
-pub mod power;
+//pub mod power;
 
 #[deriving(Show)]
 #[deriving(Clone)]
@@ -54,17 +53,87 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
     }
 }
 
+pub fn unbox_it(args:&Vec<Box<Evaluate>>) -> Result<Vec<LiteralType>, StrBuf> {
+    let mut literal_vec: Vec<LiteralType> = Vec::new();
+    let mut i = 0;
+    while i < args.len() {
+        literal_vec.push( match (args.get(i).eval()) {
+            Ok(good)    => good,
+            Err(bad)    => { return Err(bad.to_strbuf()) }
+        });
+        i += 1;
+    }
+
+    Ok(literal_vec)
+}
+
 pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
     match op_type {
         Add => {
+            let literal_vec = try!(unbox_it(args));
+
             let zero: BigRational = num::zero();
-            args.iter().fold(Ok(zero), |acc, x| {
-                combine(acc, x.eval(), |v1, v2| v1.add(&v2))
-            })
+            let mut matrix_flag = false;
+            let mut matrix_len = 0; //Only set once. No matrix ops on inequal matrices.
+
+            //determine if there are any booleans or matrices
+            for literal_x in literal_vec.iter() {
+                match *literal_x {
+                    Boolean(x)  => {
+                        return Err("Attempted binary operation with boolean value!".to_strbuf())
+                    },
+                    Matrix(ref x)   => {
+                        if matrix_flag == false { //first matrix encountered
+                            matrix_len = x.len();
+                            matrix_flag = true;
+                        } else {
+                            if matrix_len != x.len() {
+                                return Err("Inequal matrices".to_strbuf())
+                            }
+                        }
+                    },
+                    BigNum(ref x) => { } //do nothing, it might be unnecessary
+                }
+            }
+
+            //regular adddition
+            if matrix_flag == false {
+                let mut sum = zero.clone();
+                for literal_x in literal_vec.iter() { 
+                    sum = sum.add(match *literal_x {
+                        Boolean(ref x)  => { &zero }, //taken care of
+                        Matrix(ref x)   => { &zero }, //no matrices
+                        BigNum(ref x)   => { x }
+                    });
+                }
+                
+                Ok(BigNum(sum))
+
+            } else {
+                let mut sum_vec: Vec<BigRational> = Vec::new();
+                for i in range(0u, matrix_len) { sum_vec.push(zero.clone()); }
+                for literal_x in literal_vec.iter() {
+                    match *literal_x {
+                        Boolean(ref x)  => { }, //taken care of
+
+                        BigNum(ref x)   => {
+                            for i in range(0u, matrix_len) { sum_vec.as_slice()[i].add(x); }
+                        },
+
+                        Matrix(ref x)   => {
+                            for i in range(0u, matrix_len) {
+                                sum_vec.as_slice()[i].add(&x.as_slice()[i]);
+                            }
+                        }
+                    }
+                }
+
+                Ok(Matrix(sum_vec))
+            }
         },
 
         Sub => {
-            if args.len() < 1 {
+/*            if args.len() < 1 {
                 return Err("Subtraction requires at least one argument".to_strbuf())
             }
 
@@ -74,17 +143,13 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 return Ok(answer)
             }
 
-            let first_arg = args.get(0).eval();
-            args.slice_from(1).iter().fold(first_arg, |acc, x| {
-                combine(acc, x.eval(), |v1, v2| v1.sub(&v2))
-            })
+            let first_arg = args.get(0).eval(); */
+            Ok(Boolean(true))
         },
 
         Mul => {
-            let one: BigRational = num::one();
-            args.iter().fold(Ok(one), |acc, x| {
-                combine(acc, x.eval(), |v1, v2| v1.mul(&v2))
-            })
+//            let one: BigRational = num::one();
+            Ok(Boolean(true))
         },
 
         Div => {
@@ -93,7 +158,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             }
 
             let zero: BigRational = num::zero();
-            if args.len() == 1 && try!(args.get(0).eval()) != zero {
+/*            if args.len() == 1 && try!(args.get(0).eval()) != zero {
                 return Ok(try!(args.get(0).eval()).recip())
             }
 
@@ -101,16 +166,18 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             if args.slice_from(1).iter().any(|x| x.eval() == Ok(zero.clone())) {
                 return Err("Cannot divide by 0".to_strbuf());
             }
-            args.slice_from(1).iter().fold(first_arg, |acc, x| {
-                combine(acc, x.eval(), |v1, v2| v1.div(&v2))
-            })
-
+            //args.slice_from(1).iter().fold(first_arg, |acc, x| {
+            //    combine(acc, x.eval(), |v1, v2| v1.div(&v2))
+            //}) */
+            Ok(Boolean(true))
         },
 
-        Pow => { power::pow_wrapper(args) },
+        Pow => { //power::pow_wrapper(args) },
+            Ok(Boolean(true))
+        },
 
         If  => {
-            if args.len() != 3 {
+         /*   if args.len() != 3 {
                 Err("'if' requires three arguments".to_strbuf())
             } else {
                 let condition = try!(args.get(0).eval());
@@ -121,9 +188,12 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                     Ok(try!(args.get(2).eval()))
                 }
             }
+        */
+         Ok(Boolean(true))
         },
 
         Sin => {
+            /*
             if args.len() > 1 {
                 return Err("'sin' takes one argument".to_strbuf())
             }
@@ -140,10 +210,12 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 Err(msg)    => { return Err(msg.to_strbuf()) }
             };
             
-            Ok(answer)
+            Ok(answer) */
+            Ok(Boolean(true))
         },
 
         Cos => {
+            /*
             if args.len() > 1 {
                 return Err("'cos' takes one argument".to_strbuf())
             }
@@ -160,10 +232,12 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 Err(msg)    => { return Err(msg.to_strbuf()) }
             };
             
-            Ok(answer)
+            Ok(answer) */
+            Ok(Boolean(true))
         },
 
         Tan => {
+            /*
             if args.len() > 1 {
                 return Err("'cos' takes one argument".to_strbuf())
             }
@@ -181,9 +255,11 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             };
             
             Ok(answer)
+            */
+            Ok(Boolean(true))
         },
 
-        Rad => {
+        Rad => { /*
             if args.len() != 1 {
                 return Err("'rad' takes one argument".to_strbuf())
             }
@@ -194,10 +270,11 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
             let radians = degrees.mul(&pi.div(&one80));
 
-            Ok(radians)
+            Ok(radians) */
+            Ok(Boolean(true))
         },
 
-        Deg => {
+        Deg => { /*
             if args.len() != 1 {
                 return Err("'rad' takes one argument".to_strbuf())
             }
@@ -209,6 +286,8 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             let degrees = radians.mul(&one80.div(&pi));
 
             Ok(degrees)
+            */
+            Ok(Boolean(true))
         },
 
         Lt  => {
@@ -225,7 +304,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 return Err("<= requires two arguments".to_strbuf())
             }
             let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
-            Ok(Boolean(arg1 <= arg2))
+            Ok(Boolean(true))
         },
 
         Eq  => {
@@ -236,7 +315,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             let arg1 = try!(args.get(0).eval());
             let arg2 = try!(args.get(1).eval());
 
-            Ok(Boolean(arg1 == arg2))
+            Ok(Boolean(true))
         },
 
         GtEq => {
@@ -245,7 +324,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             }
 
             let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
-            Ok(Boolean(arg1 >= arg2))
+            Ok(Boolean(true))
         },
         
         Gt   => {
@@ -254,7 +333,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             }
 
             let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
-            Ok(Boolean(arg1 > arg2))
+            Ok(Boolean(true))
         }
     }
 }

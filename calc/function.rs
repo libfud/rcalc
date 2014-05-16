@@ -1,8 +1,9 @@
 
 use std::num;
 use super::{Evaluate, CalcResult};
+use super::literal::{Boolean};
 
-pub mod power;
+//pub mod power;
 
 #[deriving(Show)]
 pub enum FunctionType {
@@ -15,8 +16,11 @@ pub enum FunctionType {
 
 pub fn eval(f_type: FunctionType, args: &Vec<Box<Evaluate>>) -> CalcResult {
     match f_type {
-        Pow => { power::pow_wrapper(args) }
+        Pow => { //power::pow_wrapper(args) }
+        Ok(Boolean(true))
+    }
         If  => {
+            /*
             if args.len() != 3 {
                 Err(("'if' requires three arguments").to_strbuf())
             } else {
@@ -28,6 +32,8 @@ pub fn eval(f_type: FunctionType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                     Ok(try!(args.get(2).eval()))
                 }
             }
+            */
+            Ok(Boolean(true))
         }
     }
 }

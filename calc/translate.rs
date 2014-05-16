@@ -1,6 +1,6 @@
 //! something
 
-use super::{CalcResult, Evaluate, Number};
+use super::{CalcResult, Evaluate, Number, BoolArg, MatrixArg};
 use super::constant::{Constant};
 use super::tokenize::{Token, Literal, LParen, RParen, Operator, Name, LBracket, RBracket};
 use super::expression;
@@ -63,18 +63,18 @@ pub fn translate(tokens: &[Token]) -> CalcResult<Box<Evaluate>> {
                 return Err(("Operator '"+ op.to_str() + "' in wrong position").to_strbuf())
             },
 
-            Literal(literaltype)  => {
+            Literal(literaltype)  => { 
                 match literaltype {
                     BigNum(x)   => {
                         args.push(box Number(x) as Box<Evaluate>);
                         i += 1;
                     },
                     Boolean(x) => {
-                        println!("I dunno yet lol");
+                        args.push(box BoolArg(x) as Box<Evaluate>);
                         i += 1;
                     },
                     Matrix(x) => {
-                        println!("I dunno yet lol");
+                        args.push(box MatrixArg(x) as Box<Evaluate>);
                         i += 1;
                     }
                 }

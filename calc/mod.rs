@@ -6,7 +6,7 @@ use self::literal::LiteralType;
 use self::num::rational::BigRational;
 use self::tokenize::tokenize;
 use self::translate::translate;
-pub use self::number::Number;
+pub use self::number::{Number, BoolArg, MatrixArg};
 pub use self::common::help;
 
 mod literal;
