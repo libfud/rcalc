@@ -67,34 +67,72 @@ pub fn unbox_it(args:&Vec<Box<Evaluate>>) -> Result<Vec<LiteralType>, StrBuf> {
     Ok(literal_vec)
 }
 
+pub fn find_bools_and_matrices(args: &Vec<LiteralType>) -> (bool, bool) {
+    let mut bool_flag = false; //lol
+    let mut matrix_flag = false;
+
+    for literal in args.iter() {
+        match literal {
+            &Boolean(ref x)  => bool_flag = true,
+            &Matrix(ref x)   => matrix_flag = true,
+            _           => { } // do nothing
+        }
+    }
+
+    (bool_flag, matrix_flag)
+}
+
+pub fn find_matrix_len(args: &Vec<LiteralType>) -> Result<uint, StrBuf> {
+    let mut matrix_len = 0;
+
+    //get length of first matrix
+    for literal in args.iter() {
+        match literal {
+            &Matrix(ref x)   => {
+                matrix_len = x.len();
+                break;
+            }
+            _           => { } //do nothing
+        }
+    }
+
+    //see if all matrices are of a uniform length
+    for literal in args.iter() {
+        match literal {
+            &Matrix(ref x)   => {
+                if x.len() != matrix_len {
+                    return Err("Mismatched matrices.".to_strbuf())
+                }
+            }
+            _           => { } //do nothing
+        }
+    }
+    
+    if matrix_len == 0 {
+        Err("0 length matrices are not allowed!".to_strbuf())
+    } else {
+        Ok(matrix_len)
+    }
+}
+
 pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
     match op_type {
         Add => {
             let literal_vec = try!(unbox_it(args));
 
-            let zero: BigRational = num::zero();
-            let mut matrix_flag = false;
-            let mut matrix_len = 0; //Only set once. No matrix ops on inequal matrices.
-
-            //determine if there are any booleans or matrices
-            for literal_x in literal_vec.iter() {
-                match *literal_x {
-                    Boolean(x)  => {
-                        return Err("Attempted binary operation with boolean value!".to_strbuf())
-                    },
-                    Matrix(ref x)   => {
-                        if matrix_flag == false { //first matrix encountered
-                            matrix_len = x.len();
-                            matrix_flag = true;
-                        } else {
-                            if matrix_len != x.len() {
-                                return Err("Inequal matrices".to_strbuf())
-                            }
-                        }
-                    },
-                    BigNum(ref x) => { } //do nothing, it might be unnecessary
-                }
+            let (bool_flag, matrix_flag) = find_bools_and_matrices(&literal_vec);
+            if bool_flag == true { 
+                return Err("Attempted addition with boolean value!".to_strbuf())
             }
+
+            let matrix_len;
+            if matrix_flag == true {
+                matrix_len = try!(find_matrix_len(&literal_vec));
+            } else {
+                matrix_len = 0;
+            }
+
+            let zero: BigRational = num::zero();
 
             //regular adddition
             if matrix_flag == false {
