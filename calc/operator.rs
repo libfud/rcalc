@@ -8,7 +8,7 @@ use super::{Evaluate, CalcResult};
 use super::common::{rational_to_f64_trig, big_pi, half_circ, str_to_rational};
 use super::literal::{LiteralType, Boolean, Matrix, BigNum};
 
-//pub mod power;
+pub mod power;
 
 #[deriving(Show)]
 #[deriving(Clone)]
@@ -450,9 +450,13 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             }
         },
 
-        Pow => { //power::pow_wrapper(args) },
-            Ok(Boolean(true))
-        },
+        Pow => {
+            let literal_vec = try!(unbox_it(args));
+            let (bool_flag, matrix_flag) = find_bools_and_matrices(&literal_vec);
+            if bool_flag == true || matrix_flag == true {
+                return Err("Not yet...".to_strbuf())
+            }
+            power::pow_wrapper(args) },
 
         If  => {
          /*   if args.len() != 3 {

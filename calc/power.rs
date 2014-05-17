@@ -6,16 +6,22 @@ use self::num::rational::BigRational;
 use std::num;
 use self::num::bigint::BigInt;
 use super::super::{Evaluate, CalcResult};
+use super::super::literal::{LiteralType, BigNum, Boolean, Matrix};
 
 pub fn pow_wrapper(args: &Vec<Box<Evaluate>>) -> CalcResult {
     let mut args_vec: Vec<BigRational> = Vec::new();
     let mut i = 0;
     while i < args.len() {
-        args_vec.push(try!(args.get(i).eval()));
+        args_vec.push( match try!(args.get(i).eval()) {
+            BigNum(ref x)   => x.clone(),
+            _               => {
+                return Err("damnit".to_strbuf())
+            }
+        });
         i += 1;
     }
 
-    pow(args_vec.as_slice())
+    Ok(BigNum(try!(pow(args_vec.as_slice()))))
 }
 
 /// Pow raises a number to a power - if there are more than one terms, it
@@ -24,7 +30,7 @@ pub fn pow_wrapper(args: &Vec<Box<Evaluate>>) -> CalcResult {
 /// actually evaluate to 0, and (pow 0 0 0 0) will evaluate to one again. This
 /// behavior is periodic. Towers are evaluated recursively. If only one number
 /// is passed, the number is returned, unless it is zero, which returns zero.
-pub fn pow(args: &[BigRational]) -> CalcResult {
+pub fn pow(args: &[BigRational]) -> Result<BigRational, StrBuf> {
     let zero: BigRational = num::zero();
     let one = from_str::<BigRational>("1/1").unwrap(); //ONE
 
@@ -86,7 +92,7 @@ pub fn pow(args: &[BigRational]) -> CalcResult {
 /// Root finds a number which when raised to a power equal to the index is
 /// equal to the radicand. It requires two arguments: the index and a
 /// radicand. 
-pub fn root_wrapper(terms: &[BigRational]) -> CalcResult {
+pub fn root_wrapper(terms: &[BigRational]) -> Result<BigRational, StrBuf> {
     if terms.len() != 2 { return Err("A radicand and index are required.".to_strbuf()) }
 
     let zero = from_str::<BigRational>("0/1").unwrap(); 
@@ -152,7 +158,7 @@ pub fn root_wrapper(terms: &[BigRational]) -> CalcResult {
 /// power and the radicand to a tolerance. If it's within tolerance, that
 /// number is returned. Otherwise, it uses the average
 pub fn root(guess: BigRational, radicand: BigRational, index: BigRational) 
-    -> CalcResult {
+    -> Result<BigRational, StrBuf> {
 
     let one: BigRational = num::one();
     let two = one.add(&one);
