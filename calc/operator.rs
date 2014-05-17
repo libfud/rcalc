@@ -274,8 +274,55 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
         },
 
         Mul => {
-//            let one: BigRational = num::one();
-            Ok(Boolean(true))
+            let literal_vec = try!(unbox_it(args));
+
+            let (bool_flag, matrix_flag) = find_bools_and_matrices(&literal_vec);
+            if bool_flag == true {
+                return Err("Attempted multiplication with boolean value!".to_strbuf())
+            }
+
+            let matrix_len;
+            if matrix_flag == true {
+                matrix_len = try!(find_matrix_len(&literal_vec));
+            } else {
+                matrix_len = 0;
+            }
+
+            let one: BigRational = num::one();
+
+            if matrix_flag == true {
+                let mut product = one.clone();
+                for literal in literal_vec.iter() {
+                    match *literal {
+                        BigNum(ref x)   => { product = product.mul(x),
+                        _               => { }//do nothing
+                    }
+                }
+
+                Ok(BigNum(product))
+            } else {
+                let mut prod_vec: Vec<BigRational> = Vec::new();
+                for i in range(0u, matrix_len) { sum_vec.push(one.clone()) }
+                for literal_x in literal_vec.iter(){
+                    match *literal_x {
+                        Boolean(ref x)  => { }, //do nothing
+                        BigNum(ref x)   => {
+                            for i in range(0u, matrix_len) {
+                                let product = prod_vec.as_slice()[i].mul(x);
+                                prod_vec.as_slice()[i] = product;
+                            }
+                        },
+                        Matrix(ref x)   => {
+                            for i in range(0u, matrix_len) {
+                                let product = prod_vec.mul(&x.as_slice()[i]);
+                                prod_vec = product;
+                            }
+                        }
+                    }
+                }
+
+                Ok(Matrix(prod_vec))
+            }
         },
 
         Div => {

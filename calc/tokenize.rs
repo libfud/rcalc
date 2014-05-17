@@ -62,7 +62,8 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
         let word = slice.words().next().unwrap();
 
         //Discard dangling parens
-        let word = word.slice(0, word.find(|c: char| c == ')' || c == '(').unwrap_or(word.len()));
+        let word = word.slice(0, word.find(|c: char| c == ')' || c == '(' || c == '[' || c == ']' 
+                                            ).unwrap_or(word.len()));
 
         match operator::from_str(word) {
             Some(op_type) => {
