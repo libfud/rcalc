@@ -9,7 +9,7 @@ use super::tokenize::{Token, Literal, LParen, RParen, Operator, Name, LBracket, 
 use super::expression;
 use super::expression::{Expression, Function};
 use super::function;
-use super::literal::{LiteralType, Boolean, BigNum, Matrix};
+use super::literal::{Boolean, BigNum, Matrix};
 
 pub fn translate(tokens: &[Token]) -> CalcResult<Box<Evaluate>> {
     match (tokens.iter().next(), tokens.iter().rev().next()) {
@@ -159,10 +159,10 @@ pub fn make_matrix(tokens: &[Token]) -> Result<Vec<BigRational>, StrBuf> {
 
                 match evaluated {
                     BigNum(x)   => matrix.push(x.clone()),
-                    Boolean(x)  => {
+                    Boolean(_)  => {
                         return Err("Attempted to use a boolean value in a list!".to_strbuf())
                     }
-                    Matrix(x)   => {
+                    Matrix(_)   => {
                         return Err("Nested lists are not allowed".to_strbuf())
                     }
                 }
@@ -184,7 +184,7 @@ pub fn make_matrix(tokens: &[Token]) -> Result<Vec<BigRational>, StrBuf> {
                 return Ok(matrix)
             },
 
-            Operator(op) => {
+            Operator(_) => {
                 return Err("Operators not allowed in lists".to_strbuf())
             },
 
@@ -194,16 +194,16 @@ pub fn make_matrix(tokens: &[Token]) -> Result<Vec<BigRational>, StrBuf> {
                         matrix.push(x.clone());
                         i += 1;
                     },
-                    Boolean(x) => {
+                    Boolean(_) => {
                         return Err("Booleans not allowed in lists".to_strbuf())
                     },
-                    Matrix(x) => {
+                    Matrix(_) => {
                         return Err("Nested lists are not allowed".to_strbuf())
                     }
                 }
             }
 
-            Name(ref c_name) => {
+            Name(_) => {
                 return Err("I need to fix constants".to_strbuf())
             }
         }

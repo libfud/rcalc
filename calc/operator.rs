@@ -57,7 +57,7 @@ pub fn unbox_it(args:&Vec<Box<Evaluate>>) -> Result<Vec<LiteralType>, StrBuf> {
     let mut literal_vec: Vec<LiteralType> = Vec::new();
     let mut i = 0;
     while i < args.len() {
-        literal_vec.push( match (args.get(i).eval()) {
+        literal_vec.push( match args.get(i).eval() {
             Ok(good)    => good,
             Err(bad)    => { return Err(bad.to_strbuf()) }
         });
@@ -67,19 +67,20 @@ pub fn unbox_it(args:&Vec<Box<Evaluate>>) -> Result<Vec<LiteralType>, StrBuf> {
     Ok(literal_vec)
 }
 
-pub fn find_bools_and_matrices(args: &Vec<LiteralType>) -> (bool, bool) {
+pub fn big_bool_matrix(args: &Vec<LiteralType>) -> (bool, bool, bool) {
+    let mut bignum_flag = false;
     let mut bool_flag = false; //lol
     let mut matrix_flag = false;
 
     for literal in args.iter() {
         match literal {
-            &Boolean(ref x)  => bool_flag = true,
-            &Matrix(ref x)   => matrix_flag = true,
-            _           => { } // do nothing
+            &BigNum(_)  => bignum_flag = true,
+            &Boolean(_) => bool_flag = true,
+            &Matrix(_)  => matrix_flag = true,
         }
     }
 
-    (bool_flag, matrix_flag)
+    (bignum_flag, bool_flag, matrix_flag)
 }
 
 pub fn find_matrix_len(args: &Vec<LiteralType>) -> Result<uint, StrBuf> {
@@ -120,56 +121,61 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
         Add => {
             let literal_vec = try!(unbox_it(args));
 
-            let (bool_flag, matrix_flag) = find_bools_and_matrices(&literal_vec);
-            if bool_flag == true { 
-                return Err("Attempted addition with boolean value!".to_strbuf())
-            }
+            fn add_big(terms: &Vec<BigRational>) -> BigRational {
+                let mut sum: BigRational = num::zero();
+                for x in terms.iter() { sum = sum.add(x) }
+                sum
+            };
 
-            let matrix_len;
-            if matrix_flag == true {
-                matrix_len = try!(find_matrix_len(&literal_vec));
-            } else {
-                matrix_len = 0;
-            }
-
-            let zero: BigRational = num::zero();
-
-            //regular adddition
-            if matrix_flag == false {
-                let mut sum = zero.clone();
-                for literal_x in literal_vec.iter() { 
-                    sum = sum.add(match *literal_x {
-                        Boolean(ref x)  => { &zero }, //taken care of
-                        Matrix(ref x)   => { &zero }, //no matrices
-                        BigNum(ref x)   => { x }
-                    });
-                }
-                
-                Ok(BigNum(sum))
-            } else {
+            let matrix_add = | terms: &Vec<Vec<BigRational>> | -> Vec<BigRational> {
                 let mut sum_vec: Vec<BigRational> = Vec::new();
-                for i in range(0u, matrix_len) { sum_vec.push(zero.clone()); }
-                for literal_x in literal_vec.iter() {
-                    match *literal_x {
-                        Boolean(ref x)  => { }, //taken care of
+                let matrix_len= match find_matrix_len(&literal_vec) {
+                    Ok(val) => val,
+                    Err(_) => 0, //this shouldn't happen
+                };
+                let len = terms.len();
 
-                        BigNum(ref x)   => {
-                            for i in range(0u, matrix_len) {
-                                let addend = sum_vec.as_slice()[i].add(x);
-                                sum_vec.as_mut_slice()[i] = addend;
-                            }
-                        },
-
-                        Matrix(ref x)   => {
-                            for i in range(0u, matrix_len) {
-                                let addend = sum_vec.as_slice()[i].add(&x.as_slice()[i]);
-                                sum_vec.as_mut_slice()[i] = addend
-                            }
-                        }
+                for i in range(0u, matrix_len) {
+                    let mut column: Vec<BigRational> = Vec::new();
+                    for x in range(0u, len) {
+                        column.push(terms.as_slice()[x].as_slice()[i].clone());
                     }
+                    sum_vec.push(add_big(&column.clone()));
                 }
 
-                Ok(Matrix(sum_vec))
+                sum_vec
+            };
+
+            let (bignum_flag, bool_flag, matrix_flag) = big_bool_matrix(&literal_vec);
+            match (bignum_flag, matrix_flag, bool_flag) {
+                (false, false, false)   => { Ok(BigNum(num::zero())) }
+                (_, _, true)    => {
+                    Err("Attempted addition with boolean value!".to_strbuf())
+                },
+
+                (true, true, false) => {
+                    Err("Cannot currently add matrices and bignums".to_strbuf())
+                },
+                (true, false, false)    => {
+                    let mut vec_bigs: Vec<BigRational> = Vec::new();
+                    for term in literal_vec.iter() {
+                        vec_bigs.push(match *term{
+                            BigNum(ref x)   => x.clone(),
+                            _           => return Err("impssible".to_strbuf())
+                        });
+                    }
+                    Ok(BigNum(add_big(&vec_bigs.clone())))
+                },
+                (false, true, false)    => {
+                    let mut vec_matrix: Vec<Vec<BigRational>> = Vec::new();
+                    for term in literal_vec.iter() {
+                        vec_matrix.push(match *term {
+                            Matrix(ref x)   => x.clone(),
+                            _           => return Err("impossible".to_strbuf())
+                        });
+                    }
+                    Ok(Matrix(matrix_add(&vec_matrix.clone())))
+                }
             }
         },
 
@@ -180,7 +186,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
             let literal_vec = try!(unbox_it(args));
 
-            let (bool_flag, matrix_flag) = find_bools_and_matrices(&literal_vec);
+            let (_, bool_flag, matrix_flag) = big_bool_matrix(&literal_vec);
             if bool_flag == true {
                 return Err("Attempted subtraction with boolean value!".to_strbuf())
             }
@@ -221,7 +227,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                                 diff_vec.as_mut_slice()[i] = diff;
                             }
                         },
-                        Boolean(ref x)  => { }, //no booleans
+                        Boolean(_)  => { }, //no booleans
                         Matrix(ref x)   => {
                             for i in range(0u, matrix_len) {
                                 let diff = diff_vec.as_slice()[i].sub(&x.as_slice()[i]);
@@ -255,12 +261,12 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 } else {
                     head_i = 1;
                     match literal_vec.as_slice()[0] {
-                        BigNum(ref x)   => {
+                        BigNum(_)       => {
                             return Err(("Illegal subtraction operation! "
                             + "Cannot subtract matrix from bignum") .to_strbuf())
                         },
 
-                        Boolean(ref x)  => { }, //there are no booleans
+                        Boolean(_)      => { }, //there are no booleans
 
                         Matrix(ref x)   => {
                             for i in range(0u, matrix_len) {
@@ -277,7 +283,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
         Mul => {
             let literal_vec = try!(unbox_it(args));
 
-            let (bool_flag, matrix_flag) = find_bools_and_matrices(&literal_vec);
+            let (_,bool_flag, matrix_flag) = big_bool_matrix(&literal_vec);
             if bool_flag == true {
                 return Err("Attempted multiplication with boolean value!".to_strbuf())
             }
@@ -303,11 +309,11 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 Ok(BigNum(product))
             } else {
                 let mut prod_vec: Vec<BigRational> = Vec::new();
-                for i in range(0u, matrix_len) { prod_vec.push(one.clone()) }
+                for _ in range(0u, matrix_len) { prod_vec.push(one.clone()) }
 
                 for literal_x in literal_vec.iter(){
                     match *literal_x {
-                        Boolean(ref x)  => { }, //do nothing
+                        Boolean(_)      => { }, //do nothing
 
                         BigNum(ref x)   => {
                             for i in range(0u, matrix_len) {
@@ -336,7 +342,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
             let literal_vec = try!(unbox_it(args));
 
-            let (bool_flag, matrix_flag) = find_bools_and_matrices(&literal_vec);
+            let (_, bool_flag, matrix_flag) = big_bool_matrix(&literal_vec);
             if bool_flag == true {
                 return Err("Attempted multiplication with Boolean value!".to_strbuf())
             }
@@ -428,12 +434,12 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                     head_i = 1;
 
                     match literal_vec.as_slice()[0] {
-                        BigNum(ref x)   => {
+                        BigNum(_)       => {
                             return Err(("Illegal division operation! " + 
                             "Cannot divide bignum by matrix!").to_strbuf())
                         },
 
-                        Boolean(ref x)  => {}, //booleans already caused failure if present
+                        Boolean(_)      => {}, //booleans already caused failure if present
 
                         Matrix(ref x)   => {
                             for i in range(0u, matrix_len) {
@@ -452,30 +458,30 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Pow => {
             let literal_vec = try!(unbox_it(args));
-            let (bool_flag, matrix_flag) = find_bools_and_matrices(&literal_vec);
+            let (_, bool_flag, matrix_flag) = big_bool_matrix(&literal_vec);
             if bool_flag == true || matrix_flag == true {
                 return Err("Not yet...".to_strbuf())
             }
             power::pow_wrapper(args) },
 
         If  => {
-         /*   if args.len() != 3 {
-                Err("'if' requires three arguments".to_strbuf())
-            } else {
-                let condition = try!(args.get(0).eval());
+            if args.len() != 3 {
+                return Err("'if' requires three arguments".to_strbuf())
+            } 
+            
+            let condition = match try!(args.get(0).eval()) {
+                Boolean(x)  => x,
+                _           => { return Err("Only booleans can be a condition!".to_strbuf()) }
+            };
                 
-                if condition == num::one() {
-                    Ok(try!(args.get(1).eval()))
-                } else {
-                    Ok(try!(args.get(2).eval()))
-                }
+            if condition == true {
+                Ok(try!(args.get(1).eval()))
+            } else {
+                Ok(try!(args.get(2).eval()))
             }
-        */
-         Ok(Boolean(true))
         },
 
         Sin => {
-            /*
             if args.len() > 1 {
                 return Err("'sin' takes one argument".to_strbuf())
             }
@@ -492,7 +498,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 Err(msg)    => { return Err(msg.to_strbuf()) }
             };
             
-            Ok(answer) */
+            Ok(answer) 
             Ok(Boolean(true))
         },
 
@@ -578,7 +584,10 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             }
 
             let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
-            Ok(Boolean(true))
+            match (arg1.clone(), arg2.clone()) {
+                (BigNum(_), BigNum(_))  => Ok(Boolean(arg1 < arg2)),
+                _   => Err("Nonboolean".to_strbuf())
+            }
         },
 
         LtEq => {
@@ -586,7 +595,10 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 return Err("<= requires two arguments".to_strbuf())
             }
             let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
-            Ok(Boolean(true))
+            match (arg1.clone(), arg2.clone()) {
+                (BigNum(_), BigNum(_))  => Ok(Boolean(arg1 <= arg2)),
+                _   => Err("Non boolean".to_strbuf())
+            }
         },
 
         Eq  => {
@@ -609,7 +621,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
             let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
             match (arg1.clone(), arg2.clone()) {
-                (BigNum(x), BigNum(y))  => Ok(Boolean(arg1 >= arg2)),
+                (BigNum(_), BigNum(_))  => Ok(Boolean(arg1 >= arg2)),
                 _                       => Err("something".to_strbuf())
             }
         },
@@ -621,7 +633,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
             let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
             match (arg1.clone(), arg2.clone()) {
-                (BigNum(x), BigNum(y))  => Ok(Boolean(arg1 > arg2)),
+                (BigNum(_), BigNum(_))  => Ok(Boolean(arg1 > arg2)),
                 _                       => Err("blug".to_strbuf())
             }
         }

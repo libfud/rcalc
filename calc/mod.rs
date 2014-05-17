@@ -3,7 +3,6 @@
 extern crate num;
 
 use self::literal::LiteralType;
-use self::num::rational::BigRational;
 use self::tokenize::tokenize;
 use self::translate::translate;
 pub use self::number::{Number, BoolArg, MatrixArg};
@@ -21,7 +20,6 @@ pub mod common;
 
 // A shortcut for the result type that is used everywhere
 pub type CalcResult<T = LiteralType> = Result<T, StrBuf>;
-
 pub trait Evaluate {
     fn eval(&self) -> CalcResult;
 }

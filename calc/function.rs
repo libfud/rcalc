@@ -1,6 +1,5 @@
 
-use std::num;
-use super::{Evaluate, CalcResult};
+use super::{CalcResult};
 use super::literal::{Boolean};
 
 //pub mod power;
@@ -14,7 +13,7 @@ pub enum FunctionType {
     If
 }
 
-pub fn eval(f_type: FunctionType, args: &Vec<Box<Evaluate>>) -> CalcResult {
+pub fn eval(f_type: FunctionType ) /*, args: &Vec<Box<Evaluate>>*/ -> CalcResult {
     match f_type {
         Pow => { //power::pow_wrapper(args) }
         Ok(Boolean(true))

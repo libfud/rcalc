@@ -1,7 +1,4 @@
 
-extern crate num;
-
-use self::num::rational::BigRational;
 use super::{CalcResult, Evaluate};
 use super::function;
 use super::function::FunctionType;
@@ -26,7 +23,7 @@ impl Evaluate for Expression {
                 operator::eval(op_type, &self.args)
             }
             Function(f_type)    => {
-                function::eval(f_type, &self.args)
+                function::eval(f_type) //, &self.args)
             }
         }
     }

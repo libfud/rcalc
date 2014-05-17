@@ -4,7 +4,7 @@
 extern crate num;
 
 use super::{CalcResult, Evaluate};
-use super::literal::{LiteralType, BigNum, Boolean, Matrix};
+use super::literal::{BigNum, Boolean, Matrix};
 use self::num::rational::BigRational;
 
 #[deriving(Clone)]

@@ -13,3 +13,4 @@ pub enum LiteralType {
     BigNum(BigRational),
     Matrix(Vec<BigRational>)
 }
+

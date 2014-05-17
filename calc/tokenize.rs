@@ -4,8 +4,7 @@
 
 extern crate num;
 
-use super::literal::{LiteralType, Boolean, BigNum, Matrix};
-use self::num::rational::BigRational;
+use super::literal::{LiteralType, Boolean, BigNum};
 use super::common::str_to_rational;
 use super::CalcResult;
 use super::operator;

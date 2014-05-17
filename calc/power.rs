@@ -6,7 +6,7 @@ use self::num::rational::BigRational;
 use std::num;
 use self::num::bigint::BigInt;
 use super::super::{Evaluate, CalcResult};
-use super::super::literal::{LiteralType, BigNum, Boolean, Matrix};
+use super::super::literal::{BigNum};
 
 pub fn pow_wrapper(args: &Vec<Box<Evaluate>>) -> CalcResult {
     let mut args_vec: Vec<BigRational> = Vec::new();
