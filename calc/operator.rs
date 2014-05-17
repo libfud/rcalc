@@ -5,7 +5,7 @@ extern crate num;
 use self::num::rational::BigRational;
 use std::num;
 use super::{Evaluate, CalcResult};
-use super::common::{rational_to_f64_trig, big_pi, half_circ, str_to_rational};
+use super::common::{rational_to_f64_trig, str_to_rational};
 use super::literal::{LiteralType, Boolean, Matrix, BigNum};
 
 pub mod power;
@@ -485,11 +485,15 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             if args.len() > 1 {
                 return Err("'sin' takes one argument".to_strbuf())
             }
-            let evaluated = match args.get(0).eval() {
-                Ok(value)    => value,
-                Err(_)    => { return Err("Something went wrong".to_strbuf()) }
+
+            let evaluated_array = try!(unbox_it(args));
+            let evaluated = match evaluated_array.as_slice()[0] {
+                BigNum(ref x)   => x.clone(),
+                _           => {
+                    return Err("I'm too tired to do this right now.".to_strbuf())
+                },
             };
-                
+            
             let ration_as_float = rational_to_f64_trig(&evaluated);
 
             let penult_answer = ration_as_float.sin().to_str();
@@ -498,18 +502,16 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 Err(msg)    => { return Err(msg.to_strbuf()) }
             };
             
-            Ok(answer) 
-            Ok(Boolean(true))
+            Ok(BigNum(answer))
         },
 
         Cos => {
-            /*
             if args.len() > 1 {
                 return Err("'cos' takes one argument".to_strbuf())
             }
-            let evaluated = match args.get(0).eval() {
-                Ok(value)    => value,
-                Err(_)    => { return Err("Something went wrong".to_strbuf()) }
+            let evaluated = match (try!(unbox_it(args))).as_slice()[0] {
+                BigNum(ref x)   => x.clone(),
+                _           => { return Err("Something went wrong".to_strbuf()) }
             };
                 
             let ration_as_float = rational_to_f64_trig(&evaluated);
@@ -520,18 +522,16 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 Err(msg)    => { return Err(msg.to_strbuf()) }
             };
             
-            Ok(answer) */
-            Ok(Boolean(true))
+            Ok(BigNum(answer))
         },
 
         Tan => {
-            /*
             if args.len() > 1 {
                 return Err("'cos' takes one argument".to_strbuf())
             }
-            let evaluated = match args.get(0).eval() {
-                Ok(value)    => value,
-                Err(_)    => { return Err("Something went wrong".to_strbuf()) }
+            let evaluated = match (try!(unbox_it(args))).as_slice()[0] {
+                BigNum(ref x)   => x.clone(),
+                _           => { return Err("Too tired".to_strbuf()) }
             };
 
             let ration_as_float = rational_to_f64_trig(&evaluated);
@@ -542,9 +542,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 Err(msg)    => { return Err(msg.to_strbuf()) }
             };
             
-            Ok(answer)
-            */
-            Ok(Boolean(true))
+            Ok(BigNum(answer))
         },
 
         Rad => { /*
