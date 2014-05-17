@@ -234,7 +234,6 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 diff_vec
             }
 
-
             if matrix_flag == false {
                 if args.len() == 1 {
                     Ok(BigNum(bignum_sub(zero, literal_vec.as_slice())))
@@ -250,13 +249,15 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             } else { 
                 let mut head: Vec<BigRational> = Vec::new();
                 let mut head_i = 0;
+
                 if args.len() == 1 { 
                     for _ in range(0u, matrix_len) { head.push(zero.clone()); }
                 } else {
                     head_i = 1;
                     match literal_vec.as_slice()[0] {
                         BigNum(ref x)   => {
-                            return Err("Illegal subtraction operation!".to_strbuf())
+                            return Err(("Illegal subtraction operation! "
+                            + "Cannot subtract matrix from bignum") .to_strbuf())
                         },
 
                         Boolean(ref x)  => { }, //there are no booleans
@@ -290,11 +291,11 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
             let one: BigRational = num::one();
 
-            if matrix_flag == true {
+            if matrix_flag == false {
                 let mut product = one.clone();
                 for literal in literal_vec.iter() {
                     match *literal {
-                        BigNum(ref x)   => { product = product.mul(x),
+                        BigNum(ref x)   => product = product.mul(x),
                         _               => { }//do nothing
                     }
                 }
@@ -302,20 +303,23 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 Ok(BigNum(product))
             } else {
                 let mut prod_vec: Vec<BigRational> = Vec::new();
-                for i in range(0u, matrix_len) { sum_vec.push(one.clone()) }
+                for i in range(0u, matrix_len) { prod_vec.push(one.clone()) }
+
                 for literal_x in literal_vec.iter(){
                     match *literal_x {
                         Boolean(ref x)  => { }, //do nothing
+
                         BigNum(ref x)   => {
                             for i in range(0u, matrix_len) {
                                 let product = prod_vec.as_slice()[i].mul(x);
-                                prod_vec.as_slice()[i] = product;
+                                prod_vec.as_mut_slice()[i] = product;
                             }
                         },
+
                         Matrix(ref x)   => {
                             for i in range(0u, matrix_len) {
-                                let product = prod_vec.mul(&x.as_slice()[i]);
-                                prod_vec = product;
+                                let product = prod_vec.as_slice()[i].mul(&x.as_slice()[i]);
+                                prod_vec.as_mut_slice()[i] = product;
                             }
                         }
                     }
@@ -330,19 +334,120 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 return Err("Division requires at least one argument!".to_strbuf())
             }
 
-            let zero: BigRational = num::zero();
-/*            if args.len() == 1 && try!(args.get(0).eval()) != zero {
-                return Ok(try!(args.get(0).eval()).recip())
+            let literal_vec = try!(unbox_it(args));
+
+            let (bool_flag, matrix_flag) = find_bools_and_matrices(&literal_vec);
+            if bool_flag == true {
+                return Err("Attempted multiplication with Boolean value!".to_strbuf())
             }
 
-            let first_arg = args.get(0).eval();
-            if args.slice_from(1).iter().any(|x| x.eval() == Ok(zero.clone())) {
-                return Err("Cannot divide by 0".to_strbuf());
+            let matrix_len;
+            if matrix_flag == true {
+                matrix_len = try!(find_matrix_len(&literal_vec));
+            } else {
+                matrix_len = 0;
             }
-            //args.slice_from(1).iter().fold(first_arg, |acc, x| {
-            //    combine(acc, x.eval(), |v1, v2| v1.div(&v2))
-            //}) */
-            Ok(Boolean(true))
+
+            fn bignum_div(head: BigRational, tail: &[LiteralType]) -> 
+                Result<BigRational, StrBuf> {
+
+                let mut quotient = head.clone();
+                let zero: BigRational = num::zero();
+
+                for term in tail.iter() {
+                    match *term {
+                        BigNum(ref x)   => {
+                            if *x == zero { return Err("Division by zero!".to_strbuf()) }
+                            quotient = quotient.div(x);
+                            }
+                        _               => { },
+                    }
+                }
+
+                Ok(quotient)
+            }   
+
+            fn matrix_div(matrix_len: uint, head: &[BigRational], tail: &[LiteralType]) ->
+                Result<Vec<BigRational>, StrBuf> {
+                
+                let zero: BigRational = num::zero();
+                let mut quot_vec: Vec<BigRational> = Vec::new();
+                for i in range(0u, matrix_len) { quot_vec.push(head[i].clone()); }
+
+                for literal in tail.iter() {
+                    match *literal {
+                        BigNum(ref x)   => {
+                            if *x == zero {
+                                return Err("Division by zero!".to_strbuf())
+                            }
+                            for i in range(0u, matrix_len) {
+
+                                let quotient = quot_vec.as_slice()[i].div(x);
+                                quot_vec.as_mut_slice()[i] = quotient;
+                            }
+                        }
+                        Boolean(_)      => { },
+                        Matrix(ref x)   => {
+                            for i in range(0u, matrix_len) {
+                                if x.as_slice()[i] == zero {
+                                    return Err("Division by zero!".to_strbuf())
+                                }
+                                let quotient = quot_vec.as_slice()[i].div(&x.as_slice()[i]);
+                                quot_vec.as_mut_slice()[i] = quotient;
+                            }
+                        }
+                    }
+                }
+
+                Ok(quot_vec)
+            }
+
+            let one: BigRational = num::one();
+            if matrix_flag == false {
+                if args.len() == 1 {
+                    let answer = try!(bignum_div(one, literal_vec.as_slice()));
+
+                    Ok(BigNum(answer))
+                } else {
+                    let head = match literal_vec.as_slice()[0] {
+                        BigNum(ref x)   => x.clone(),
+                        _               => one.clone(), //shouldn't happen, see matrix_flag
+                    };
+
+                    let answer = try!(bignum_div(head, literal_vec.slice_from(1)));
+
+                    Ok(BigNum(answer))
+                }
+            } else {
+                let mut head: Vec<BigRational> = Vec::new();
+                let mut head_i = 0;
+
+                if args.len() == 1 {
+                    for _ in range(0u, matrix_len) { head.push(one.clone()); }
+                } else {
+                    head_i = 1;
+
+                    match literal_vec.as_slice()[0] {
+                        BigNum(ref x)   => {
+                            return Err(("Illegal division operation! " + 
+                            "Cannot divide bignum by matrix!").to_strbuf())
+                        },
+
+                        Boolean(ref x)  => {}, //booleans already caused failure if present
+
+                        Matrix(ref x)   => {
+                            for i in range(0u, matrix_len) {
+                                head.push(x.as_slice()[i].clone());
+                            }
+                        }
+                    }
+                }
+
+                let answer = try!(matrix_div(matrix_len, head.as_slice(),
+                    literal_vec.slice_from(head_i)));
+
+                Ok(Matrix(answer))
+            }
         },
 
         Pow => { //power::pow_wrapper(args) },
