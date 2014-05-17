@@ -146,7 +146,6 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 }
                 
                 Ok(BigNum(sum))
-
             } else {
                 let mut sum_vec: Vec<BigRational> = Vec::new();
                 for i in range(0u, matrix_len) { sum_vec.push(zero.clone()); }
@@ -175,18 +174,103 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
         },
 
         Sub => {
-/*            if args.len() < 1 {
+            if args.len() < 1 {
                 return Err("Subtraction requires at least one argument".to_strbuf())
             }
 
-            let zero: BigRational = num::zero();
-            if args.len() == 1 {
-                let answer = zero.sub(&try!(args.get(0).eval()));
-                return Ok(answer)
+            let literal_vec = try!(unbox_it(args));
+
+            let (bool_flag, matrix_flag) = find_bools_and_matrices(&literal_vec);
+            if bool_flag == true {
+                return Err("Attempted subtraction with boolean value!".to_strbuf())
             }
 
-            let first_arg = args.get(0).eval(); */
-            Ok(Boolean(true))
+            let matrix_len;
+            if matrix_flag == true {
+                matrix_len = try!(find_matrix_len(&literal_vec));
+            } else {
+                matrix_len = 0;
+            }
+
+            let zero: BigRational = num::zero();
+
+            fn bignum_sub(head: BigRational, tail: &[LiteralType]) -> BigRational {
+                let mut difference = head.clone();
+
+                for term in tail.iter() {
+                    match *term {
+                        BigNum(ref x) => difference = difference.sub(x),
+                        _             => { },
+                    }
+                }
+
+                difference
+            }
+
+            fn matrix_sub(matrix_len: uint, head: &[BigRational], tail: &[LiteralType])
+                -> Vec<BigRational> {
+
+                let mut diff_vec: Vec<BigRational> = Vec::new();
+                for i in range(0u, matrix_len) { diff_vec.push(head[i].clone()); }
+
+                for literal in tail.iter(){
+                    match *literal {
+                        BigNum(ref x)   => {
+                            for i in range(0u, matrix_len) {
+                                let diff = diff_vec.as_slice()[i].sub(x);
+                                diff_vec.as_mut_slice()[i] = diff;
+                            }
+                        },
+                        Boolean(ref x)  => { }, //no booleans
+                        Matrix(ref x)   => {
+                            for i in range(0u, matrix_len) {
+                                let diff = diff_vec.as_slice()[i].sub(&x.as_slice()[i]);
+                                diff_vec.as_mut_slice()[i] = diff;
+                            }
+                        },
+                    }
+                }
+
+                diff_vec
+            }
+
+
+            if matrix_flag == false {
+                if args.len() == 1 {
+                    Ok(BigNum(bignum_sub(zero, literal_vec.as_slice())))
+                }
+                else {
+                    let head = match literal_vec.as_slice()[0] {
+                        BigNum(ref x)   => x.clone(),
+                        _               => zero.clone()
+                    };
+
+                    Ok(BigNum(bignum_sub(head, literal_vec.slice_from(1))))
+                }
+            } else { 
+                let mut head: Vec<BigRational> = Vec::new();
+                let mut head_i = 0;
+                if args.len() == 1 { 
+                    for _ in range(0u, matrix_len) { head.push(zero.clone()); }
+                } else {
+                    head_i = 1;
+                    match literal_vec.as_slice()[0] {
+                        BigNum(ref x)   => {
+                            return Err("Illegal subtraction operation!".to_strbuf())
+                        },
+
+                        Boolean(ref x)  => { }, //there are no booleans
+
+                        Matrix(ref x)   => {
+                            for i in range(0u, matrix_len) {
+                                head.push(x.as_slice()[i].clone());
+                            }
+                        }
+                    }
+                }
+
+                Ok(Matrix(matrix_sub(matrix_len, head.as_slice(), literal_vec.slice_from(head_i))))
+            }
         },
 
         Mul => {
