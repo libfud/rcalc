@@ -117,12 +117,16 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                         Boolean(ref x)  => { }, //taken care of
 
                         BigNum(ref x)   => {
-                            for i in range(0u, matrix_len) { sum_vec.as_slice()[i].add(x); }
+                            for i in range(0u, matrix_len) {
+                                let addend = sum_vec.as_slice()[i].add(x);
+                                sum_vec.as_mut_slice()[i] = addend;
+                            }
                         },
 
                         Matrix(ref x)   => {
                             for i in range(0u, matrix_len) {
-                                sum_vec.as_slice()[i].add(&x.as_slice()[i]);
+                                let addend = sum_vec.as_slice()[i].add(&x.as_slice()[i]);
+                                sum_vec.as_mut_slice()[i] = addend
                             }
                         }
                     }
@@ -314,8 +318,10 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
             let arg1 = try!(args.get(0).eval());
             let arg2 = try!(args.get(1).eval());
-
-            Ok(Boolean(true))
+            match (arg1, arg2) {
+                (BigNum(x), BigNum(y))  => Ok(Boolean(x == y)),
+                _                       => Err("oh snap".to_strbuf())
+            }
         },
 
         GtEq => {
@@ -324,7 +330,10 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             }
 
             let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
-            Ok(Boolean(true))
+            match (arg1.clone(), arg2.clone()) {
+                (BigNum(x), BigNum(y))  => Ok(Boolean(arg1 >= arg2)),
+                _                       => Err("something".to_strbuf())
+            }
         },
         
         Gt   => {
@@ -333,7 +342,10 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             }
 
             let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
-            Ok(Boolean(true))
+            match (arg1.clone(), arg2.clone()) {
+                (BigNum(x), BigNum(y))  => Ok(Boolean(arg1 > arg2)),
+                _                       => Err("blug".to_strbuf())
+            }
         }
     }
 }

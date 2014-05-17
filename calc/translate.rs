@@ -1,5 +1,8 @@
 //! something
 
+extern crate num;
+
+use self::num::rational::BigRational;
 use super::{CalcResult, Evaluate, Number, BoolArg, MatrixArg};
 use super::constant::{Constant};
 use super::tokenize::{Token, Literal, LParen, RParen, Operator, Name, LBracket, RBracket};
@@ -48,15 +51,18 @@ pub fn translate(tokens: &[Token]) -> CalcResult<Box<Evaluate>> {
             LBracket    => {
                 let limit = try!(find_rbracket(tokens, i, top)) + 1;
                 
-                let list = try!(translate(tokens.slice(i, limit)));
+                let matrix = match make_matrix(tokens.slice(i, limit)) {
+                    Ok(matrix_vec)  => matrix_vec,
+                    Err(msg)        => return Err(msg)
+                };
 
-                args.push(list);
+                args.push(box MatrixArg(matrix) as Box<Evaluate>);
 
                 i = limit;
             },
 
             RBracket => {
-                return Ok(box Expression{ expr_type: top_expr, args: args } as Box<Evaluate>)
+                return Err("Mismatching RBrackets!".to_strbuf())
             },
 
             Operator(op) => {
@@ -95,38 +101,113 @@ pub fn translate(tokens: &[Token]) -> CalcResult<Box<Evaluate>> {
 // expressions like (+ 2 2) (+ 2 2). This function does not fulfill that
 // task.
 fn find_rparen(tokens: &[Token], begin: uint, end: uint) -> Result<uint, StrBuf> {
+
     let mut i = begin;
     let mut p_count = 0;
+
     while i <= end {
         match tokens[i] {
             LParen  => p_count += 1,
             RParen  => p_count -= 1,
             _       => { } //do nothing
         }
-        if p_count == 0 {
-            return Ok(i);
-        }
+        if p_count == 0 { return Ok(i) }
+
         i += 1;
     }
 
     Err(("Parentheses not present or wrongly formatted.").to_strbuf())
 }
 
+// Needs to be separate because of limitations of match statements
 fn find_rbracket(tokens: &[Token], begin: uint, end: uint) -> Result<uint, StrBuf> {
 
     let mut i = begin;
     let mut delimiter_count = 0;
+
     while i <= end {
         match tokens[i] {
             LBracket => delimiter_count += 1,
             RBracket => delimiter_count -= 1,
             _        => { } //do nothing
         }
-        if delimiter_count == 0 {
-            return Ok(i);
-        }
+        if delimiter_count == 0 { return Ok(i) }
         i += 1;
     }
 
     Err(("Delimiter not present or wrongly formatted.").to_strbuf())
+}
+
+pub fn make_matrix(tokens: &[Token]) -> Result<Vec<BigRational>, StrBuf> {
+
+    match (tokens.iter().next(), tokens.iter().rev().next()) {
+        (Some(&LBracket), Some(&RBracket))  => {} //it's good
+        _   => return Err(("Badly formatted expression").to_strbuf())
+    }
+
+    let mut matrix: Vec<BigRational> = Vec::new();
+    let top = tokens.len();
+    let mut i = 1u;
+
+    while i < tokens.len() {
+        match tokens[i].clone() {
+            // Subexpression begins, potential value for list
+            LParen  => {
+                let limit = try!(find_rparen(tokens, i, top)) + 1;
+                let sub_expr = try!(translate(tokens.slice(i, limit)));
+                let evaluated = try!(sub_expr.eval());
+
+                match evaluated {
+                    BigNum(x)   => matrix.push(x.clone()),
+                    Boolean(x)  => {
+                        return Err("Attempted to use a boolean value in a list!".to_strbuf())
+                    }
+                    Matrix(x)   => {
+                        return Err("Nested lists are not allowed".to_strbuf())
+                    }
+                }
+
+                //skip over the sub expression 
+                i = limit;
+            },
+
+            RParen => {
+                return Err("Malformed list: found unexexted RParen token".to_strbuf())
+            },
+
+            LBracket    => {
+                return Err("Nested lists are not allowed".to_strbuf())
+            },
+
+            RBracket => {
+                if matrix.len() == 0 { return Err("Empty lists not allowed!".to_strbuf()) }
+                return Ok(matrix)
+            },
+
+            Operator(op) => {
+                return Err("Operators not allowed in lists".to_strbuf())
+            },
+
+            Literal(literaltype)  => { 
+                match literaltype {
+                    BigNum(x)   => {
+                        matrix.push(x.clone());
+                        i += 1;
+                    },
+                    Boolean(x) => {
+                        return Err("Booleans not allowed in lists".to_strbuf())
+                    },
+                    Matrix(x) => {
+                        return Err("Nested lists are not allowed".to_strbuf())
+                    }
+                }
+            }
+
+            Name(ref c_name) => {
+                return Err("I need to fix constants".to_strbuf())
+            }
+        }
+    }
+
+    Err(("Unable to find last parentheses of expression").to_strbuf())
 }

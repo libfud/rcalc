@@ -8,6 +8,8 @@ use super::literal::{LiteralType, BigNum, Boolean, Matrix};
 use self::num::rational::BigRational;
 
 #[deriving(Clone)]
+#[deriving(Ord)]
+#[deriving(Eq)]
 pub struct Number(pub BigRational);
 
 impl Evaluate for Number {
