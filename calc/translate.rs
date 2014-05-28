@@ -66,7 +66,7 @@ pub fn translate(tokens: &[Token]) -> CalcResult<Box<Evaluate>> {
             },
 
             Operator(op) => {
-                return Err(("Operator '"+ op.to_str() + "' in wrong position").to_strbuf())
+                return Err("Operator in wrong position: ".to_str().append(op.to_str().as_slice()))
             },
 
             Literal(literaltype)  => { 
@@ -100,7 +100,7 @@ pub fn translate(tokens: &[Token]) -> CalcResult<Box<Evaluate>> {
 // Parens should be counted before anything else to check for malformed
 // expressions like (+ 2 2) (+ 2 2). This function does not fulfill that
 // task.
-fn find_rparen(tokens: &[Token], begin: uint, end: uint) -> Result<uint, StrBuf> {
+fn find_rparen(tokens: &[Token], begin: uint, end: uint) -> Result<uint, String> {
 
     let mut i = begin;
     let mut p_count = 0;
@@ -120,7 +120,7 @@ fn find_rparen(tokens: &[Token], begin: uint, end: uint) -> Result<uint, StrBuf>
 }
 
 // Needs to be separate because of limitations of match statements
-fn find_rbracket(tokens: &[Token], begin: uint, end: uint) -> Result<uint, StrBuf> {
+fn find_rbracket(tokens: &[Token], begin: uint, end: uint) -> Result<uint, String> {
 
     let mut i = begin;
     let mut delimiter_count = 0;
@@ -138,7 +138,7 @@ fn find_rbracket(tokens: &[Token], begin: uint, end: uint) -> Result<uint, StrBu
     Err(("Delimiter not present or wrongly formatted.").to_strbuf())
 }
 
-pub fn make_matrix(tokens: &[Token]) -> Result<Vec<BigRational>, StrBuf> {
+pub fn make_matrix(tokens: &[Token]) -> Result<Vec<BigRational>, String> {
 
     match (tokens.iter().next(), tokens.iter().rev().next()) {
         (Some(&LBracket), Some(&RBracket))  => {} //it's good

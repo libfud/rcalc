@@ -41,6 +41,6 @@ pub fn from_str(name: &str) -> CalcResult<FunctionType> {
     match name {
         "pow"   => Ok(Pow),
         "if"    => Ok(If),
-        _       => Err(("Unknown function '"+ name +"'").to_strbuf())
+        _       => Err(("Unknown function '".to_str().append(name.to_str().as_slice())))
     }
 }

@@ -276,18 +276,18 @@ statement, a consequent, and an alternative.
 
 /// Function to convert an array of owned strings into BigRationals for work.
 /// A message is included to indicate the success of the operation.
-pub fn str_to_rational(str_array: &[~str]) -> Result<~[BigRational], &str> {
+pub fn str_to_rational(str_array: &[String]) -> Result<~[BigRational], &str> {
     let mut big_vec: Vec<BigRational> = Vec::new();
     let mut rational: BigRational;
 
     for elem in str_array.iter() {
-        let number_type = get_number_type(*elem);
+        let number_type = get_number_type(elem.as_slice());
         if number_type == "invalid representation" {
             return Err(number_type)
         }
         match number_type {
             "fraction"      => {
-                match from_str::<BigRational>(*elem) {
+                match from_str::<BigRational>(elem.as_slice()) {
                     Some(bignum)    => { rational = bignum }
                     _               => { 
                         return Err(DESPAIR)
@@ -297,7 +297,7 @@ pub fn str_to_rational(str_array: &[~str]) -> Result<~[BigRational], &str> {
 
             "non-fraction"  => {
                 let mut floated: f64;
-                match from_str::<f64>(*elem) {
+                match from_str::<f64>(elem.as_slice()) {
                     Some(num)   => { floated = num },
                     _           => {
                         return Err(DESPAIR)
@@ -384,8 +384,8 @@ pub fn rational_to_f64_trig(bigrational_orig: &BigRational) -> f64 {
     let denom = bigrational.denom().clone();
 
     //This is cruddy
-    let numer_f64: f64 = from_str::<f64>(numer.to_str()).unwrap();
-    let denom_f64: f64 = from_str::<f64>(denom.to_str()).unwrap();
+    let numer_f64: f64 = from_str::<f64>(numer.to_str().as_slice()).unwrap();
+    let denom_f64: f64 = from_str::<f64>(denom.to_str().as_slice()).unwrap();
 
     numer_f64 / denom_f64
 }

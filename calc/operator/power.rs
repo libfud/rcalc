@@ -30,7 +30,7 @@ pub fn pow_wrapper(args: &Vec<Box<Evaluate>>) -> CalcResult {
 /// actually evaluate to 0, and (pow 0 0 0 0) will evaluate to one again. This
 /// behavior is periodic. Towers are evaluated recursively. If only one number
 /// is passed, the number is returned, unless it is zero, which returns zero.
-pub fn pow(args: &[BigRational]) -> Result<BigRational, StrBuf> {
+pub fn pow(args: &[BigRational]) -> Result<BigRational, String> {
     let zero: BigRational = num::zero();
     let one = from_str::<BigRational>("1/1").unwrap(); //ONE
 
@@ -92,7 +92,7 @@ pub fn pow(args: &[BigRational]) -> Result<BigRational, StrBuf> {
 /// Root finds a number which when raised to a power equal to the index is
 /// equal to the radicand. It requires two arguments: the index and a
 /// radicand. 
-pub fn root_wrapper(terms: &[BigRational]) -> Result<BigRational, StrBuf> {
+pub fn root_wrapper(terms: &[BigRational]) -> Result<BigRational, String> {
     if terms.len() != 2 { return Err("A radicand and index are required.".to_strbuf()) }
 
     let zero = from_str::<BigRational>("0/1").unwrap(); 
@@ -158,7 +158,7 @@ pub fn root_wrapper(terms: &[BigRational]) -> Result<BigRational, StrBuf> {
 /// power and the radicand to a tolerance. If it's within tolerance, that
 /// number is returned. Otherwise, it uses the average
 pub fn root(guess: BigRational, radicand: BigRational, index: BigRational) 
-    -> Result<BigRational, StrBuf> {
+    -> Result<BigRational, String> {
 
     let one: BigRational = num::one();
     let two = one.add(&one);

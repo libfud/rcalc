@@ -22,7 +22,7 @@ pub enum Token {
     LBracket,
     RBracket,
     Operator(OperatorType),
-    Name(StrBuf)
+    Name(String)
 }
 
 /// Tokenizs a string into 
@@ -90,7 +90,7 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
 
         //no number should ever start or end with /
         if word.starts_with("/") || word.ends_with("/") {
-            return Err(("Unrecognized token '"+ word + "'").to_strbuf())
+            return Err("Unrecognized token '".to_str().append(word.to_str().as_slice()).append("'"))
         }
 
         let mut negative_sign_counter = 0;
@@ -103,7 +103,10 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
                 '-'         => { negative_sign_counter += 1 },
                 '.'         => { radix_point_counter += 1 },
                 '/'         => { fraction_counter += 1 },
-                _           => { return Err(("Unrecognized token '" + word + "'").to_strbuf()) }
+                _           => {
+                    return Err("Unrecognized token '".to_str().append(word.to_str().as_slice())
+                                   .append("'"))
+                }
             }
         }
 
@@ -114,7 +117,9 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
 
             (0, 0, 1) | (0, 1, 1) | (1, 0, 1) => {
                 if word.starts_with("-") == true { Some(word) }
-                else { return Err(("Unrecognized token '" + word + "'").to_strbuf()) }
+                else {
+                    return Err("Unrecognized token: ".to_str().append(word.to_str().as_slice()))
+                }
             },
 
             _   => None
@@ -127,7 +132,7 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
                     continue;
                 }
                 Err(_)        => {
-                    return Err(("Unrecognized token '" + word + "'").to_strbuf())
+                    return Err("Unrecognized token: ".to_str().append(word.to_str().as_slice()))
                 }
             }
         }
@@ -141,7 +146,7 @@ pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
         }
         
         //This point is reached if every other kind of token has not been matched
-        return Err(("Unrecognized token '"+ word.to_str() + "'").to_strbuf());
+        return Err("Unrecognized token: ".to_str().append(word.to_str().as_slice()))
     }
 
     Ok(tokens)

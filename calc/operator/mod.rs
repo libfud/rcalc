@@ -53,7 +53,7 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
     }
 }
 
-pub fn unbox_it(args:&Vec<Box<Evaluate>>) -> Result<Vec<LiteralType>, StrBuf> {
+pub fn unbox_it(args:&Vec<Box<Evaluate>>) -> Result<Vec<LiteralType>, String> {
     let mut literal_vec: Vec<LiteralType> = Vec::new();
     let mut i = 0;
     while i < args.len() {
@@ -83,7 +83,7 @@ pub fn big_bool_matrix(args: &Vec<LiteralType>) -> (bool, bool, bool) {
     (bignum_flag, bool_flag, matrix_flag)
 }
 
-pub fn find_matrix_len(args: &Vec<LiteralType>) -> Result<uint, StrBuf> {
+pub fn find_matrix_len(args: &Vec<LiteralType>) -> Result<uint, String> {
     let mut matrix_len = 0;
 
     //get length of first matrix
@@ -262,8 +262,9 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                     head_i = 1;
                     match literal_vec.as_slice()[0] {
                         BigNum(_)       => {
-                            return Err(("Illegal subtraction operation! "
-                            + "Cannot subtract matrix from bignum") .to_strbuf())
+                            return Err(
+                            "Illegal subtraction operation! Cannot subtract matrix from bignum"
+                                        .to_str())
                         },
 
                         Boolean(_)      => { }, //there are no booleans
@@ -355,7 +356,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             }
 
             fn bignum_div(head: BigRational, tail: &[LiteralType]) -> 
-                Result<BigRational, StrBuf> {
+                Result<BigRational, String> {
 
                 let mut quotient = head.clone();
                 let zero: BigRational = num::zero();
@@ -374,7 +375,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             }   
 
             fn matrix_div(matrix_len: uint, head: &[BigRational], tail: &[LiteralType]) ->
-                Result<Vec<BigRational>, StrBuf> {
+                Result<Vec<BigRational>, String> {
                 
                 let zero: BigRational = num::zero();
                 let mut quot_vec: Vec<BigRational> = Vec::new();
@@ -435,8 +436,8 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
                     match literal_vec.as_slice()[0] {
                         BigNum(_)       => {
-                            return Err(("Illegal division operation! " + 
-                            "Cannot divide bignum by matrix!").to_strbuf())
+                            return Err("Illegal division operation! ".to_str().append( 
+                            "Cannot divide bignum by matrix!"))
                         },
 
                         Boolean(_)      => {}, //booleans already caused failure if present

@@ -17,7 +17,7 @@ impl Constant {
         match s {
             "pi"    => Ok(Constant(Pi)),
             "e"     => Ok(Constant(E)),
-            _       => Err(("Undefined Constant '" + s  + "'").to_strbuf())
+            _       => Err(("Undefined Constant :".to_str().append(s.to_str().as_slice())))
         }
     }
 }

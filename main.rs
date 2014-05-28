@@ -5,6 +5,7 @@
 //! Polish notation calculator.
 
 extern crate libc;
+extern crate collections;
 
 use libc::c_char;
 use std::c_str::CString;
@@ -19,7 +20,7 @@ extern {
     fn add_history(l: *c_char);
 }
 
-pub fn rust_readline(prompt: &str) -> Option<StrBuf> {
+pub fn rust_readline(prompt: &str) -> Option<String> {
     if prompt.len() == 0 { return None }
     let c_prompt = prompt.to_c_str();
 
@@ -53,9 +54,9 @@ fn main() {
             Some(val)   => { val.to_str() }
             None        => { continue }
         };
-        rust_add_history(expr);
+        rust_add_history(expr.as_slice());
 
-        let help_exit_or_eval: Vec<&str> = expr.words().collect();
+        let help_exit_or_eval: Vec<&str> = expr.as_slice().words().collect();
         let result;
 
         match help_exit_or_eval.as_slice()[0] {
@@ -76,13 +77,13 @@ fn main() {
                             continue;
                         }
 
-                        _                   => { result = eval(expr.trim()) }
+                        _                   => { result = eval(expr.as_slice().trim()) }
                     }
                 }
-                else { result = eval(expr.trim()) }
+                else { result = eval(expr.as_slice().trim()) }
             },
 
-            _   => { result = eval(expr.trim()) }
+            _   => { result = eval(expr.as_slice().trim()) }
         }
 
         match result {

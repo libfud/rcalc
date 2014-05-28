@@ -19,7 +19,7 @@ mod function;
 pub mod common;
 
 // A shortcut for the result type that is used everywhere
-pub type CalcResult<T = LiteralType> = Result<T, StrBuf>;
+pub type CalcResult<T = LiteralType> = Result<T, String>;
 pub trait Evaluate {
     fn eval(&self) -> CalcResult;
 }
