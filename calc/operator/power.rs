@@ -5,17 +5,27 @@ extern crate num;
 use self::num::rational::BigRational;
 use std::num;
 use self::num::bigint::BigInt;
-use super::super::{Evaluate, CalcResult};
+use super::super::{Evaluate, CalcResult, lookup, Environment};
 use super::super::literal::{BigNum};
+use super::super::literal::Symbol;
 
-pub fn pow_wrapper(args: &Vec<Box<Evaluate>>) -> CalcResult {
+pub fn pow_wrapper(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     let mut args_vec: Vec<BigRational> = Vec::new();
     let mut i = 0;
     while i < args.len() {
-        args_vec.push( match try!(args.get(i).eval()) {
+        args_vec.push( match try!(args.get(i).eval(env)) {
             BigNum(ref x)   => x.clone(),
+            Symbol(ref x)   => {
+                let val = try!(lookup(x, env));
+                match val {
+                    BigNum(ref y)   => y.clone(),
+                    _               => {
+                        return Err("damnit".to_str())
+                    }
+                }
+            },
             _               => {
-                return Err("damnit".to_strbuf())
+                return Err("damnit".to_str())
             }
         });
         i += 1;

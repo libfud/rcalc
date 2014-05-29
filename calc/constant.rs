@@ -1,7 +1,7 @@
 extern crate num;
 
 use self::num::rational::BigRational;
-use super::{Evaluate, CalcResult};
+use super::{Evaluate, CalcResult, Environment};
 use super::literal::BigNum;
 
 #[deriving(Show)]
@@ -23,7 +23,7 @@ impl Constant {
 }
 
 impl Evaluate for Constant {
-    fn eval(&self) -> CalcResult {
+    fn eval(&self, _: &mut Environment) -> CalcResult {
         let &Constant(c_type) = self;
         match c_type {
             Pi => Ok(BigNum(from_str::<BigRational>("3126535/995207").unwrap())),

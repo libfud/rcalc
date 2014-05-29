@@ -4,9 +4,9 @@ extern crate num;
 
 use self::num::rational::BigRational;
 use std::num;
-use super::{Evaluate, CalcResult};
+use super::{Evaluate, CalcResult, Environment, lookup};
 use super::common::{rational_to_f64_trig, str_to_rational};
-use super::literal::{LiteralType, Boolean, Matrix, BigNum};
+use super::literal::{LiteralType, Boolean, Matrix, BigNum, Symbol, Func};
 
 pub mod power;
 
@@ -29,6 +29,10 @@ pub enum OperatorType {
     Gt,
     GtEq,
     If,
+    Define,
+    Defun,
+    Print,
+    Limit,
 }
 
 pub fn from_str(s: &str) -> Option<OperatorType> {
@@ -49,17 +53,54 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         ">="    => Some(GtEq),
         ">"     => Some(Gt),
         "if"    => Some(If),
+        "define"=> Some(Define),
+        "defun" => Some(Defun),
+        "print" => Some(Print),
+        "lim"   => Some(Limit),
         _       => None
     }
 }
 
-pub fn unbox_it(args:&Vec<Box<Evaluate>>) -> Result<Vec<LiteralType>, String> {
+pub fn to_str(op: &OperatorType) -> String {
+    let answer = match *op {
+        Add     => "+",
+        Sub     => "-",
+        Mul     => "*",
+        Div     => "/",
+        Pow     => "pow",
+        Sin     => "sin",
+        Cos     => "cos",
+        Tan     => "tan",
+        Rad     => "rad",
+        Deg     => "deg",
+        Lt      => "<",
+        LtEq    => "<=",
+        Eq      => "=",
+        GtEq    => ">=",
+        Gt      => ">",
+        If      => "if",
+        Define  => "define",
+        Defun   => "defun",
+        Print   => "print",
+        Limit   => "lim"
+    };
+
+    answer.to_str()
+}
+
+pub fn unbox_it(args:&Vec<Box<Evaluate>>, env: &mut Environment) 
+                                                -> Result<Vec<LiteralType>, String> {
     let mut literal_vec: Vec<LiteralType> = Vec::new();
     let mut i = 0;
     while i < args.len() {
-        literal_vec.push( match args.get(i).eval() {
-            Ok(good)    => good,
-            Err(bad)    => { return Err(bad.to_strbuf()) }
+        let val = try!(args.get(i).eval(env));
+        literal_vec.push( match val {
+            Symbol(ref var) => try!(lookup(var, env)),
+            Func(ref var)   => {
+                let (_, fun) = try!(super::funfind(var, env));
+                Func(fun)
+            },
+            _   => val
         });
         i += 1;
     }
@@ -77,6 +118,8 @@ pub fn big_bool_matrix(args: &Vec<LiteralType>) -> (bool, bool, bool) {
             &BigNum(_)  => bignum_flag = true,
             &Boolean(_) => bool_flag = true,
             &Matrix(_)  => matrix_flag = true,
+            &Symbol(_)  => { } //do nothing
+            &Func(_)    => { } //do nothing
         }
     }
 
@@ -102,7 +145,7 @@ pub fn find_matrix_len(args: &Vec<LiteralType>) -> Result<uint, String> {
         match literal {
             &Matrix(ref x)   => {
                 if x.len() != matrix_len {
-                    return Err("Mismatched matrices.".to_strbuf())
+                    return Err("Mismatched matrices.".to_str())
                 }
             }
             _           => { } //do nothing
@@ -110,16 +153,131 @@ pub fn find_matrix_len(args: &Vec<LiteralType>) -> Result<uint, String> {
     }
     
     if matrix_len == 0 {
-        Err("0 length matrices are not allowed!".to_strbuf())
+        Err("0 length matrices are not allowed!".to_str())
     } else {
         Ok(matrix_len)
     }
 }
 
-pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
+pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environment)
+                                                                            -> CalcResult {
     match op_type {
+        Define  => {
+            if args.len() != 2 {
+                return Err("Define doesn't work that way!".to_str())
+            }
+
+            let var = match try!(args.get(0).eval(env)) {
+                Symbol(ref x)   => x.clone(),
+                _               => {
+                    return Err("Attempted illegal definition!".to_str())
+                }
+            };
+
+            let val = match try!(args.get(1).eval(env)) {
+                Symbol(ref x)   => try!(lookup(x, env)),
+                _   => try!(args.get(1).eval(env).clone())
+            };
+            env.vars.insert(var.clone(), val);
+            Ok(Symbol(var))
+        },
+
+        Defun => {
+            if args.len() != 1 {
+                return Err("bad use of defun!".to_str())
+            }
+            let fn_string = match try!(args.get(0).eval(env)) {
+                Func(ref x) => x.clone(),
+                _           => {
+                    return Err("Attempted illegal defunition!".to_str())
+                }
+            };
+
+            let fn_string = fn_string.as_slice().trim();
+
+            if fn_string.len() == 0 {
+                fail!("Impossible fn length!")
+            }
+            let symbol = fn_string.words().next().unwrap();
+            match symbol.chars().next().unwrap() {
+                'a'..'z'|'A'..'Z' => { }, //okay
+                _   => {
+                    return Err("Illegal function name!".to_str())
+                }
+            }
+
+            if fn_string.len() == symbol.len() {
+                return Err("Illegal function!".to_str())
+            }
+
+            let fn_string = fn_string.slice_from(symbol.len()).trim();
+            if fn_string.starts_with("(") == false {
+                return Err("No arguments found!".to_str())
+            }
+
+            let args_string_len = match fn_string.find(|c: char| c == ')') {
+                Some(x) => x,
+                None    => {
+                    return Err("Illegal function!".to_str())
+                }
+            };
+
+            let args_string = fn_string.slice(1, args_string_len + 1);
+            let mut arguments: Vec<LiteralType> = Vec::new();
+            for arg in args_string.slice_to(args_string_len).words() {
+                if arg.ends_with(")") {
+                    arguments.push(Symbol(arg.slice_to(arg.len() - 1).to_str()))
+                } else {
+                    arguments.push(Symbol(arg.to_str()))
+                }
+            }
+
+            if fn_string.len() == args_string.len()  {
+                return Err("No procedure found!".to_str())
+            }
+
+            let fn_string = fn_string.slice_from(args_string.len() + 1).trim();
+
+            if fn_string.starts_with("(") && fn_string.ends_with(")") {
+                env.funs.insert(symbol.to_str(), (arguments, fn_string.to_str()));
+            } else {
+                println!("{}", fn_string);
+                return Err("Illegal fn!".to_str())
+            }
+
+            Ok(Func(fn_string.to_str()))
+        },
+
+        Print   => {
+            let literal_vec = try!(unbox_it(args, env));
+            for term in literal_vec.iter() {
+                match *term {
+                    BigNum(ref x)   => println!("{}", x),
+                    Boolean(ref x)  => println!("{}", x),
+                    Matrix(ref x)   => println!("{}", x),
+                    Symbol(ref x)   => {
+                        let val = match lookup(x, env) {
+                            Ok(value)  => value.to_str(),
+                            Err(_)     => match super::funfind(x, env) {
+                                Ok((args, x))   => (args, x).to_str(),
+                                Err(msg)    => msg
+                            }
+                        };
+                        println!("{}", val)
+                    },
+                    Func(ref x)     => println!("{}", x),
+                }
+            }
+
+            Ok(Symbol("foo".to_str()))
+        },
+
+        Limit   => {
+            Ok(Symbol("foo".to_str()))
+        },
+
         Add => {
-            let literal_vec = try!(unbox_it(args));
+            let literal_vec = try!(unbox_it(args, env));
 
             fn add_big(terms: &Vec<BigRational>) -> BigRational {
                 let mut sum: BigRational = num::zero();
@@ -150,18 +308,25 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             match (bignum_flag, matrix_flag, bool_flag) {
                 (false, false, false)   => { Ok(BigNum(num::zero())) }
                 (_, _, true)    => {
-                    Err("Attempted addition with boolean value!".to_strbuf())
+                    Err("Attempted addition with boolean value!".to_str())
                 },
 
                 (true, true, false) => {
-                    Err("Cannot currently add matrices and bignums".to_strbuf())
+                    Err("Cannot currently add matrices and bignums".to_str())
                 },
                 (true, false, false)    => {
                     let mut vec_bigs: Vec<BigRational> = Vec::new();
                     for term in literal_vec.iter() {
                         vec_bigs.push(match *term{
                             BigNum(ref x)   => x.clone(),
-                            _           => return Err("impssible".to_strbuf())
+                            Symbol(ref x)   => {
+                                let val = try!(lookup(x, env));
+                                match val {
+                                    BigNum(ref y) => y.clone(),
+                                    _   => return Err("impossible!".to_str())
+                                }
+                            }
+                            _           => return Err("impossible".to_str())
                         });
                     }
                     Ok(BigNum(add_big(&vec_bigs.clone())))
@@ -171,7 +336,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                     for term in literal_vec.iter() {
                         vec_matrix.push(match *term {
                             Matrix(ref x)   => x.clone(),
-                            _           => return Err("impossible".to_strbuf())
+                            _           => return Err("impossible".to_str())
                         });
                     }
                     Ok(Matrix(matrix_add(&vec_matrix.clone())))
@@ -181,14 +346,14 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Sub => {
             if args.len() < 1 {
-                return Err("Subtraction requires at least one argument".to_strbuf())
+                return Err("Subtraction requires at least one argument".to_str())
             }
 
-            let literal_vec = try!(unbox_it(args));
+            let literal_vec = try!(unbox_it(args, env));
 
             let (_, bool_flag, matrix_flag) = big_bool_matrix(&literal_vec);
             if bool_flag == true {
-                return Err("Attempted subtraction with boolean value!".to_strbuf())
+                return Err("Attempted subtraction with boolean value!".to_str())
             }
 
             let matrix_len;
@@ -213,8 +378,8 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 difference
             }
 
-            fn matrix_sub(matrix_len: uint, head: &[BigRational], tail: &[LiteralType])
-                -> Vec<BigRational> {
+            fn matrix_sub(matrix_len: uint, head: &[BigRational], tail: &[LiteralType],
+                    env: &mut Environment) -> Result<Vec<BigRational>, String> {
 
                 let mut diff_vec: Vec<BigRational> = Vec::new();
                 for i in range(0u, matrix_len) { diff_vec.push(head[i].clone()); }
@@ -234,10 +399,40 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                                 diff_vec.as_mut_slice()[i] = diff;
                             }
                         },
+                        Symbol(ref x)   => {
+                            let val = try!(lookup(x, env));
+                            match val {
+                                BigNum(ref y)   => {
+                                    for i in range(0u, matrix_len) {
+                                        let diff = diff_vec.as_slice()[i].sub(y);
+                                        diff_vec.as_mut_slice()[i] = diff;
+                                    }
+                                },
+                                Boolean(_)      => {
+                                    return Err("Boolean detected in sub operation!".to_str())
+                                }
+                                Matrix(ref y)   => {
+                                    if y.len() != matrix_len {
+                                        return Err("Mismatched matrices!".to_str())
+                                    }
+                                    for i in range(0u, matrix_len) {
+                                        let diff = diff_vec.as_slice()[i].sub(&y.as_slice()[i]);
+                                        diff_vec.as_mut_slice()[i] = diff;
+                                    }
+                                },
+                                Symbol(_)       => {
+                                    return Err("2deep4me".to_str())
+                                },
+                                Func(_)         => {
+                                    return Err("2deep4me".to_str())
+                                },
+                            }
+                        },
+                        Func(_) => { } //idk yet
                     }
                 }
 
-                diff_vec
+                Ok(diff_vec)
             }
 
             if matrix_flag == false {
@@ -274,19 +469,48 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                                 head.push(x.as_slice()[i].clone());
                             }
                         }
+                        Symbol(ref x)   => {
+                            let val = try!(lookup(x, env));
+                            match val {
+                                BigNum(_)   => {
+                                    return Err("Cannot sub matrix from bignum!".to_str())
+                                },
+                                Boolean(_)  => {
+                                    return Err("Attempted to use boolean for sub!".to_str())
+                                },
+                                Matrix(ref y)   => {
+                                    if y.len() != matrix_len {
+                                        return Err("Mismatched matrices!".to_str())
+                                    }
+                                    for i in range(0u, matrix_len) {
+                                        head.push(y.as_slice()[i].clone());
+                                    }
+                                },
+                                Symbol(_)   => {
+                                    return Err("2deep4me".to_str())
+                                },
+
+                                Func(_)     => {
+                                    return Err("WAY 2 deep 5 me".to_str())
+                                },
+                            }
+                        },
+                        Func(_) => { } //idk yet
                     }
                 }
 
-                Ok(Matrix(matrix_sub(matrix_len, head.as_slice(), literal_vec.slice_from(head_i))))
+                let answer = try!(matrix_sub(matrix_len, head.as_slice(),
+                                                    literal_vec.slice_from(head_i), env));
+                Ok(Matrix(answer))
             }
         },
 
         Mul => {
-            let literal_vec = try!(unbox_it(args));
+            let literal_vec = try!(unbox_it(args, env));
 
             let (_,bool_flag, matrix_flag) = big_bool_matrix(&literal_vec);
             if bool_flag == true {
-                return Err("Attempted multiplication with boolean value!".to_strbuf())
+                return Err("Attempted multiplication with boolean value!".to_str())
             }
 
             let matrix_len;
@@ -316,6 +540,8 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                     match *literal_x {
                         Boolean(_)      => { }, //do nothing
 
+                        Func(_)         => { }, //idk yet
+
                         BigNum(ref x)   => {
                             for i in range(0u, matrix_len) {
                                 let product = prod_vec.as_slice()[i].mul(x);
@@ -328,6 +554,34 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                                 let product = prod_vec.as_slice()[i].mul(&x.as_slice()[i]);
                                 prod_vec.as_mut_slice()[i] = product;
                             }
+                        },
+                        Symbol(ref x)   => {
+                            let val = try!(lookup(x, env));
+                            match val {
+                                Boolean(_)  => {
+                                    return Err("Attempted to use boolean in multiplication!".to_str())
+                                }
+                                BigNum(ref x) => {
+                                    for i in range(0u, matrix_len) {
+                                        let product = prod_vec.as_slice()[i].mul(x);
+                                        prod_vec.as_mut_slice()[i] = product;
+                                    }
+                                },
+
+                                Func(_)         => { }, //idk yet
+                                Matrix(ref x)   => {
+                                    if x.len() != matrix_len {
+                                        return Err("Mismatched matrices!".to_str())
+                                    }
+                                    for i in range(0u, matrix_len) {
+                                        let product = prod_vec.as_slice()[i].mul(&x.as_slice()[i]);
+                                        prod_vec.as_mut_slice()[i] = product;
+                                    }
+                                },
+                                Symbol(_)       => {
+                                    return Err("2Deep4Me".to_str())
+                                }
+                            }
                         }
                     }
                 }
@@ -338,14 +592,14 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Div => {
             if args.len() < 1 {
-                return Err("Division requires at least one argument!".to_strbuf())
+                return Err("Division requires at least one argument!".to_str())
             }
 
-            let literal_vec = try!(unbox_it(args));
+            let literal_vec = try!(unbox_it(args, env));
 
             let (_, bool_flag, matrix_flag) = big_bool_matrix(&literal_vec);
             if bool_flag == true {
-                return Err("Attempted multiplication with Boolean value!".to_strbuf())
+                return Err("Attempted multiplication with Boolean value!".to_str())
             }
 
             let matrix_len;
@@ -364,7 +618,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                 for term in tail.iter() {
                     match *term {
                         BigNum(ref x)   => {
-                            if *x == zero { return Err("Division by zero!".to_strbuf()) }
+                            if *x == zero { return Err("Division by zero!".to_str()) }
                             quotient = quotient.div(x);
                             }
                         _               => { },
@@ -385,7 +639,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                     match *literal {
                         BigNum(ref x)   => {
                             if *x == zero {
-                                return Err("Division by zero!".to_strbuf())
+                                return Err("Division by zero!".to_str())
                             }
                             for i in range(0u, matrix_len) {
 
@@ -397,12 +651,14 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
                         Matrix(ref x)   => {
                             for i in range(0u, matrix_len) {
                                 if x.as_slice()[i] == zero {
-                                    return Err("Division by zero!".to_strbuf())
+                                    return Err("Division by zero!".to_str())
                                 }
                                 let quotient = quot_vec.as_slice()[i].div(&x.as_slice()[i]);
                                 quot_vec.as_mut_slice()[i] = quotient;
                             }
-                        }
+                        },
+                        Symbol(_)   => { } //push this off for now
+                        Func(_)     => { } //push this off for now
                     }
                 }
 
@@ -442,9 +698,38 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
                         Boolean(_)      => {}, //booleans already caused failure if present
 
+                        Func(_)         => {
+                            return Err("idk yet".to_str())
+                        }
+
                         Matrix(ref x)   => {
                             for i in range(0u, matrix_len) {
                                 head.push(x.as_slice()[i].clone());
+                            }
+                        },
+
+                        Symbol(ref x)   => {
+                            match try!(lookup(x, env)) {
+                                Func(_)     => {
+                                    return Err("Idk yet".to_str())
+                                },
+                                BigNum(_)   => {
+                                    return Err("Can't divide bignum by matrix!".to_str())
+                                },
+                                Boolean(_)  => {
+                                    return Err("Attempted division with boolean!".to_str())
+                                },
+                                Matrix(ref x)   => {
+                                    if x.len() != matrix_len {
+                                        return Err("Mismatched matrices!".to_str())
+                                    }
+                                    for i in range(0u, matrix_len) {
+                                        head.push(x.as_slice()[i].clone());
+                                    }
+                                },
+                                Symbol(_)   => {
+                                    return Err("2deep4me".to_str())
+                                }
                             }
                         }
                     }
@@ -458,40 +743,40 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
         },
 
         Pow => {
-            let literal_vec = try!(unbox_it(args));
+            let literal_vec = try!(unbox_it(args, env));
             let (_, bool_flag, matrix_flag) = big_bool_matrix(&literal_vec);
             if bool_flag == true || matrix_flag == true {
-                return Err("Not yet...".to_strbuf())
+                return Err("Not yet...".to_str())
             }
-            power::pow_wrapper(args) },
+            power::pow_wrapper(args, env) },
 
         If  => {
             if args.len() != 3 {
-                return Err("'if' requires three arguments".to_strbuf())
+                return Err("'if' requires three arguments".to_str())
             } 
             
-            let condition = match try!(args.get(0).eval()) {
+            let condition = match try!(args.get(0).eval(env)) {
                 Boolean(x)  => x,
-                _           => { return Err("Only booleans can be a condition!".to_strbuf()) }
+                _           => { return Err("Only booleans can be a condition!".to_str()) }
             };
                 
             if condition == true {
-                Ok(try!(args.get(1).eval()))
+                Ok(try!(args.get(1).eval(env)))
             } else {
-                Ok(try!(args.get(2).eval()))
+                Ok(try!(args.get(2).eval(env)))
             }
         },
 
         Sin => {
             if args.len() > 1 {
-                return Err("'sin' takes one argument".to_strbuf())
+                return Err("'sin' takes one argument".to_str())
             }
 
-            let evaluated_array = try!(unbox_it(args));
+            let evaluated_array = try!(unbox_it(args, env));
             let evaluated = match evaluated_array.as_slice()[0] {
                 BigNum(ref x)   => x.clone(),
                 _           => {
-                    return Err("I'm too tired to do this right now.".to_strbuf())
+                    return Err("I'm too tired to do this right now.".to_str())
                 },
             };
             
@@ -500,7 +785,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             let penult_answer = ration_as_float.sin().to_str();
             let answer = match str_to_rational(&[penult_answer]) {
                 Ok(array)   => array[0],
-                Err(msg)    => { return Err(msg.to_strbuf()) }
+                Err(msg)    => { return Err(msg.to_str()) }
             };
             
             Ok(BigNum(answer))
@@ -508,11 +793,11 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Cos => {
             if args.len() > 1 {
-                return Err("'cos' takes one argument".to_strbuf())
+                return Err("'cos' takes one argument".to_str())
             }
-            let evaluated = match (try!(unbox_it(args))).as_slice()[0] {
+            let evaluated = match (try!(unbox_it(args, env))).as_slice()[0] {
                 BigNum(ref x)   => x.clone(),
-                _           => { return Err("Something went wrong".to_strbuf()) }
+                _           => { return Err("Something went wrong".to_str()) }
             };
                 
             let ration_as_float = rational_to_f64_trig(&evaluated);
@@ -520,7 +805,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             let penult_answer = ration_as_float.cos().to_str();
             let answer = match str_to_rational(&[penult_answer]) {
                 Ok(array)   => array[0],
-                Err(msg)    => { return Err(msg.to_strbuf()) }
+                Err(msg)    => { return Err(msg.to_str()) }
             };
             
             Ok(BigNum(answer))
@@ -528,11 +813,11 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Tan => {
             if args.len() > 1 {
-                return Err("'cos' takes one argument".to_strbuf())
+                return Err("'cos' takes one argument".to_str())
             }
-            let evaluated = match (try!(unbox_it(args))).as_slice()[0] {
+            let evaluated = match (try!(unbox_it(args, env))).as_slice()[0] {
                 BigNum(ref x)   => x.clone(),
-                _           => { return Err("Too tired".to_strbuf()) }
+                _           => { return Err("Too tired".to_str()) }
             };
 
             let ration_as_float = rational_to_f64_trig(&evaluated);
@@ -540,7 +825,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
             let penult_answer = (ration_as_float.sin() / ration_as_float.cos()).to_str();
             let answer = match str_to_rational(&[penult_answer]) {
                 Ok(array)   => array[0],
-                Err(msg)    => { return Err(msg.to_strbuf()) }
+                Err(msg)    => { return Err(msg.to_str()) }
             };
             
             Ok(BigNum(answer))
@@ -548,7 +833,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Rad => { /*
             if args.len() != 1 {
-                return Err("'rad' takes one argument".to_strbuf())
+                return Err("'rad' takes one argument".to_str())
             }
             
             let degrees = try!(args.get(0).eval());
@@ -563,7 +848,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Deg => { /*
             if args.len() != 1 {
-                return Err("'rad' takes one argument".to_strbuf())
+                return Err("'rad' takes one argument".to_str())
             }
 
             let radians = try!(args.get(0).eval());
@@ -579,61 +864,62 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>) -> CalcResult {
 
         Lt  => {
             if args.len() != 2 {
-                return Err("< requires two arguments".to_strbuf())
+                return Err("< requires two arguments".to_str())
             }
 
-            let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
+            let (arg1, arg2) = (try!(args.get(0).eval(env)), try!(args.get(1).eval(env)));
             match (arg1.clone(), arg2.clone()) {
                 (BigNum(_), BigNum(_))  => Ok(Boolean(arg1 < arg2)),
-                _   => Err("Nonboolean".to_strbuf())
+                _   => Err("Nonboolean".to_str())
             }
         },
 
         LtEq => {
             if args.len() != 2 {
-                return Err("<= requires two arguments".to_strbuf())
+                return Err("<= requires two arguments".to_str())
             }
-            let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
+            let (arg1, arg2) = (try!(args.get(0).eval(env)), try!(args.get(1).eval(env)));
             match (arg1.clone(), arg2.clone()) {
                 (BigNum(_), BigNum(_))  => Ok(Boolean(arg1 <= arg2)),
-                _   => Err("Non boolean".to_strbuf())
+                _   => Err("Non boolean".to_str())
             }
         },
 
         Eq  => {
             if args.len() != 2 {
-                return Err("= requires two arguments".to_strbuf())
+                return Err("= requires two arguments".to_str())
             }
 
-            let arg1 = try!(args.get(0).eval());
-            let arg2 = try!(args.get(1).eval());
+            let arg1 = try!(args.get(0).eval(env));
+            let arg2 = try!(args.get(1).eval(env));
             match (arg1, arg2) {
                 (BigNum(x), BigNum(y))  => Ok(Boolean(x == y)),
-                _                       => Err("oh snap".to_strbuf())
+                _                       => Err("oh snap".to_str())
             }
         },
 
         GtEq => {
             if args.len() != 2 {
-                return Err(">= requires two arguments".to_strbuf())
+                return Err(">= requires two arguments".to_str())
             }
 
-            let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
+            let (arg1, arg2) = (try!(args.get(0).eval(env)), try!(args.get(1).eval(env)));
             match (arg1.clone(), arg2.clone()) {
                 (BigNum(_), BigNum(_))  => Ok(Boolean(arg1 >= arg2)),
-                _                       => Err("something".to_strbuf())
+                _                       => Err("something".to_str())
             }
         },
         
         Gt   => {
              if args.len() != 2 {
-                return Err(">= requires two arguments".to_strbuf())
+                return Err(">= requires two arguments".to_str())
             }
 
-            let (arg1, arg2) = (try!(args.get(0).eval()), try!(args.get(1).eval()));
+            let comparands = try!(unbox_it(args, env));
+            let (arg1, arg2) = (comparands.get(0).clone(), comparands.get(1).clone());
             match (arg1.clone(), arg2.clone()) {
                 (BigNum(_), BigNum(_))  => Ok(Boolean(arg1 > arg2)),
-                _                       => Err("blug".to_strbuf())
+                _                       => Err("blug".to_str())
             }
         }
     }

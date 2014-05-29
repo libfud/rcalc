@@ -6,8 +6,7 @@ extern crate num;
 
 use super::literal::{LiteralType, Boolean, BigNum};
 use super::common::str_to_rational;
-use super::CalcResult;
-use super::operator;
+use super::{CalcResult, operator};
 use super::operator::{OperatorType};
 
 ///Enumeration of valid tokens. Valid tokens are Operators, Literals, LParens,
@@ -15,140 +14,150 @@ use super::operator::{OperatorType};
 #[deriving(Show)]
 #[deriving(Clone)]
 pub enum Token {
-//    Literal(BigRational),
     Literal(LiteralType),
     LParen,
     RParen,
     LBracket,
     RBracket,
+    Fun(String),
     Operator(OperatorType),
-    Name(String)
+    Name(String),
+    Variable(String),
 }
 
-/// Tokenizs a string into 
-pub fn tokenize(expr: &str) -> CalcResult<Vec<Token>> {
-    let mut tokens = Vec::new();
+pub struct TokenStream {
+    pub expr: String,
+    pub index: uint
+}
 
-    let mut i = 0;
-    let len = expr.len();
+impl Iterator<CalcResult<Token>> for TokenStream {
+    fn next(&mut self) -> Option<CalcResult<Token>> {
+        loop {
+            if self.index == self.expr.len() { 
+                return None
+            } 
 
-    while i < len {
-        let slice = expr.slice_from(i);
-
-        //skip whitespace. unwrap is ok because of while i < len
-        if slice.chars().next().unwrap().is_whitespace() {
-            i += 1;
-            continue;
-        }
-
-        //Parentheses and Brackets
-        let token = match slice.chars().next().unwrap() {
-            '(' => Some(LParen),
-            ')' => Some(RParen),
-            '[' => Some(LBracket),
-            ']' => Some(RBracket),
-            _   => None
-        };
-        if token.is_some() {
-            tokens.push(token.unwrap());
-            i += 1;
-            continue;
-        }
-
-        //Operators
-        
-        //There is at least one word, so it is safe to unwrap
-        let word = slice.words().next().unwrap();
-
-        //Discard dangling parens
-        let word = word.slice(0, word.find(|c: char| c == ')' || c == '(' || c == '[' || c == ']' 
-                                            ).unwrap_or(word.len()));
-
-        match operator::from_str(word) {
-            Some(op_type) => {
-                tokens.push(Operator(op_type));
-                i += word.len();
+            let temp = self.expr.as_slice().slice_from(self.index);
+            if temp.chars().next().unwrap().is_whitespace() {
+                self.index += 1;
                 continue;
             }
-            _       => {}
-        };
+
+            let token = match temp.chars().next().unwrap() {
+                '(' => Some(LParen),
+                ')' => Some(RParen),
+                '[' => Some(LBracket),
+                ']' => Some(RBracket),
+                _   => None
+            };
+
+            if token.is_some() {
+                self.index += 1;
+                return Some(Ok(token.unwrap()));
+            }
+
+            //function . It's pretty blind
+            if self.expr.as_slice().slice_from(self.index).starts_with("|") {
+                let fn_last = match self.expr.as_slice().slice_from(self.index + 1).find(
+                                                                        |c: char| c == '|') {
+                    Some(x) => x,
+                    None    => {
+                        return Some(Err("Function with no limit!".to_str()))
+                    }
+                };
+                let fn_string = self.expr.as_slice().slice(self.index + 1,
+                                                    self.index + fn_last + 1).to_str();
+                self.index += fn_last + 2;
+                return Some(Ok(Fun(fn_string)))
+            }
+
+            //Operators
         
-        //Booleans
+            //There is at least one word, so it is safe to unwrap
+            let word = self.expr.as_slice().slice_from(self.index).words().next().unwrap();
+
+            //Discard dangling parens
+            let word = word.slice(0, word.find(|c: char| c == ')' || c == '(' ||
+                                                c == '[' || c == ']').unwrap_or(word.len()));
+
+            match operator::from_str(word) {
+                Some(op_type) => {
+                    self.index += word.len();
+                    return Some(Ok(Operator(op_type)))
+                }
+                _       => {}
+            }
+        
+            //Booleans
        
-        let token = match word {
-            "true"  => Some(Literal(Boolean(true))),
-            "false" => Some(Literal(Boolean(false))),
-            _       => None
-        };
-        if token.is_some() {
-            tokens.push(token.unwrap());
-            i += word.len();
-            continue;
-        }
+            let token = match word {
+                "true"  => Some(Literal(Boolean(true))),
+                "false" => Some(Literal(Boolean(false))),
+                _       => None
+            };
+            if token.is_some() {
+                self.index += word.len();
+                return Some(Ok(token.unwrap()));
+            }
 
-        //Literals
+            //Variables
+            let c = word.chars().next().unwrap();
+            if c.is_alphabetic() {
+                self.index += word.len();
+                return Some(Ok(Variable(word.to_str())))
+            }
+ 
+            //Literals
 
-        //no number should ever start or end with /
-        if word.starts_with("/") || word.ends_with("/") {
-            return Err("Unrecognized token '".to_str().append(word.to_str().as_slice()).append("'"))
-        }
+            //no number should ever start or end with /
+            if word.starts_with("/") || word.ends_with("/") {
+                return Some(Err("Unrecognized token: ".to_str().append(word.to_str().as_slice())))
+            }
 
-        let mut negative_sign_counter = 0;
-        let mut radix_point_counter = 0;
-        let mut fraction_counter = 0;
+            let mut negative_sign_counter = 0;
+            let mut radix_point_counter = 0;
+            let mut fraction_counter = 0;
 
-        for c in word.chars() {
-            match c {
-                '0'..'9'    => { }, //do nothing here
-                '-'         => { negative_sign_counter += 1 },
-                '.'         => { radix_point_counter += 1 },
-                '/'         => { fraction_counter += 1 },
-                _           => {
-                    return Err("Unrecognized token '".to_str().append(word.to_str().as_slice())
-                                   .append("'"))
+            for c in word.chars() {
+                match c {
+                    '0'..'9'    => { }, //do nothing here
+                    '-'         => { negative_sign_counter += 1 },
+                    '.'         => { radix_point_counter += 1 },
+                    '/'         => { fraction_counter += 1 },
+                    _           => {
+                        return Some(Err("Unrecognized token!".to_str()))
+                    }
                 }
             }
-        }
 
-        // Numbers could have a negative sign and, or (exclusively) a divisor or
-        // a radix point.
-        let token = match (fraction_counter, radix_point_counter, negative_sign_counter) {
-            (0, 0, 0) | (1, 0, 0) | (0, 1, 0) => Some(word),
+            // Numbers could have a negative sign and, or (exclusively) a divisor or
+            // a radix point.
+            let token = match (fraction_counter, radix_point_counter, negative_sign_counter) {
+                (0, 0, 0) | (1, 0, 0) | (0, 1, 0) => Some(word),
 
-            (0, 0, 1) | (0, 1, 1) | (1, 0, 1) => {
-                if word.starts_with("-") == true { Some(word) }
-                else {
-                    return Err("Unrecognized token: ".to_str().append(word.to_str().as_slice()))
-                }
-            },
+                (0, 0, 1) | (0, 1, 1) | (1, 0, 1) => {
+                    if word.starts_with("-") == true { Some(word) }
+                    else {
+                        return Some(Err("Unrecognized token!".to_str()))
+                    }
+                },
 
-            _   => None
-        };
-        if token.is_some() {
-            match str_to_rational(&[token.unwrap().to_owned()]) {
-                Ok(literal_val)    => {
-                    tokens.push(Literal(BigNum(literal_val[0])));
-                    i += word.len();
-                    continue;
-                }
-                Err(_)        => {
-                    return Err("Unrecognized token: ".to_str().append(word.to_str().as_slice()))
+                _   => None
+            };
+            if token.is_some() {
+                match str_to_rational(&[token.unwrap().to_owned()]) {
+                    Ok(literal_val)    => {
+                        self.index += word.len();
+                        return Some(Ok(Literal(BigNum(literal_val[0]))))
+                    }
+                    Err(_)        => {
+                        return Some(Err("Unrecognized token!".to_str()))
+                    }
                 }
             }
+       
+            //This point is reached if every other kind of token has not been matched
+            return Some(Err("Unrecognized token: ".to_str().append(word.to_str().as_slice())))
         }
-
-        let c = word.chars().next().unwrap();
-
-        if c.is_alphabetic() {
-            tokens.push(Name(word.to_strbuf()));
-            i += word.len();
-            continue;
-        }
-        
-        //This point is reached if every other kind of token has not been matched
-        return Err("Unrecognized token: ".to_str().append(word.to_str().as_slice()))
     }
-
-    Ok(tokens)
 }
-
