@@ -12,7 +12,7 @@ pub fn add(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     let literals = try!(unbox_it(args, env));
     let zero: BigRational = num::zero();
 
-    let matrix_add = |terms: &Vec<Vec<BigRational>>| -> Vec<BigRational> {
+    let matrix_add = |terms: Vec<Vec<BigRational>>| -> Vec<BigRational> {
         let mut sum_vec: Vec<BigRational> = Vec::new();
         let matrix_len = terms.as_slice()[0].len();
         let zero2: BigRational = num::zero();
@@ -35,22 +35,22 @@ pub fn add(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
         (_    , _    ,  true)   => Err("Attempted boolean addition!".to_str()),
         (true ,  true, false)   => Err("Attempted mixed addition!".to_str()),
         (true , false, false)   => {
-            let stripped_literals: Vec<BigRational> = literals.iter().map(|x|
+            let stripped_literals: Vec<BigRational> = literals.move_iter().map(|x|
                 match x {
-                    &BigNum(ref n)  => n.clone(),
+                    BigNum(n)   => n,
                     _   => fail!("Impossible!")
                 }
             ).collect();
             Ok(BigNum(stripped_literals.iter().fold(zero, |sum, x| sum.add(x))))
         },
         (false, true , false)   => {
-            let stripped_matrix: Vec<Vec<BigRational>> = literals.iter().map(|x|
+            let stripped_matrix: Vec<Vec<BigRational>> = literals.move_iter().map(|x|
                 match x {
-                    &Matrix(ref v)  => v.clone(),
+                    Matrix(v)  => v,
                     _   => fail!("Impossible!")
                 }
             ).collect();
-            Ok(Matrix(matrix_add(&stripped_matrix)))
+            Ok(Matrix(matrix_add(stripped_matrix)))
         }
     }
 }
@@ -64,7 +64,7 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
 
     let zero: BigRational = num::zero();
 
-    let matrix_sub = |terms: &Vec<Vec<BigRational>>| -> Vec<BigRational> {
+    let matrix_sub = |terms: Vec<Vec<BigRational>>| -> Vec<BigRational> {
         let mut diff_vec: Vec<BigRational> = Vec::new();
         let matrix_len = terms.as_slice()[0].len();
         let zero2: BigRational = num::zero();
@@ -96,9 +96,9 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
         (_    , _    ,  true)   => Err("Attempted boolean subtraction!".to_str()),
         (true ,  true, false)   => Err("Attempted mixed subtraction!".to_str()),
         (true , false, false)   => {
-            let stripped_literals: Vec<BigRational> = literals.iter().map(|x|
+            let stripped_literals: Vec<BigRational> = literals.move_iter().map(|x|
                 match x {
-                    &BigNum(ref n)  => n.clone(),
+                    BigNum(n)   => n,
                     _   => fail!("Impossible!")
                 }
             ).collect();
@@ -111,14 +111,14 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
             }
         },
         (false, true , false)   => {
-            let stripped_matrix: Vec<Vec<BigRational>> = literals.iter().map(|x|
+            let stripped_matrix: Vec<Vec<BigRational>> = literals.move_iter().map(|x|
                 match x {
-                    &Matrix(ref v)  => v.clone(),
+                    Matrix(v)   => v,
                     _   => fail!("Impossible!")
                 }
             ).collect();
 
-            Ok(Matrix(matrix_sub(&stripped_matrix)))
+            Ok(Matrix(matrix_sub(stripped_matrix)))
         }
     }
 }
