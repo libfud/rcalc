@@ -23,7 +23,7 @@ pub fn add(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
                 acc
             });
 
-            sum_vec.push(column.iter().fold(zero2.clone(), |acc, x| acc.add(x)));
+            sum_vec.push(column.iter().fold(zero2.clone(), |sum, x| sum.add(x)));
         }
 
         sum_vec
@@ -41,7 +41,7 @@ pub fn add(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
                     _   => fail!("Impossible!")
                 }
             ).collect();
-            Ok(BigNum(stripped_literals.iter().fold(zero, |acc, x| acc.add(x))))
+            Ok(BigNum(stripped_literals.iter().fold(zero, |sum, x| sum.add(x))))
         },
         (false, true , false)   => {
             let stripped_matrix: Vec<Vec<BigRational>> = literals.iter().map(|x|
@@ -77,12 +77,12 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
             
             match terms.len() {
                 1   => {
-                    diff_vec.push(column.iter().fold(zero2.clone(), |acc, x| acc.sub(x)));
+                    diff_vec.push(column.iter().fold(zero2.clone(), |diff, x| diff.sub(x)));
                 },
                 _   => {
                     let head = column.as_slice()[0].clone();
                     let tail = column.slice_from(1);
-                    diff_vec.push(tail.iter().fold(head, |acc, x| acc.sub(x)));
+                    diff_vec.push(tail.iter().fold(head, |diff, x| diff.sub(x)));
                 }
             }
         }
@@ -103,11 +103,11 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
                 }
             ).collect();
             if args.len() == 1 {
-                Ok(BigNum(stripped_literals.iter().fold(zero, |acc, x| acc.sub(x))))
+                Ok(BigNum(stripped_literals.iter().fold(zero, |diff, x| diff.sub(x))))
             } else {
                 let first = stripped_literals.as_slice()[0].clone();
                 let tail = stripped_literals.slice_from(1);
-                Ok(BigNum(tail.iter().fold(first, |acc, x| acc.sub(x))))
+                Ok(BigNum(tail.iter().fold(first, |diff, x| diff.sub(x))))
             }
         },
         (false, true , false)   => {
