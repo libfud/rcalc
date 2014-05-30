@@ -23,6 +23,8 @@ extern {
     fn add_history(l: *c_char);
 }
 
+///Takes a reference to a string for use as a prompt, and returns an option.
+///On failure it returns None, which may be the case for ^D or ^C.
 pub fn rust_readline(prompt: &str) -> Option<String> {
     if prompt.len() == 0 { return None }
     let c_prompt = prompt.to_c_str();
@@ -39,6 +41,8 @@ pub fn rust_readline(prompt: &str) -> Option<String> {
     })
 }
 
+///Adds a string to a history buffer for use by readline. Does not
+///take zero length strings.
 pub fn rust_add_history(line: &str) {
     if line.len() == 0 {
         return
@@ -54,6 +58,9 @@ pub fn rust_add_history(line: &str) {
 
 fn main() {
 
+    //env will hold all user defined variables and functions in hashmaps,
+    //to be looked up when called. They're in the main function for
+    //persistence.
     let mut env = Environment {
         vars: HashMap::new(),
         funs: HashMap::new()
@@ -84,15 +91,11 @@ fn main() {
                 if help_exit_or_eval.len() >= 2 {
                     match help_exit_or_eval.as_slice()[1] {
                         "exit" | "exit)"    => { break },
-
                         "help" | "help)"    => {
                             help(help_exit_or_eval.slice_from(2));
                             continue;
-                        }
-
-                        _   => {
-                            result = eval(expr.as_slice().trim(), &mut env);
-                        }
+                        },
+                        _   => result = eval(expr.as_slice().trim(), &mut env),
                     }
                 }
                 else {
