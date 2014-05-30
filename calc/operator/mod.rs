@@ -4,7 +4,7 @@ extern crate num;
 
 use self::num::rational::BigRational;
 use std::num;
-use super::{Evaluate, CalcResult, Environment, lookup};
+use super::{Evaluate, CalcResult, Environment, lookup, funfind};
 use super::common::{rational_to_f64_trig, str_to_rational};
 use super::literal::{LiteralType, Boolean, Matrix, BigNum, Symbol, Func};
 
@@ -245,7 +245,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
                 return Err("Illegal fn!".to_str())
             }
 
-            Ok(Func(fn_string.to_str()))
+            Ok(Func(symbol.to_str()))
         },
 
         Print   => {
@@ -269,7 +269,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
                 }
             }
 
-            Ok(Symbol("foo".to_str()))
+            Ok(Boolean(true)) //this is a poor workaround
         },
 
         Limit   => {

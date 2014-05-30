@@ -5,20 +5,21 @@ extern crate collections;
 
 pub use self::literal::LiteralType;
 pub use self::tokenize::TokenStream;
-use self::translate::translate;
+pub use self::translate::translate;
 pub use self::number::{Number, BoolArg, MatrixArg, SymbolArg, FunArg};
 pub use self::common::help;
 pub use self::collections::HashMap;
 
 pub mod literal;
-mod tokenize;
-mod translate;
-mod expression;
-mod number;
-mod constant;
-mod operator;
-mod function;
+pub mod tokenize;
+pub mod translate;
+pub mod expression;
+pub mod number;
+pub mod constant;
+pub mod operator;
+pub mod function;
 pub mod common;
+pub mod pretty;
 
 /// A shortcut for the result type that is used everywhere
 pub type CalcResult<T = LiteralType> = Result<T, String>;

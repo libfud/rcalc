@@ -1,6 +1,6 @@
 #![crate_id = "rcalc"]
 #![crate_type = "bin"]
-#![feature(default_type_params)]
+#![feature(default_type_params, globs)]
 
 //! Polish notation calculator.
 
@@ -11,9 +11,8 @@ use libc::c_char;
 use std::c_str::CString;
 use calc::{eval, Environment};
 use calc::common::help;
-use calc::literal::{BigNum, Boolean, Matrix, Symbol, Func};
+use calc::pretty::pretty_print;
 use collections::HashMap;
-use std::num;
 
 pub mod calc;
 
@@ -77,9 +76,8 @@ fn main() {
         if help_exit_or_eval.len() == 0 {
             continue
         }
-        let result;
 
-        match help_exit_or_eval.as_slice()[0] {
+        let result = match help_exit_or_eval.as_slice()[0] {
             "exit" | "(exit" | "(exit)" => { break },
 
             "help" | "(help" | "(help)" => {
@@ -95,49 +93,17 @@ fn main() {
                             help(help_exit_or_eval.slice_from(2));
                             continue;
                         },
-                        _   => result = eval(expr.as_slice().trim(), &mut env),
+                        _   => eval(expr.as_slice().trim(), &mut env),
                     }
                 }
                 else {
-                    result = eval(expr.as_slice().trim(), &mut env)
+                    eval(expr.as_slice().trim(), &mut env)
                 }
             },
 
-            _   => {
-                result = eval(expr.as_slice().trim(), &mut env)
-            }
-        }
+            _   => eval(expr.as_slice().trim(), &mut env)
+        };
 
-        match result {
-            Err(msg)    => println!("Error: {}", msg),
-            Ok(result)  => match result {
-                BigNum(x)  => {
-                    if *x.denom() == num::one() {
-                        println!("{}",x.numer())
-                    } else {
-                        println!("{}", x)
-                    }
-                },
-                Boolean(x)  => println!("{}",x),
-                Matrix(x)   => println!("{}",x),
-                Symbol(x)   => match env.vars.find(&x) {
-                    Some(ref y)     => match *y {
-                        &BigNum(ref z)  => {
-                            if *z.denom() == num::one() {
-                                println!("{}", z.numer())
-                            } else {
-                                println!("{}", z)
-                            }
-                        },
-                        &Matrix(ref z)  => println!("{}", z),
-                        &Boolean(ref z) => println!("{}", z),
-                        &Symbol(ref z)  => println!("{}", z),
-                        &Func(ref s)    => println!("{}", s),
-                    },
-                    None    => println!("Doesn't exist!")
-                },
-                Func(x) => println!("{}", x)
-            }
-        }
+        pretty_print(&result, &env);
     }
 }
