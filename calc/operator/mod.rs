@@ -757,6 +757,12 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
             
             let condition = match try!(args.get(0).eval(env)) {
                 Boolean(x)  => x,
+                Symbol(x)   => {
+                    match try!(lookup(&x, env)) {
+                        Boolean(y)  => y,
+                        _   => return Err("Only booleans can be a condition!".to_str())
+                    }
+                },
                 _           => { return Err("Only booleans can be a condition!".to_str()) }
             };
                 

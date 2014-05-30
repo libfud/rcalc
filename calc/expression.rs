@@ -1,3 +1,4 @@
+//! Expressions
 
 use super::{CalcResult, Evaluate};
 use super::{function, operator, Environment};

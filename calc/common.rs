@@ -8,7 +8,6 @@ use std::num;
 pub static DESPAIR: &'static str = "Laundry day is a very dangerous day.";
 static PI: &'static str = "3126535/995207";
 
-
 pub fn help(list: &[&str]) {
     let help_help =
 "The help function has the form (help term1, term2, term3...) and prints out
@@ -229,6 +228,21 @@ statement, a consequent, and an alternative.
 (> 9 5/4) -> true
 (> e pi) -> false";
 
+    let define_help = 
+"Define a variable. You can define it as another variable, or the result of a
+function.
+
+(define x 42)
+(define y (/ x 7))
+(define z (+ (* x y) x))";
+
+let defun_help = 
+"Define a function. Place the function between pipes.
+
+(defun |f (x) (+ x 2)|)
+(defun |g (x y) (* x y)|)
+(defun |h (x y z) (/ (* x (+ x 1) (* 2 (+ x 1))) 6)";
+
     if list.len() == 0 {
         println!("{}", help_help)
         return
@@ -268,6 +282,8 @@ statement, a consequent, and an alternative.
             ">"                 => gt_help,
             "if"                => condit_help,
             "logic"             => logic_help,
+            "define"            => define_help,
+            "defun"             => defun_help,
             _                   => "More help is not available at this time."
             }
         );
@@ -356,6 +372,8 @@ pub fn get_number_type(num_str: &str) -> &str {
     }
 }
 
+/// Reduces a rational to a value between -2 and 2, converts it to an f64
+/// and then returns that value for use in trigonometric functions.
 pub fn rational_to_f64_trig(bigrational_orig: &BigRational) -> f64 {
     let mut bigrational = bigrational_orig.clone();
 

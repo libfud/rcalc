@@ -6,7 +6,7 @@ extern crate num;
 
 use super::literal::{LiteralType, Boolean, BigNum};
 use super::common::str_to_rational;
-use super::{CalcResult, operator};
+use super::{CalcResult, operator, constant};
 use super::operator::{OperatorType};
 
 ///Enumeration of valid tokens. Valid tokens are Operators, Literals, LParens,
@@ -79,12 +79,20 @@ impl Iterator<CalcResult<Token>> for TokenStream {
             //Discard dangling parens
             let word = word.slice(0, word.find(|c: char| c == ')' || c == '(' ||
                                                 c == '[' || c == ']').unwrap_or(word.len()));
-
             match operator::from_str(word) {
                 Some(op_type) => {
                     self.index += word.len();
                     return Some(Ok(Operator(op_type)))
                 }
+                _       => {}
+            }
+
+            //Constants
+            match constant::from_const_str(word) {
+                Some(c)   => {
+                    self.index += word.len();
+                    return Some(Ok(Literal(c)))
+                },
                 _       => {}
             }
         

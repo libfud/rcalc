@@ -9,6 +9,7 @@ use super::tokenize::{TokenStream, Literal, LParen, RParen, LBracket, RBracket, 
 use super::operator::unbox_it;
 use super::operator;
 
+///Returns a function's name if it's already defined, or an error if it is not found.
 pub fn from_str(name: &str, env: &mut Environment) -> CalcResult<String> {
     match funfind(&name.to_str(), env) {
         Ok(_)   => Ok(name.to_str().clone()),
@@ -16,6 +17,7 @@ pub fn from_str(name: &str, env: &mut Environment) -> CalcResult<String> {
     }
 }
 
+///Returns the value of the function for the arguments given
 pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     let (args_to_fulfill, funcstr) = try!(funfind(fn_name, env));
 
@@ -32,10 +34,12 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) 
         }
     }
 
+    //Unbox the substitutions.
     let subs_literals = try!(unbox_it(args, env));
 
     let mut subs_strings: Vec<String> = Vec::new();
 
+    //Populate the vector of substition strings
     for literal in subs_literals.iter() {
         match literal {
             &BigNum(ref x)   => subs_strings.push(x.to_str()),
@@ -48,6 +52,8 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) 
     //Use hashmap to rewrite string
     let mut sub_map: HashMap<String, String> = HashMap::new();
 
+    //Populate the hashmap with the arguments as keys as the
+    //substition strings as values
     for (arg, sub) in args_strs.iter().zip(subs_strings.iter()) {
         sub_map.insert(arg.clone(), sub.clone());
     }
