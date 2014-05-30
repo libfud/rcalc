@@ -32,7 +32,7 @@ pub fn rust_readline(prompt: &str) -> Option<String> {
         unsafe {
             let ret_str = CString::new(readline(c_buf), true);
             if ret_str.is_not_null() {
-                ret_str.as_str().map(|ret_str| ret_str.to_strbuf())
+                ret_str.as_str().map(|ret_str| ret_str.to_str())
             } else {
                 None
             }

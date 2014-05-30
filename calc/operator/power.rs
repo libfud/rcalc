@@ -60,7 +60,7 @@ pub fn pow(args: &[BigRational]) -> Result<BigRational, String> {
     } else {
         exponent = match pow(args.slice_from(1)) {
             Ok(good_val)    => good_val,
-            Err(msg)        => { return Err(msg.to_strbuf()) }
+            Err(msg)        => { return Err(msg.to_str()) }
         };
     }
 
@@ -80,7 +80,7 @@ pub fn pow(args: &[BigRational]) -> Result<BigRational, String> {
     if index > zero {
         rootx = match root_wrapper(&[base.clone(), index.recip()]) {
             Ok(value)   => value,
-            Err(msg)    => { return Err(msg.to_strbuf()) }
+            Err(msg)    => { return Err(msg.to_str()) }
         };
     }
 
@@ -103,7 +103,7 @@ pub fn pow(args: &[BigRational]) -> Result<BigRational, String> {
 /// equal to the radicand. It requires two arguments: the index and a
 /// radicand. 
 pub fn root_wrapper(terms: &[BigRational]) -> Result<BigRational, String> {
-    if terms.len() != 2 { return Err("A radicand and index are required.".to_strbuf()) }
+    if terms.len() != 2 { return Err("A radicand and index are required.".to_str()) }
 
     let zero = from_str::<BigRational>("0/1").unwrap(); 
     let one = from_str::<BigRational>("1/1").unwrap(); 
@@ -116,7 +116,7 @@ pub fn root_wrapper(terms: &[BigRational]) -> Result<BigRational, String> {
     if radicand == zero { return Ok(zero) }
 
     if index % two == zero && radicand < zero {
-        return Err("I can't handle this complexity!".to_strbuf())
+        return Err("I can't handle this complexity!".to_str())
     }
 
     let mut guess = one.clone();
@@ -142,7 +142,7 @@ pub fn root_wrapper(terms: &[BigRational]) -> Result<BigRational, String> {
         true    => { },
         false   => {
             println!("Sorry. I'm just too dumb to handle that for now.");
-            return Err("me too dum".to_strbuf())
+            return Err("me too dum".to_str())
         }
     }
 

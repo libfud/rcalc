@@ -153,7 +153,7 @@ impl Iterator<CalcResult<Token>> for TokenStream {
                 _   => None
             };
             if token.is_some() {
-                match str_to_rational(&[token.unwrap().to_owned()]) {
+                match str_to_rational(&[token.unwrap().to_string()]) {
                     Ok(literal_val)    => {
                         self.index += word.len();
                         return Some(Ok(Literal(BigNum(literal_val[0]))))
