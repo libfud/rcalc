@@ -50,7 +50,7 @@ pub fn add(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
                     _   => fail!("Impossible!")
                 }
             ).collect();
-            Ok(Matrix(matrix_add(&stripped_matrix.clone())))
+            Ok(Matrix(matrix_add(&stripped_matrix)))
         }
     }
 }
