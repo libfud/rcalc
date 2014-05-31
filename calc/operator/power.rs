@@ -42,7 +42,7 @@ pub fn pow_wrapper(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResu
 /// is passed, the number is returned, unless it is zero, which returns zero.
 pub fn pow(args: &[BigRational]) -> Result<BigRational, String> {
     let zero: BigRational = num::zero();
-    let one = from_str::<BigRational>("1/1").unwrap(); //ONE
+    let one: BigRational = num::one();
 
     if args.len() == 0 { return Ok(one) }
 
@@ -53,19 +53,16 @@ pub fn pow(args: &[BigRational]) -> Result<BigRational, String> {
         else { return Ok(zero) }
     }
 
-    let mut exponent;
+    let mut exponent = match args.len() {
+        2   => args[1].clone(),
+        _   => try!(pow(args.slice_from(1)))
+    };
 
-    if args.len() == 2 {
-        exponent = args[1].clone();
-    } else {
-        exponent = match pow(args.slice_from(1)) {
-            Ok(good_val)    => good_val,
-            Err(msg)        => { return Err(msg.to_str()) }
-        };
+    if base == zero && exponent == zero { 
+        return Ok(one)
+    } else if base == zero {
+        return Ok(zero)
     }
-
-    if base == zero && exponent == zero { return Ok(one) }
-    else if base == zero { return Ok(zero) }
 
     //BigRationals need to be cloned due to shallow copying
     let mut rootx = one.clone();
@@ -84,19 +81,30 @@ pub fn pow(args: &[BigRational]) -> Result<BigRational, String> {
         };
     }
 
-    let mut product = one.clone();
-    let mut i = zero.clone();
-    loop {
-        if i >= exponent.floor() { break }
-        product = product.mul(&base);
-        i = i.add(&one);
-    }
+    let power = exponent.floor();
+    let mut product = exp_by_sq(base, power);
 
-    product = product.mul(&rootx);
+    product = product * rootx;
 
     if recip_flag == true { product = product.recip() }
 
     Ok(product)
+}
+
+pub fn exp_by_sq(base: BigRational, power: BigRational) -> BigRational {
+    let zero: BigRational = num::zero();
+    let one: BigRational = num::one();
+    let two = one + one;
+
+    if power == zero {
+        num::one()
+    } else if power == one {
+        base
+    } else if power % two == zero {
+        exp_by_sq(base * base, power / two)
+    } else {
+        base * exp_by_sq(base * base, (power - one) / two)
+    }
 }
 
 /// Root finds a number which when raised to a power equal to the index is
