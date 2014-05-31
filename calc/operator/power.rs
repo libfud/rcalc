@@ -81,7 +81,7 @@ pub fn pow(args: &[BigRational]) -> Result<BigRational, String> {
         };
     }
 
-    let power = exponent.floor();
+    let power = exponent.floor().to_integer().to_u64().expect("exponent too large");
     let mut product = exp_by_sq(base, power);
 
     product = product * rootx;
@@ -91,19 +91,15 @@ pub fn pow(args: &[BigRational]) -> Result<BigRational, String> {
     Ok(product)
 }
 
-pub fn exp_by_sq(base: BigRational, power: BigRational) -> BigRational {
-    let zero: BigRational = num::zero();
-    let one: BigRational = num::one();
-    let two = one + one;
-
-    if power == zero {
+pub fn exp_by_sq(base: BigRational, power: u64) -> BigRational {
+    if power == 0 {
         num::one()
-    } else if power == one {
+    } else if power == 1 {
         base
-    } else if power % two == zero {
-        exp_by_sq(base * base, power / two)
+    } else if power % 2 == 0 {
+        exp_by_sq(base * base, power / 2)
     } else {
-        base * exp_by_sq(base * base, (power - one) / two)
+        base * exp_by_sq(base * base, (power - 1) / 2)
     }
 }
 
