@@ -6,30 +6,15 @@ use self::num::rational::BigRational;
 use std::num;
 use self::num::bigint::BigInt;
 use super::super::{Evaluate, CalcResult, lookup, Environment};
-use super::super::literal::{BigNum};
-use super::super::literal::Symbol;
+use super::super::literal::BigNum;
+use super::unbox_it;
 
 pub fn pow_wrapper(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
-    let mut args_vec: Vec<BigRational> = Vec::new();
-    let mut i = 0;
-    while i < args.len() {
-        args_vec.push( match try!(args.get(i).eval(env)) {
-            BigNum(ref x)   => x.clone(),
-            Symbol(ref x)   => {
-                let val = try!(lookup(x, env));
-                match val {
-                    BigNum(ref y)   => y.clone(),
-                    _               => {
-                        return Err("damnit".to_str())
-                    }
-                }
-            },
-            _               => {
-                return Err("damnit".to_str())
-            }
-        });
-        i += 1;
-    }
+    let literals = try!(unbox_it(args, env));
+    let args_vec: Vec<BigRational> = literals.move_iter().map(|x| match x {
+        BigNum(y)   => y,
+        _   => return Err("Can't do anything but bigrationals in pow for now.".to_str())
+    }).collect();
 
     Ok(BigNum(try!(pow(args_vec.as_slice()))))
 }
@@ -41,16 +26,16 @@ pub fn pow_wrapper(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResu
 /// behavior is periodic. Towers are evaluated recursively. If only one number
 /// is passed, the number is returned, unless it is zero, which returns zero.
 pub fn pow(args: &[BigRational]) -> Result<BigRational, String> {
+    if args.len() == 0 { return Ok(num::one()) }
+
     let zero: BigRational = num::zero();
     let one: BigRational = num::one();
-
-    if args.len() == 0 { return Ok(one) }
-
     let base = args[0].clone();
 
-    if args.len() == 1 { 
-        if base != zero { return Ok(base) }
-        else { return Ok(zero) }
+    if args.len() == 1 && base != zero {
+        return Ok(base)
+    } else if args.len() == 1 && base == zero {
+        return Ok(zero)
     }
 
     let mut exponent = match args.len() {
@@ -66,29 +51,30 @@ pub fn pow(args: &[BigRational]) -> Result<BigRational, String> {
 
     //BigRationals need to be cloned due to shallow copying
     let mut rootx = one.clone();
-  
     let mut recip_flag = false;
+
     if exponent < zero { 
         exponent = zero.sub(&exponent);
         recip_flag = true;
     }
 
+    let power = match exponent.floor().to_integer().to_u64() {
+        Some(x) => x,
+        None    => return Err("Exponent too large!".to_str())
+    };
     let index = exponent - exponent.floor();
+
     if index > zero {
-        rootx = match root_wrapper(&[base.clone(), index.recip()]) {
-            Ok(value)   => value,
-            Err(msg)    => { return Err(msg.to_str()) }
-        };
+        rootx = try!(root_wrapper(&[base.clone(), index.recip()]));
     }
 
-    let power = exponent.floor().to_integer().to_u64().expect("exponent too large");
-    let mut product = exp_by_sq(base, power);
+    let product = exp_by_sq(base, power);
 
-    product = product * rootx;
-
-    if recip_flag == true { product = product.recip() }
-
-    Ok(product)
+    if recip_flag == true {
+        Ok((product * rootx).recip())
+    } else { 
+        Ok(product * rootx)
+    }
 }
 
 pub fn exp_by_sq(base: BigRational, power: u64) -> BigRational {

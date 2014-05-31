@@ -281,13 +281,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
 
         Div => arithmetic::div(args, env),
 
-        Pow => {
-            let literal_vec = try!(unbox_it(args, env));
-            let (_, bool_flag, matrix_flag) = big_bool_matrix(&literal_vec);
-            if bool_flag == true || matrix_flag == true {
-                return Err("Not yet...".to_str())
-            }
-            power::pow_wrapper(args, env) },
+        Pow => power::pow_wrapper(args, env),
 
         If  => {
             if args.len() != 3 {
