@@ -36,11 +36,6 @@ pub fn matrix_op(terms: Vec<Vec<BigRational>>, op: |BigRational, &BigRational| -
     acc_vec
 }
 
-pub fn add_b(lh: BigRational, rh: &BigRational) -> BigRational { lh.add(rh) }
-pub fn sub_b(lh: BigRational, rh: &BigRational) -> BigRational { lh.sub(rh) }
-pub fn mul_b(lh: BigRational, rh: &BigRational) -> BigRational { lh.mul(rh) }
-pub fn div_b(lh: BigRational, rh: &BigRational) -> BigRational { lh.div(rh) }
-
 macro_rules! strip (
     ($x: expr, $case: ident) => {
         $x.map(|y| match y { 
@@ -66,7 +61,7 @@ pub fn add(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
         },
         (false, true , false)   => {
             let stripped_m: Vec<Vec<BigRational>> = strip!(literals.move_iter(), Matrix).collect();
-            Ok(Matrix(matrix_op(stripped_m, add_b, zero)))
+            Ok(Matrix(matrix_op(stripped_m, |a, b| a + *b, zero)))
         }
     }
 }
@@ -98,7 +93,7 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
         (false, true , false)   => {
             let stripped_m: Vec<Vec<BigRational>> = strip!(literals.move_iter(), Matrix).collect();
 
-            Ok(Matrix(matrix_op(stripped_m, sub_b, zero)))
+            Ok(Matrix(matrix_op(stripped_m, |a, b| a - *b, zero)))
         }
     }
 }
@@ -119,7 +114,7 @@ pub fn mul(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
         (false, true , false)   => {
             let stripped_m: Vec<Vec<BigRational>> = strip!(literals.move_iter(), Matrix).collect();
 
-            Ok(Matrix(matrix_op(stripped_m, mul_b, one)))
+            Ok(Matrix(matrix_op(stripped_m, |a, b| a * *b, one)))
         }
     }
 }
@@ -151,7 +146,7 @@ pub fn div(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
         (false, true , false)   => {
             let stripped_m: Vec<Vec<BigRational>> = strip!(literals.move_iter(), Matrix).collect();
 
-            Ok(Matrix(matrix_op(stripped_m, div_b, one)))
+            Ok(Matrix(matrix_op(stripped_m, |a, b| a / *b, one)))
         }
     }
 }
