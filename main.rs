@@ -1,6 +1,6 @@
 #![crate_id = "rcalc"]
 #![crate_type = "bin"]
-#![feature(default_type_params, globs)]
+#![feature(default_type_params, globs, macro_rules)]
 
 //! Polish notation calculator.
 
