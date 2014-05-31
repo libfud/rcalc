@@ -8,26 +8,40 @@ use super::super::literal::{Matrix, BigNum};
 use super::super::{CalcResult, Environment, Evaluate};
 use self::num::rational::BigRational;
 
+///Performs either multiplication or addition
+pub fn matrix_op(terms: Vec<Vec<BigRational>>, op: |BigRational, &BigRational| -> BigRational,
+    ident: BigRational) -> Vec<BigRational> {
+
+    let mut acc_vec: Vec<BigRational> = Vec::new();
+    let matrix_len = terms.as_slice()[0].len();
+
+    for i in range(0u, matrix_len) {
+        let column: Vec<BigRational> = terms.iter().fold(vec![], |mut acc, elem| {
+            acc.push(elem.as_slice()[i].clone());
+            acc
+        });
+
+        match terms.len() {
+            1   => {
+                acc_vec.push(column.iter().fold(ident.clone(), |acc, x| op(acc, x)));
+            },
+            _   => {
+                let head = column.as_slice()[0].clone();
+                let tail = column.slice_from(1);
+                acc_vec.push(tail.iter().fold(head, |acc, x| op(acc, x)));
+    }
+
+    acc_vec
+}
+
+pub fn add_b(lh: BigRational, rh: &BigRational) -> BigRational { lh.add(rh) }
+pub fn sub_b(lh: BigRational, rh: &BigRational) -> BigRational { lh.sub(rh) }
+pub fn mul_b(lh: BigRational, rh: &BigRational) -> BigRational { lh.mul(rh) }
+pub fn div_b(lh: BigRational, rh: &BigRational) -> BigRational { lh.div(rh) }
+
 pub fn add(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     let literals = try!(unbox_it(args, env));
     let zero: BigRational = num::zero();
-
-    let matrix_add = |terms: Vec<Vec<BigRational>>| -> Vec<BigRational> {
-        let mut sum_vec: Vec<BigRational> = Vec::new();
-        let matrix_len = terms.as_slice()[0].len();
-        let zero2: BigRational = num::zero();
-
-        for i in range(0u, matrix_len) {
-            let column: Vec<BigRational> = terms.iter().fold(vec![], |mut acc, elem| {
-                acc.push(elem.as_slice()[i].clone());
-                acc
-            });
-
-            sum_vec.push(column.iter().fold(zero2.clone(), |sum, x| sum.add(x)));
-        }
-
-        sum_vec
-    };
 
     let (big_flag, bool_flag, matrix_flag) = big_bool_matrix(&literals);
     match (big_flag, matrix_flag, bool_flag) {
@@ -50,7 +64,7 @@ pub fn add(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
                     _   => fail!("Impossible!")
                 }
             ).collect();
-            Ok(Matrix(matrix_add(stripped_matrix)))
+            Ok(Matrix(matrix_op(stripped_matrix, add_b, zero)))
         }
     }
 }
@@ -63,7 +77,7 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     let literals = try!(unbox_it(args, env));
 
     let zero: BigRational = num::zero();
-
+/*
     let matrix_sub = |terms: Vec<Vec<BigRational>>| -> Vec<BigRational> {
         let mut diff_vec: Vec<BigRational> = Vec::new();
         let matrix_len = terms.as_slice()[0].len();
@@ -89,7 +103,7 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
 
         diff_vec
     };
-
+*/
     let (big_flag, bool_flag, matrix_flag) = big_bool_matrix(&literals);
     match (big_flag, matrix_flag, bool_flag) {
         (false, false, false)   => fail!("Impossible condition!"), //see first test in this fn
@@ -118,7 +132,7 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
                 }
             ).collect();
 
-            Ok(Matrix(matrix_sub(stripped_matrix)))
+            Ok(Matrix(matrix_op(stripped_matrix)))
         }
     }
 }
@@ -126,23 +140,6 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
 pub fn mul(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     let literals = try!(unbox_it(args, env));
     let one: BigRational = num::one();
-
-    let matrix_mul = |terms: Vec<Vec<BigRational>>| -> Vec<BigRational> {
-        let mut prod_vec: Vec<BigRational> = Vec::new();
-        let matrix_len = terms.as_slice()[0].len();
-        let one2: BigRational = num::one(); //closures capture surrounding env
-
-        for i in range(0u, matrix_len) {
-            let column: Vec<BigRational> = terms.iter().fold(vec![], |mut acc, elem| {
-                acc.push(elem.as_slice()[i].clone());
-                acc
-            });
-
-            prod_vec.push(column.iter().fold(one2.clone(), |sum, x| sum.mul(x)));
-        }
-
-        prod_vec
-    };
 
     let (big_flag, bool_flag, matrix_flag) = big_bool_matrix(&literals);
     match (big_flag, matrix_flag, bool_flag) {
@@ -165,7 +162,7 @@ pub fn mul(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
                     _   => fail!("Impossible!")
                 }
             ).collect();
-            Ok(Matrix(matrix_mul(stripped_matrix)))
+            Ok(Matrix(matrix_op(stripped_matrix, mul_b, one)))
         }
     }
 }
