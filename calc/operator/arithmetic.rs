@@ -29,6 +29,8 @@ pub fn matrix_op(terms: Vec<Vec<BigRational>>, op: |BigRational, &BigRational| -
                 let head = column.as_slice()[0].clone();
                 let tail = column.slice_from(1);
                 acc_vec.push(tail.iter().fold(head, |acc, x| op(acc, x)));
+            }
+        }
     }
 
     acc_vec
@@ -77,33 +79,7 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     let literals = try!(unbox_it(args, env));
 
     let zero: BigRational = num::zero();
-/*
-    let matrix_sub = |terms: Vec<Vec<BigRational>>| -> Vec<BigRational> {
-        let mut diff_vec: Vec<BigRational> = Vec::new();
-        let matrix_len = terms.as_slice()[0].len();
-        let zero2: BigRational = num::zero();
 
-        for i in range(0u, matrix_len) {
-            let column: Vec<BigRational> = terms.iter().fold(vec![], |mut acc, elem| {
-                acc.push(elem.as_slice()[i].clone());
-                acc
-            });
-            
-            match terms.len() {
-                1   => {
-                    diff_vec.push(column.iter().fold(zero2.clone(), |diff, x| diff.sub(x)));
-                },
-                _   => {
-                    let head = column.as_slice()[0].clone();
-                    let tail = column.slice_from(1);
-                    diff_vec.push(tail.iter().fold(head, |diff, x| diff.sub(x)));
-                }
-            }
-        }
-
-        diff_vec
-    };
-*/
     let (big_flag, bool_flag, matrix_flag) = big_bool_matrix(&literals);
     match (big_flag, matrix_flag, bool_flag) {
         (false, false, false)   => fail!("Impossible condition!"), //see first test in this fn
@@ -132,7 +108,7 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
                 }
             ).collect();
 
-            Ok(Matrix(matrix_op(stripped_matrix)))
+            Ok(Matrix(matrix_op(stripped_matrix, sub_b, zero)))
         }
     }
 }
@@ -175,32 +151,6 @@ pub fn div(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     let literals = try!(unbox_it(args, env));
     let one: BigRational = num::one();
 
-    let matrix_div = |terms: Vec<Vec<BigRational>>| -> Vec<BigRational> {
-        let mut quotient_vec: Vec<BigRational> = Vec::new();
-        let matrix_len = terms.as_slice()[0].len();
-        let one2: BigRational = num::zero();
-
-        for i in range(0u, matrix_len) {
-            let column: Vec<BigRational> = terms.iter().fold(vec![], |mut acc, elem| {
-                acc.push(elem.as_slice()[i].clone());
-                acc
-            });
-            
-            match terms.len() {
-                1   => {
-                    quotient_vec.push(column.iter().fold(one2.clone(), |quot, x| quot.div(x)));
-                },
-                _   => {
-                    let head = column.as_slice()[0].clone();
-                    let tail = column.slice_from(1);
-                    quotient_vec.push(tail.iter().fold(head, |quot, x| quot.div(x)));
-                }
-            }
-        }
-
-        quotient_vec
-    };
-
     let (big_flag, bool_flag, matrix_flag) = big_bool_matrix(&literals);
     match (big_flag, matrix_flag, bool_flag) {
         (false, false, false)   => fail!("Impossible condition!"), //see first test in this fn
@@ -229,7 +179,7 @@ pub fn div(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
                 }
             ).collect();
 
-            Ok(Matrix(matrix_div(stripped_matrix)))
+            Ok(Matrix(matrix_op(stripped_matrix, div_b, one)))
         }
     }
 }
