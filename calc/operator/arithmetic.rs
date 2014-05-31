@@ -4,7 +4,7 @@ extern crate num;
 
 use std::num;
 use super::{big_bool_matrix, unbox_it};
-use super::super::literal::{Matrix, BigNum};
+use super::super::literal::{LiteralType, Matrix, BigNum};
 use super::super::{CalcResult, Environment, Evaluate};
 use self::num::rational::BigRational;
 
@@ -41,6 +41,29 @@ pub fn sub_b(lh: BigRational, rh: &BigRational) -> BigRational { lh.sub(rh) }
 pub fn mul_b(lh: BigRational, rh: &BigRational) -> BigRational { lh.mul(rh) }
 pub fn div_b(lh: BigRational, rh: &BigRational) -> BigRational { lh.div(rh) }
 
+pub fn strip_literal(clothed: Vec<LiteralType>) -> Vec<BigRational> {
+    clothed.move_iter().map(|x| match x {
+        BigNum(n)   => n,
+        _   => fail!("Impossible!")
+    }).collect()
+}
+
+pub fn strip_matrix(clothed: Vec<LiteralType>) -> Vec<Vec<BigRational>> {
+    clothed.move_iter().map(|x| match x {
+        Matrix(v)   => v,
+        _   => fail!("Impossible!")
+    }).collect()
+}
+
+/*
+pub fn strip_x<T, U>(clothed: Vec<T>, case: U)   -> Vec<U> {
+    clothed.move_iter().map(|x| match x {
+        case(n)    => n,
+        _   => fail!("Impossible!")
+    }).collect()
+}
+*/
+
 pub fn add(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     let literals = try!(unbox_it(args, env));
     let zero: BigRational = num::zero();
@@ -51,21 +74,12 @@ pub fn add(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
         (_    , _    ,  true)   => Err("Attempted boolean addition!".to_str()),
         (true ,  true, false)   => Err("Attempted mixed addition!".to_str()),
         (true , false, false)   => {
-            let stripped_literals: Vec<BigRational> = literals.move_iter().map(|x|
-                match x {
-                    BigNum(n)   => n,
-                    _   => fail!("Impossible!")
-                }
-            ).collect();
+            let stripped_literals = strip_literal(literals);
+
             Ok(BigNum(stripped_literals.iter().fold(zero, |sum, x| sum.add(x))))
         },
         (false, true , false)   => {
-            let stripped_matrix: Vec<Vec<BigRational>> = literals.move_iter().map(|x|
-                match x {
-                    Matrix(v)  => v,
-                    _   => fail!("Impossible!")
-                }
-            ).collect();
+            let stripped_matrix = strip_matrix(literals);
             Ok(Matrix(matrix_op(stripped_matrix, add_b, zero)))
         }
     }
@@ -77,7 +91,6 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     }
 
     let literals = try!(unbox_it(args, env));
-
     let zero: BigRational = num::zero();
 
     let (big_flag, bool_flag, matrix_flag) = big_bool_matrix(&literals);
@@ -86,12 +99,8 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
         (_    , _    ,  true)   => Err("Attempted boolean subtraction!".to_str()),
         (true ,  true, false)   => Err("Attempted mixed subtraction!".to_str()),
         (true , false, false)   => {
-            let stripped_literals: Vec<BigRational> = literals.move_iter().map(|x|
-                match x {
-                    BigNum(n)   => n,
-                    _   => fail!("Impossible!")
-                }
-            ).collect();
+            let stripped_literals = strip_literal(literals);
+
             if args.len() == 1 {
                 Ok(BigNum(stripped_literals.iter().fold(zero, |diff, x| diff.sub(x))))
             } else {
@@ -101,12 +110,7 @@ pub fn sub(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
             }
         },
         (false, true , false)   => {
-            let stripped_matrix: Vec<Vec<BigRational>> = literals.move_iter().map(|x|
-                match x {
-                    Matrix(v)   => v,
-                    _   => fail!("Impossible!")
-                }
-            ).collect();
+            let stripped_matrix = strip_matrix(literals);
 
             Ok(Matrix(matrix_op(stripped_matrix, sub_b, zero)))
         }
@@ -123,21 +127,12 @@ pub fn mul(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
         (_    , _    ,  true)   => Err("Attempted boolean addition!".to_str()),
         (true ,  true, false)   => Err("Attempted mixed addition!".to_str()),
         (true , false, false)   => {
-            let stripped_literals: Vec<BigRational> = literals.move_iter().map(|x|
-                match x {
-                    BigNum(n)   => n,
-                    _   => fail!("Impossible!")
-                }
-            ).collect();
+            let stripped_literals = strip_literal(literals);
             Ok(BigNum(stripped_literals.iter().fold(one, |sum, x| sum.mul(x))))
         },
         (false, true , false)   => {
-            let stripped_matrix: Vec<Vec<BigRational>> = literals.move_iter().map(|x|
-                match x {
-                    Matrix(v)  => v,
-                    _   => fail!("Impossible!")
-                }
-            ).collect();
+            let stripped_matrix = strip_matrix(literals);
+
             Ok(Matrix(matrix_op(stripped_matrix, mul_b, one)))
         }
     }
@@ -157,12 +152,8 @@ pub fn div(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
         (_    , _    ,  true)   => Err("Attempted boolean subtraction!".to_str()),
         (true ,  true, false)   => Err("Attempted mixed subtraction!".to_str()),
         (true , false, false)   => {
-            let stripped_literals: Vec<BigRational> = literals.move_iter().map(|x|
-                match x {
-                    BigNum(n)   => n,
-                    _   => fail!("Impossible!")
-                }
-            ).collect();
+            let stripped_literals = strip_literal(literals);
+
             if args.len() == 1 {
                 Ok(BigNum(stripped_literals.iter().fold(one, |quot, x| quot.div(x))))
             } else {
@@ -172,12 +163,7 @@ pub fn div(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
             }
         },
         (false, true , false)   => {
-            let stripped_matrix: Vec<Vec<BigRational>> = literals.move_iter().map(|x|
-                match x {
-                    Matrix(v)   => v,
-                    _   => fail!("Impossible!")
-                }
-            ).collect();
+            let stripped_matrix = strip_matrix(literals);
 
             Ok(Matrix(matrix_op(stripped_matrix, div_b, one)))
         }
