@@ -8,7 +8,7 @@ use super::super::literal::{Matrix, BigNum};
 use super::super::{CalcResult, Environment, Evaluate};
 use self::num::rational::BigRational;
 
-///Performs either multiplication or addition
+///Performs addition, multiplication, subtraction and division on matrices
 pub fn matrix_op(terms: Vec<Vec<BigRational>>, op: |BigRational, &BigRational| -> BigRational,
     ident: BigRational) -> Vec<BigRational> {
 
