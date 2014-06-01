@@ -44,7 +44,15 @@ macro_rules! strip (
     }
 )
 
-//doo-wop, doo-wop...
+///Performs addition, subtraction, and multiplication on BigNums and Matrices.
+///Takes the following:
+///A reference to a vector of arguments, which are a vector of LiteralTypes.
+///LiteralTypes can be BigRationals, matrices, and a few other types not relevant to this.
+///A reference to the environment, which is a struct holding two hashmaps:
+///one for variables, and one for functions.
+///A minimum length, which is a uint. + and * take >= 0 arguments, - takes >= 1.
+///A function to apply, which is either addition, subtraction or multiplication.
+///An identity function, which returns either the additive or multiplicative identities.
 pub fn do_op(args: &Vec<Box<Evaluate>>, env: &mut Environment, min_len: uint,
             op: |BigRational, &BigRational| -> BigRational, ident_fn: || -> BigRational
             ) -> CalcResult {
@@ -53,23 +61,31 @@ pub fn do_op(args: &Vec<Box<Evaluate>>, env: &mut Environment, min_len: uint,
                     min_len.to_str().as_slice()).append( " arguments!"))
     }
 
+    //args is a vector of boxed expressions, which need to be evaluated. Unbox_it
+    //handles this for us, and returns a vector of literaltypes. Variables and
+    //functions return BigNums, Booleans and Matrices.
     let literals = try!(unbox_it(args, env));
     let ident: BigRational = ident_fn();
 
+    //Find out the contents of the vector.
     let (big_flag, bool_flag, matrix_flag) = big_bool_matrix(&literals);
     match (big_flag, matrix_flag, bool_flag) {
-        (false, false, false)   => Ok(BigNum(ident_fn())),
+        (false, false, false)   => Ok(BigNum(ident_fn())), //this is incorrect for (- ), unfortunately
         (_    , _    ,  true)   => Err("Attempted nonsense boolean operation!".to_str()),
         (true ,  true, false)   => Err("Attempted mixed operation!".to_str()),
         (true , false, false)   => {
+            //it's a vector holding only bigrationals; we're removing the tag from them, so
+            //we can work directly with the values
             let stripped_literals: Vec<BigRational> = strip!(literals.move_iter(), BigNum).collect();
             
             if args.len() == 1 {
+                //(+ 1) -> 1, (+ -2) -> -2, (- 3) -> -3, (- -4) -> 4
                 Ok(BigNum(stripped_literals.iter().fold(ident, op)))
             } else {
                 let first = stripped_literals.as_slice()[0].clone();
                 let tail = stripped_literals.slice_from(1);
-                Ok(BigNum(tail.iter().fold(first, |acc, x| op(acc, x))))
+                //(- 2 3) -> -1
+                Ok(BigNum(tail.iter().fold(first, op)))
             }
         },
         (false, true , false)   => {
