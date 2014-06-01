@@ -9,14 +9,14 @@ use super::super::{CalcResult, Environment, Evaluate};
 use self::num::rational::BigRational;
 
 ///Performs addition, multiplication, subtraction and division on matrices
-pub fn matrix_op(terms: Vec<Vec<BigRational>>, op: |BigRational, &BigRational| -> BigRational,
-    ident: BigRational) -> Vec<BigRational> {
+pub fn matrix_op<T: Clone>(terms: Vec<Vec<T>>, op: |T, &T| -> T, ident: T,
+                            pred: |T| -> bool) -> Vec<T> {
 
-    let mut acc_vec: Vec<BigRational> = Vec::new();
+    let mut acc_vec: Vec<T> = Vec::new();
     let matrix_len = terms.as_slice()[0].len();
 
     for i in range(0u, matrix_len) {
-        let column: Vec<BigRational> = terms.iter().fold(vec![], |mut acc, elem| {
+        let column: Vec<T> = terms.iter().fold(vec![], |mut acc, elem| {
             acc.push(elem.as_slice()[i].clone());
             acc
         });
@@ -66,7 +66,7 @@ pub fn do_op(args: &Vec<Box<Evaluate>>, env: &mut Environment, min_len: uint,
             let stripped_literals: Vec<BigRational> = strip!(literals.move_iter(), BigNum).collect();
             
             if args.len() == 1 {
-                Ok(BigNum(stripped_literals.iter().fold(ident, |acc, x| op(acc, x))))
+                Ok(BigNum(stripped_literals.iter().fold(ident, op)))
             } else {
                 let first = stripped_literals.as_slice()[0].clone();
                 let tail = stripped_literals.slice_from(1);
