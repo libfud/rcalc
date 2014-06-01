@@ -73,8 +73,7 @@ impl Iterator<CalcResult<Token>> for TokenStream {
             let word = self.expr.as_slice().slice_from(self.index).words().next().unwrap();
 
             //Discard dangling parens
-            let word = word.slice(0, word.find(|c: char| c == ')' || c == '(' ||
-                                                c == '[' || c == ']').unwrap_or(word.len()));
+            let word = word.slice(0, word.find(|c: char| c == ')' || c == '(').unwrap_or(word.len()));
             match operator::from_str(word) {
                 Some(op_type) => {
                     self.index += word.len();
@@ -118,41 +117,13 @@ impl Iterator<CalcResult<Token>> for TokenStream {
                 return Some(Err("Unrecognized token: ".to_str().append(word.to_str().as_slice())))
             }
 
-            let mut negative_sign_counter = 0;
-            let mut radix_point_counter = 0;
-            let mut fraction_counter = 0;
+            let token = is_number(word);
 
-            for c in word.chars() {
-                match c {
-                    '0'..'9'    => { }, //do nothing here
-                    '-'         => { negative_sign_counter += 1 },
-                    '.'         => { radix_point_counter += 1 },
-                    '/'         => { fraction_counter += 1 },
-                    _           => {
-                        return Some(Err("Unrecognized token!".to_str()))
-                    }
-                }
-            }
-
-            // Numbers could have a negative sign and, or (exclusively) a divisor or
-            // a radix point.
-            let token = match (fraction_counter, radix_point_counter, negative_sign_counter) {
-                (0, 0, 0) | (1, 0, 0) | (0, 1, 0) => Some(word),
-
-                (0, 0, 1) | (0, 1, 1) | (1, 0, 1) => {
-                    if word.starts_with("-") == true { Some(word) }
-                    else {
-                        return Some(Err("Unrecognized token!".to_str()))
-                    }
-                },
-
-                _   => None
-            };
             if token.is_some() {
-                match str_to_rational(&[token.unwrap().to_string()]) {
+                match str_to_rational(token.unwrap().to_str().as_slice()) {
                     Ok(literal_val)    => {
                         self.index += word.len();
-                        return Some(Ok(Literal(BigNum(literal_val[0]))))
+                        return Some(Ok(Literal(BigNum(literal_val))))
                     }
                     Err(_)        => {
                         return Some(Err("Unrecognized token!".to_str()))
@@ -163,5 +134,39 @@ impl Iterator<CalcResult<Token>> for TokenStream {
             //This point is reached if every other kind of token has not been matched
             return Some(Err("Unrecognized token: ".to_str().append(word.to_str().as_slice())))
         }
+    }
+}
+
+pub fn is_number(word: &str) -> Option<Result<String, String>> {
+    let mut negative_sign_counter = 0;
+    let mut radix_point_counter = 0;
+    let mut fraction_counter = 0;
+
+    for c in word.chars() {
+        match c {
+            '0'..'9'    => { }, //do nothing here
+            '-'         => { negative_sign_counter += 1 },
+            '.'         => { radix_point_counter += 1 },
+            '/'         => { fraction_counter += 1 },
+            _           => {
+                return Some(Err("Unrecognized token!".to_str()))
+            }
+        }
+    }
+
+    // Numbers could have a negative sign and, or (exclusively) a divisor or
+    // a radix point.
+    match (fraction_counter, radix_point_counter, negative_sign_counter) {
+        (0, 0, 0) | (1, 0, 0) | (0, 1, 0) => Some(Ok(word.to_str())),
+
+        (0, 0, 1) | (0, 1, 1) | (1, 0, 1) => {
+            if word.starts_with("-") == true { 
+                Some(Ok(word.to_str()))
+            } else {
+                Some(Err("Unrecognized token!".to_str()))
+            }
+        },
+
+        _   => None
     }
 }

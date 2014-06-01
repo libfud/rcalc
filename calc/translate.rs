@@ -13,12 +13,7 @@ use super::literal::{Boolean, BigNum, Symbol, Func};
 use super::{lookup, Environment};
 
 pub fn translate(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult<Box<Evaluate>> {
-    /*
-    match (tokens.iter().next(), tokens.iter().rev().next()) {
-        (Some(&LParen), Some(&RParen))  => {} //it's good
-        _   => return Err(("Badly formatted expression").to_str())
-    }
-    */
+
     match tokens.next() {
         Some(Ok(LParen))    => {}, //good to go
         Some(Ok(x))         => {

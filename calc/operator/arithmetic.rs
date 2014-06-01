@@ -84,19 +84,18 @@ pub fn div(args: &Arguments, env: &mut Environment) -> CalcResult {
         if *stripped_literals.get(0) == num::zero() {
             return Err("Division by zero is not allowed!".to_str())
         }
-        Ok(BigNum(one / *stripped_literals.get(0)))
-    } else {
-        let first = stripped_literals.as_slice()[0].clone();
-        let tail = stripped_literals.slice_from(1);
-        let answer = try!(tail.iter().fold(Ok(first), |quot, x|
-            quot.and_then(|q| 
-                if *x == num::zero() {
-                Err(("Division by zero is not allowed!".to_str()))
-                } else {
-                    Ok(q / *x)
-                }
-            )
-        ));
-        Ok(BigNum(answer))
+        return Ok(BigNum(one / *stripped_literals.get(0)))
     }
+
+    let first = stripped_literals.as_slice()[0].clone();
+    let tail = stripped_literals.slice_from(1);
+    let answer = try!(tail.iter().fold(Ok(first), |quot, x|
+        quot.and_then(|q| if *x == num::zero() {
+                Err(("Division by zero is not allowed!".to_str()))
+            } else {
+                Ok(q / *x)
+            }
+        )
+    ));
+    Ok(BigNum(answer))
 }

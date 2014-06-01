@@ -252,10 +252,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
             let ration_as_float = rational_to_f64_trig(&evaluated);
 
             let penult_answer = ration_as_float.sin().to_str();
-            let answer = match str_to_rational(&[penult_answer]) {
-                Ok(array)   => array[0],
-                Err(msg)    => { return Err(msg.to_str()) }
-            };
+            let answer = try!(str_to_rational(penult_answer.as_slice()));
             
             Ok(BigNum(answer))
         },
@@ -272,10 +269,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
             let ration_as_float = rational_to_f64_trig(&evaluated);
 
             let penult_answer = ration_as_float.cos().to_str();
-            let answer = match str_to_rational(&[penult_answer]) {
-                Ok(array)   => array[0],
-                Err(msg)    => { return Err(msg.to_str()) }
-            };
+            let answer = try!(str_to_rational(penult_answer.as_slice()));
             
             Ok(BigNum(answer))
         },
@@ -292,10 +286,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
             let ration_as_float = rational_to_f64_trig(&evaluated);
 
             let penult_answer = (ration_as_float.sin() / ration_as_float.cos()).to_str();
-            let answer = match str_to_rational(&[penult_answer]) {
-                Ok(array)   => array[0],
-                Err(msg)    => { return Err(msg.to_str()) }
-            };
+            let answer = try!(str_to_rational(penult_answer.as_slice()));
             
             Ok(BigNum(answer))
         },

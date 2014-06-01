@@ -292,83 +292,59 @@ let defun_help =
 
 /// Function to convert an array of owned strings into BigRationals for work.
 /// A message is included to indicate the success of the operation.
-pub fn str_to_rational(str_array: &[String]) -> Result<~[BigRational], &str> {
-    let mut big_vec: Vec<BigRational> = Vec::new();
-    let mut rational: BigRational;
+pub fn str_to_rational(word: &str) -> Result<BigRational, String> {
 
-    for elem in str_array.iter() {
-        let number_type = get_number_type(elem.as_slice());
-        if number_type == "invalid representation" {
-            return Err(number_type)
-        }
-        match number_type {
-            "fraction"      => {
-                match from_str::<BigRational>(elem.as_slice()) {
-                    Some(bignum)    => { rational = bignum }
-                    _               => { 
-                        return Err(DESPAIR)
-                    }
-                }
-            },
+    let number_type = try!(get_number_type(word));
+    match number_type.as_slice() {
+        "fraction"      => Ok(from_str::<BigRational>(word).unwrap()),
 
-            "non-fraction"  => {
-                let mut floated: f64;
-                match from_str::<f64>(elem.as_slice()) {
-                    Some(num)   => { floated = num },
-                    _           => {
-                        return Err(DESPAIR)
-                    }
-                }
-                match Ratio::from_float(floated) {
-                    Some(bignum)    => { rational = bignum }
-                    _               => { 
-                        return Err(DESPAIR)
-                    }
-                }
-            },
+        "non-fraction"  => {
+            let floated =  from_str::<f64>(word).unwrap();
+            Ok(Ratio::from_float(floated).unwrap())
+        },
 
-            _               => {
-                return Err(DESPAIR)
-            }
-        }
-        big_vec.push(rational);
+        _               => fail!("Unexpected return type!")
     }
-
-    Ok(big_vec.as_slice().to_owned())
 }
 
 /// Determines if a number is a decimal representation or a fractional
 /// representation. Mixing is disallowed. Returns a message and the
 /// location of the division symbol or radix point.
-pub fn get_number_type(num_str: &str) -> &str {
+pub fn get_number_type(num_str: &str) -> Result<String, String> {
     let bad_sym = "invalid representation";
     let mut div_symbol = false;
     let mut radix_point_symbol = false;
 
-    if num_str.slice_to(1) == "/" ||
-        num_str.slice_to(num_str.len() -1) == "/" { return bad_sym  }
+    if num_str.slice_to(1) == "/" || num_str.slice_to(num_str.len() -1) == "/" { 
+            return Err(bad_sym.to_str())
+    }
 
     for c in num_str.chars() {
         match c {
             '/' => {
-                if div_symbol == true { return bad_sym }
-                else { div_symbol = true; }
+                if div_symbol == true {
+                    return Err(bad_sym.to_str())
+                } else {
+                    div_symbol = true;
+                }
             },
             '.' => {
-                if radix_point_symbol == true { return bad_sym }
-                else { radix_point_symbol = true; }
+                if radix_point_symbol == true {
+                    return Err(bad_sym.to_str())
+                } else {
+                    radix_point_symbol = true;
+                }
             }
             _   => { } // do nothing, it doesn't concern us
         }
     }
 
     if div_symbol == true && radix_point_symbol == true {
-        bad_sym 
+        Err(bad_sym.to_str())
     } else if div_symbol == true {
-        "fraction"
+        Ok("fraction".to_str())
     } else {
-        "non-fraction"
-        // a number without either / or . has an implicit .
+        Ok("non-fraction".to_str())
     }
 }
 
