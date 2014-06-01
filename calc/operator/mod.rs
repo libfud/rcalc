@@ -1,5 +1,6 @@
 //! Operators
 
+use std::num;
 use super::{Evaluate, CalcResult, Environment, lookup, funfind};
 use super::common::{rational_to_f64_trig, str_to_rational};
 use super::literal::{LiteralType, Boolean, Matrix, BigNum, Symbol, Func};
@@ -273,13 +274,13 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
             Ok(Symbol("foo".to_str()))
         },
 
-        Add => arithmetic::add(args, env),
+        Add => arithmetic::do_op(args, env, 0, |a, b| a + *b, num::zero),
 
-        Sub => arithmetic::sub(args, env),
+        Sub => arithmetic::do_op(args, env, 1, |a, b| a - *b, num::zero),
 
-        Mul => arithmetic::mul(args, env),
+        Mul => arithmetic::do_op(args, env, 0, |a, b| a * *b, num::one),
 
-        Div => arithmetic::div(args, env),
+        Div => arithmetic::div(args, env), //division can fail with zeros
 
         Pow => power::pow_wrapper(args, env),
 
