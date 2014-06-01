@@ -44,6 +44,8 @@ macro_rules! strip (
     }
 )
 
+pub type Arguments<T = Box<Evaluate>> = Vec<T>;
+pub type BigRat = BigRational;
 ///Performs addition, subtraction, and multiplication on BigNums and Matrices.
 ///Takes the following:
 ///A reference to a vector of arguments, which are a vector of LiteralTypes.
@@ -53,9 +55,8 @@ macro_rules! strip (
 ///A minimum length, which is a uint. + and * take >= 0 arguments, - takes >= 1.
 ///A function to apply, which is either addition, subtraction or multiplication.
 ///An identity function, which returns either the additive or multiplicative identities.
-pub fn do_op(args: &Vec<Box<Evaluate>>, env: &mut Environment, min_len: uint,
-            op: |BigRational, &BigRational| -> BigRational, ident_fn: || -> BigRational
-            ) -> CalcResult {
+pub fn do_op(args: &Arguments, env: &mut Environment, min_len: uint,
+            op: |BigRat, &BigRat| -> BigRat, ident_fn: || -> BigRat ) -> CalcResult {
     if args.len() < min_len {
         return Err(" Specified operation requires at least ".to_str().append(
                     min_len.to_str().as_slice()).append( " arguments!"))
@@ -71,8 +72,11 @@ pub fn do_op(args: &Vec<Box<Evaluate>>, env: &mut Environment, min_len: uint,
     let (big_flag, bool_flag, matrix_flag) = big_bool_matrix(&literals);
     match (big_flag, matrix_flag, bool_flag) {
         (false, false, false)   => Ok(BigNum(ident_fn())), //this is incorrect for (- ), unfortunately
+
         (_    , _    ,  true)   => Err("Attempted nonsense boolean operation!".to_str()),
+
         (true ,  true, false)   => Err("Attempted mixed operation!".to_str()),
+
         (true , false, false)   => {
             //it's a vector holding only bigrationals; we're removing the tag from them, so
             //we can work directly with the values
@@ -88,6 +92,8 @@ pub fn do_op(args: &Vec<Box<Evaluate>>, env: &mut Environment, min_len: uint,
                 Ok(BigNum(tail.iter().fold(first, op)))
             }
         },
+
+        //It's a vector holding matrices. Strip and pass to matrix_op
         (false, true , false)   => {
             let stripped_m: Vec<Vec<BigRational>> = strip!(literals.move_iter(), Matrix).collect();
             Ok(Matrix(matrix_op(stripped_m, op, ident)))
@@ -95,6 +101,10 @@ pub fn do_op(args: &Vec<Box<Evaluate>>, env: &mut Environment, min_len: uint,
     }
 }
 
+
+///Divides bignums and matrices. Takes a reference to boxed values for arguments,
+///and a reference to the environment, and returns a result which is either
+///Ok(LiteralType) or Err(String).
 pub fn div(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     if args.len() < 1 {
         return Err("Division requires at least one argument!".to_str())
@@ -106,8 +116,9 @@ pub fn div(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     let (big_flag, bool_flag, matrix_flag) = big_bool_matrix(&literals);
     match (big_flag, matrix_flag, bool_flag) {
         (false, false, false)   => fail!("Impossible condition!"), //see first test in this fn
-        (_    , _    ,  true)   => Err("Attempted boolean subtraction!".to_str()),
-        (true ,  true, false)   => Err("Attempted mixed subtraction!".to_str()),
+
+        (_    , _    ,  true)   => Err("Attempted boolean division!".to_str()),
+        (true ,  true, false)   => Err("Attempted mixed division!".to_str()),
         (true , false, false)   => {
             let stripped_literals: Vec<BigRational> = strip!(literals.move_iter(), BigNum).collect();
 
