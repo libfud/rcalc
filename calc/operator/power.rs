@@ -138,6 +138,8 @@ pub fn root_wrapper(radicand: BigRational, index: BigRational) -> Result<BigRati
         }
     };
 
+    println!("{}", index.recip().floor());
+
     let numerator = index.floor();
     let root_of_radicand = try!(root(guess, radicand, numerator));
 

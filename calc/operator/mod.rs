@@ -157,8 +157,7 @@ pub fn find_matrix_len(args: &Vec<LiteralType>) -> Result<uint, String> {
     }
 }
 
-pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environment)
-                                                                            -> CalcResult {
+pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     match op_type {
         Define  => {
             if args.len() != 2 {

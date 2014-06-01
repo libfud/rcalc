@@ -60,8 +60,8 @@ pub fn do_op(args: &Vec<Box<Evaluate>>, env: &mut Environment, min_len: uint,
     let (big_flag, bool_flag, matrix_flag) = big_bool_matrix(&literals);
     match (big_flag, matrix_flag, bool_flag) {
         (false, false, false)   => Ok(BigNum(ident_fn())),
-        (_    , _    ,  true)   => Err("Attempted boolean addition!".to_str()),
-        (true ,  true, false)   => Err("Attempted mixed addition!".to_str()),
+        (_    , _    ,  true)   => Err("Attempted nonsense boolean operation!".to_str()),
+        (true ,  true, false)   => Err("Attempted mixed operation!".to_str()),
         (true , false, false)   => {
             let stripped_literals: Vec<BigRational> = strip!(literals.move_iter(), BigNum).collect();
             
@@ -104,10 +104,16 @@ pub fn div(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
             } else {
                 let first = stripped_literals.as_slice()[0].clone();
                 let tail = stripped_literals.slice_from(1);
-                Ok(BigNum(tail.iter().fold(first, |quot, x| match x == num::zero() {
-                    true => return Err("Division by zero is not allowed!".to_str()),
-                    false => quot.div(x)
-                })))
+                let answer = try!(tail.iter().fold(Ok(first), |quot, x|
+                    quot.and_then(|q| 
+                        if *x == num::zero() {
+                            Err(("Division by zero is not allowed!".to_str()))
+                        } else {
+                            Ok(q / *x)
+                        }
+                    )
+                ));
+                Ok(BigNum(answer))
             }
         },
         (false, true , false)   => {
