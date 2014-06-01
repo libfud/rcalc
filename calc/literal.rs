@@ -8,7 +8,6 @@ use self::num::rational::BigRational;
 pub enum LiteralType {
     Boolean(bool),
     BigNum(BigRational),
-    Matrix(Vec<BigRational>),
     Symbol(String),
     Func(String)
 }

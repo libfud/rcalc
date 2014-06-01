@@ -3,7 +3,7 @@
 use std::num;
 use super::{Evaluate, CalcResult, Environment, lookup, funfind};
 use super::common::{rational_to_f64_trig, str_to_rational};
-use super::literal::{LiteralType, Boolean, Matrix, BigNum, Symbol, Func};
+use super::literal::{LiteralType, Boolean, BigNum, Symbol, Func};
 
 pub mod power;
 pub mod arithmetic;
@@ -29,8 +29,6 @@ pub enum OperatorType {
     If,
     Define,
     Defun,
-    Print,
-    Limit,
 }
 
 pub fn from_str(s: &str) -> Option<OperatorType> {
@@ -53,8 +51,6 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "if"    => Some(If),
         "define"=> Some(Define),
         "defun" => Some(Defun),
-        "print" => Some(Print),
-        "lim"   => Some(Limit),
         _       => None
     }
 }
@@ -79,8 +75,6 @@ pub fn to_str(op: &OperatorType) -> String {
         If      => "if",
         Define  => "define",
         Defun   => "defun",
-        Print   => "print",
-        Limit   => "lim"
     };
 
     answer.to_str()
@@ -106,55 +100,19 @@ pub fn unbox_it(args:&Vec<Box<Evaluate>>, env: &mut Environment)
     Ok(literal_vec)
 }
 
-pub fn big_bool_matrix(args: &Vec<LiteralType>) -> (bool, bool, bool) {
+pub fn has_bigs_or_bools(args: &Vec<LiteralType>) -> (bool, bool) {
     let mut bignum_flag = false;
     let mut bool_flag = false; //lol
-    let mut matrix_flag = false;
 
     for literal in args.iter() {
         match literal {
             &BigNum(_)  => bignum_flag = true,
             &Boolean(_) => bool_flag = true,
-            &Matrix(_)  => matrix_flag = true,
-            &Symbol(_)  => { } //do nothing
-            &Func(_)    => { } //do nothing
+            _   => { } //do nothing
         }
     }
 
-    (bignum_flag, bool_flag, matrix_flag)
-}
-
-pub fn find_matrix_len(args: &Vec<LiteralType>) -> Result<uint, String> {
-    let mut matrix_len = 0;
-
-    //get length of first matrix
-    for literal in args.iter() {
-        match literal {
-            &Matrix(ref x)   => {
-                matrix_len = x.len();
-                break;
-            }
-            _           => { } //do nothing
-        }
-    }
-
-    //see if all matrices are of a uniform length
-    for literal in args.iter() {
-        match literal {
-            &Matrix(ref x)   => {
-                if x.len() != matrix_len {
-                    return Err("Mismatched matrices.".to_str())
-                }
-            }
-            _           => { } //do nothing
-        }
-    }
-    
-    if matrix_len == 0 {
-        Err("0 length matrices are not allowed!".to_str())
-    } else {
-        Ok(matrix_len)
-    }
+    (bignum_flag, bool_flag)
 }
 
 pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
@@ -243,34 +201,6 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
             }
 
             Ok(Func(symbol.to_str()))
-        },
-
-        Print   => {
-            let literal_vec = try!(unbox_it(args, env));
-            for term in literal_vec.iter() {
-                match *term {
-                    BigNum(ref x)   => println!("{}", x),
-                    Boolean(ref x)  => println!("{}", x),
-                    Matrix(ref x)   => println!("{}", x),
-                    Symbol(ref x)   => {
-                        let val = match lookup(x, env) {
-                            Ok(value)  => value.to_str(),
-                            Err(_)     => match super::funfind(x, env) {
-                                Ok((args, x))   => (args, x).to_str(),
-                                Err(msg)    => msg
-                            }
-                        };
-                        println!("{}", val)
-                    },
-                    Func(ref x)     => println!("{}", x),
-                }
-            }
-
-            Ok(Boolean(true)) //this is a poor workaround
-        },
-
-        Limit   => {
-            Ok(Symbol("foo".to_str()))
         },
 
         Add => arithmetic::do_op(args, env, 0, |a, b| a + *b, num::zero),

@@ -4,8 +4,8 @@ extern crate collections;
 
 use self::collections::HashMap;
 use super::{CalcResult, funfind, Environment, Evaluate};
-use super::literal::{BigNum, Boolean, Matrix, Symbol};
-use super::tokenize::{TokenStream, Literal, LParen, RParen, LBracket, RBracket, Operator, Variable};
+use super::literal::{BigNum, Boolean, Symbol};
+use super::tokenize::{TokenStream, Literal, LParen, RParen, Operator, Variable};
 use super::operator::unbox_it;
 use super::operator;
 
@@ -44,7 +44,6 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) 
         match literal {
             &BigNum(ref x)   => subs_strings.push(x.to_str()),
             &Boolean(ref x)  => subs_strings.push(x.to_str()),
-            &Matrix(ref x)   => subs_strings.push(x.to_str()),
             _   => fail!("unbox it returned something it shouldn't have!")
         }
     }
@@ -80,8 +79,6 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) 
         let sub_str = match token {
             LParen      => "( ".to_str(),
             RParen      => ") ".to_str(),
-            LBracket    => "[ ".to_str(),
-            RBracket    => "] ".to_str(),
             Literal(x)  => match x {
                 BigNum(y)   => y.to_str().append(" "),
                 Boolean(y)  => y.to_str().append(" "),

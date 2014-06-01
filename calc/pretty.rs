@@ -22,7 +22,6 @@ pub fn pretty_print(result: &CalcResult, env: &Environment) {
             }
         },
         Boolean(x) => println!("{}", x),
-        Matrix(x)  => println!("{}", x),
         Symbol(x)  => {
             let res = match env.vars.find(&x) {
                 Some(y) => Ok(y.clone()),

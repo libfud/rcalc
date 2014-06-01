@@ -6,7 +6,7 @@ extern crate collections;
 pub use self::literal::LiteralType;
 pub use self::tokenize::TokenStream;
 pub use self::translate::translate;
-pub use self::number::{Number, BoolArg, MatrixArg, SymbolArg, FunArg};
+pub use self::number::{Number, BoolArg, SymbolArg, FunArg};
 pub use self::common::help;
 pub use self::collections::HashMap;
 

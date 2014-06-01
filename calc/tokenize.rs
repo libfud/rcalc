@@ -17,8 +17,6 @@ pub enum Token {
     Literal(LiteralType),
     LParen,
     RParen,
-    LBracket,
-    RBracket,
     Fun(String),
     Operator(OperatorType),
     Name(String),
@@ -46,8 +44,6 @@ impl Iterator<CalcResult<Token>> for TokenStream {
             let token = match temp.chars().next().unwrap() {
                 '(' => Some(LParen),
                 ')' => Some(RParen),
-                '[' => Some(LBracket),
-                ']' => Some(RBracket),
                 _   => None
             };
 

@@ -4,7 +4,7 @@
 extern crate num;
 
 use super::{CalcResult, Evaluate, Environment};
-use super::literal::{BigNum, Boolean, Matrix, Symbol, Func};
+use super::literal::{BigNum, Boolean, Symbol, Func};
 use self::num::rational::BigRational;
 
 #[deriving(Clone, Ord, Eq)]
@@ -24,16 +24,6 @@ impl Evaluate for BoolArg {
         let &BoolArg(x) = self;
         Ok(Boolean(x))
     }
-}
-
-#[deriving(Clone)]
-pub struct MatrixArg(pub Vec<BigRational>);
-
-impl Evaluate for MatrixArg {
-    fn eval(&self, _: &mut Environment) -> CalcResult {
-        let MatrixArg(x)   = self.clone();
-        Ok(Matrix(x))
-    } 
 }
 
 #[deriving(Clone)]
