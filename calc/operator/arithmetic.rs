@@ -9,8 +9,7 @@ use super::super::{CalcResult, Environment, Evaluate};
 use self::num::rational::BigRational;
 
 ///Performs addition, multiplication, subtraction and division on matrices
-pub fn matrix_op<T: Clone>(terms: Vec<Vec<T>>, op: |T, &T| -> T, ident: T,
-                            pred: |T| -> bool) -> Vec<T> {
+pub fn matrix_op<T: Clone>(terms: Vec<Vec<T>>, op: |T, &T| -> T, ident: T) -> Vec<T> {
 
     let mut acc_vec: Vec<T> = Vec::new();
     let matrix_len = terms.as_slice()[0].len();
@@ -118,6 +117,11 @@ pub fn div(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
         },
         (false, true , false)   => {
             let stripped_m: Vec<Vec<BigRational>> = strip!(literals.move_iter(), Matrix).collect();
+            for v in stripped_m.iter() {
+                if v.iter().any(|x| *x == num::zero()) {
+                    return Err("Division by zero is not allowed!".to_str())
+                }
+            }
 
             Ok(Matrix(matrix_op(stripped_m, |a, b| a / *b, one)))
         }
