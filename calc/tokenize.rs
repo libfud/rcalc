@@ -28,8 +28,12 @@ pub struct TokenStream {
 }
 
 impl TokenStream {
-    fn new(e: String) -> TokenStream {
+    pub fn new(e: String) -> TokenStream {
         TokenStream { expr: e, index: 0 }
+    }
+
+    pub fn iter(&mut self) -> TokenStream {
+        self.next()
     }
 }
 
