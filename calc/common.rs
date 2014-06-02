@@ -290,14 +290,14 @@ let defun_help =
     }
 }
 
+//Nonfraction is either just an integer or a number with a radix point.
 pub enum NumEncoding {
     Fraction,
     NonFraction,
     Invalid
 }
 
-/// Function to convert an array of owned strings into BigRationals for work.
-/// A message is included to indicate the success of the operation.
+/// Converts a string into a bigrational.
 pub fn str_to_rational(word: &str) -> Result<BigRational, String> {
 
     let number_type = get_num_encoding(word);
@@ -313,9 +313,7 @@ pub fn str_to_rational(word: &str) -> Result<BigRational, String> {
     }
 }
 
-/// Determines if a number is a decimal representation or a fractional
-/// representation. Mixing is disallowed. Returns a message and the
-/// location of the division symbol or radix point.
+/// Determines if a number is represented as a fraction or not.
 pub fn get_num_encoding(num_str: &str) -> NumEncoding {
     if num_str.slice_to(1) == "/" || num_str.slice_to(num_str.len() -1) == "/" { 
             return Invalid
@@ -373,5 +371,10 @@ pub fn rational_to_f64_trig(bigrational_orig: &BigRational) -> f64 {
     numer_f64 / denom_f64
 }
 
-pub fn big_pi() -> BigRational { from_str::<BigRational>(PI).unwrap() }
-pub fn half_circ() -> BigRational { from_str::<BigRational>("180/1").unwrap() }
+pub fn big_pi() -> BigRational { 
+    from_str::<BigRational>(PI).unwrap()
+}
+
+pub fn half_circ() -> BigRational { 
+    from_str::<BigRational>("180/1").unwrap()
+}
