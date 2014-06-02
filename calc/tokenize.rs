@@ -11,8 +11,7 @@ use super::operator::{OperatorType};
 
 ///Enumeration of valid tokens. Valid tokens are Operators, Literals, LParens,
 ///RParens, and Names.
-#[deriving(Show)]
-#[deriving(Clone)]
+#[deriving(Show, Clone)]
 pub enum Token {
     Literal(LiteralType),
     LParen,
@@ -26,6 +25,12 @@ pub enum Token {
 pub struct TokenStream {
     pub expr: String,
     pub index: uint
+}
+
+impl TokenStream {
+    fn new(e: String) -> TokenStream {
+        TokenStream { expr: e, index: 0 }
+    }
 }
 
 pub type MaybeToken<T = Option<CalcResult<Token>>> = (T, uint);
@@ -43,6 +48,14 @@ impl Iterator<CalcResult<Token>> for TokenStream {
                 self.index += len;
                 token
             }
+        }
+    }
+
+    fn size_hint(&self) -> (uint, Option<uint>) {
+        if self.index == self.expr.len() {
+            (0, None)
+        } else {
+            (1, Some(self.expr.len() - self.index))
         }
     }
 }
@@ -125,9 +138,9 @@ pub fn is_number(expr: &str) -> MaybeToken {
     for c in word.as_slice().chars() {
         match c {
             '0'..'9'    => { }, //do nothing here
-            '-'         => { negative_sign_counter += 1 },
-            '.'         => { radix_point_counter += 1 },
-            '/'         => { fraction_counter += 1 },
+            '-'         => negative_sign_counter += 1,
+            '.'         => radix_point_counter += 1,
+            '/'         => fraction_counter += 1,
             _           => return (Some(Err("Unrecognized token!".to_str())), 0)
         }
     }

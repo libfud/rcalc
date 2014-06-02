@@ -26,35 +26,27 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) 
     }
 
     //Reconvert Symbol(String) to String, append to vector for use in hashmap
-    let mut args_strs = Vec::new();
-    for arg in args_to_fulfill.iter() {
-        match arg {
-            &Symbol(ref x)  => args_strs.push(x.clone()),
-            _   => fail!("Unexpected argument type!")
-        }
-    }
+    let args_strs: Vec<String> = args_to_fulfill.move_iter().map(|x| match x {
+        Symbol(x)   => x,
+        _   => fail!("Unexpected argument type!")
+    }).collect();
 
     //Unbox the substitutions.
     let subs_literals = try!(unbox_it(args, env));
 
-    let mut subs_strings: Vec<String> = Vec::new();
-
-    //Populate the vector of substition strings
-    for literal in subs_literals.iter() {
-        match literal {
-            &BigNum(ref x)   => subs_strings.push(x.to_str()),
-            &Boolean(ref x)  => subs_strings.push(x.to_str()),
-            _   => fail!("unbox it returned something it shouldn't have!")
-        }
-    }
+    let subs_strings: Vec<String> = subs_literals.iter().map(|x| match *x {
+        BigNum(ref y)   => y.to_str(),
+        Boolean(ref y)  => y.to_str(),
+        _   => fail!("unbox it returned something it shouldn't have!")
+    }).collect();
 
     //Use hashmap to rewrite string
     let mut sub_map: HashMap<String, String> = HashMap::new();
 
     //Populate the hashmap with the arguments as keys as the
     //substition strings as values
-    for (arg, sub) in args_strs.iter().zip(subs_strings.iter()) {
-        sub_map.insert(arg.clone(), sub.clone());
+    for (arg, sub) in args_strs.move_iter().zip(subs_strings.move_iter()) {
+        sub_map.insert(arg, sub);
     }
 
     let mut tokens = TokenStream {
@@ -63,6 +55,10 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) 
     };
 
     let mut evaluable_string: String = String::new();
+
+    for x in tokens.iter() {
+        println!("{}", x)
+    }
 
     //This is horribly inefficient
     loop {
