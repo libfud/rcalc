@@ -290,61 +290,53 @@ let defun_help =
     }
 }
 
+pub enum NumEncoding {
+    Fraction,
+    NonFraction,
+    Invalid
+}
+
 /// Function to convert an array of owned strings into BigRationals for work.
 /// A message is included to indicate the success of the operation.
 pub fn str_to_rational(word: &str) -> Result<BigRational, String> {
 
-    let number_type = try!(get_number_type(word));
-    match number_type.as_slice() {
-        "fraction"      => Ok(from_str::<BigRational>(word).unwrap()),
+    let number_type = get_num_encoding(word);
+    match number_type {
+        Fraction    => Ok(from_str::<BigRational>(word).unwrap()),
 
-        "non-fraction"  => {
+        NonFraction => {
             let floated =  from_str::<f64>(word).unwrap();
             Ok(Ratio::from_float(floated).unwrap())
         },
 
-        _               => fail!("Unexpected return type!")
+        Invalid     => fail!("Unexpected return type!")
     }
 }
 
 /// Determines if a number is a decimal representation or a fractional
 /// representation. Mixing is disallowed. Returns a message and the
 /// location of the division symbol or radix point.
-pub fn get_number_type(num_str: &str) -> Result<String, String> {
-    let bad_sym = "invalid representation";
-    let mut div_symbol = false;
-    let mut radix_point_symbol = false;
-
+pub fn get_num_encoding(num_str: &str) -> NumEncoding {
     if num_str.slice_to(1) == "/" || num_str.slice_to(num_str.len() -1) == "/" { 
-            return Err(bad_sym.to_str())
+            return Invalid
     }
 
+    let mut divisors = 0u;
+    let mut radices  = 0u;
     for c in num_str.chars() {
         match c {
-            '/' => {
-                if div_symbol == true {
-                    return Err(bad_sym.to_str())
-                } else {
-                    div_symbol = true;
-                }
-            },
-            '.' => {
-                if radix_point_symbol == true {
-                    return Err(bad_sym.to_str())
-                } else {
-                    radix_point_symbol = true;
-                }
-            }
+            '/' => divisors += 1,
+            '.' => radices  += 1,
             _   => { } // do nothing, it doesn't concern us
         }
     }
+    
+    let divisors = num_str.chars().fold(0, |mut x, c| { if c == '/' { x += 1 } x });
 
-    if div_symbol == true && radix_point_symbol == true {
-        Err(bad_sym.to_str())
-    } else if div_symbol == true {
-        Ok("fraction".to_str())
-    } else {
-        Ok("non-fraction".to_str())
+    match (divisors, radices) {
+        (0, 0) | (0, 1) => NonFraction,
+        (1, 0)          => Fraction,
+        _   => Invalid
     }
 }
 

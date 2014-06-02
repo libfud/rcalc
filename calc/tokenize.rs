@@ -160,7 +160,7 @@ pub fn is_number(expr: &str) -> MaybeToken {
 }
 
 pub fn analyze(expr: &str) -> MaybeToken {
-    let funs = vec!(is_paren, is_fun, is_op, is_const, is_bool, is_var, is_number);
+    let funs = [is_paren, is_fun, is_op, is_const, is_bool, is_var, is_number];
 
     for &fun in funs.iter() {
         let (token, len) = fun(expr);
