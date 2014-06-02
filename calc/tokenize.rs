@@ -28,7 +28,7 @@ pub struct TokenStream {
     pub index: uint
 }
 
-pub type MaybeToken<T = (Option<CalcResult<Token>>, uint)> = T;
+pub type MaybeToken<T = Option<CalcResult<Token>>> = (T, uint);
 
 impl Iterator<CalcResult<Token>> for TokenStream {
     fn next(&mut self) -> Option<CalcResult<Token>> {
