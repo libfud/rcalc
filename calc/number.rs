@@ -7,7 +7,7 @@ use super::{CalcResult, Evaluate, Environment};
 use super::literal::{BigNum, Boolean, Symbol, Func};
 use self::num::rational::BigRational;
 
-#[deriving(Clone, Ord, Eq)]
+#[deriving(Clone)]
 pub struct Number(pub BigRational);
 
 impl Evaluate for Number {

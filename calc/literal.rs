@@ -4,7 +4,7 @@ extern crate num;
 
 use self::num::rational::BigRational;
 
-#[deriving(Show, Clone, Ord, Eq)]
+#[deriving(Show, Clone)]
 pub enum LiteralType {
     Boolean(bool),
     BigNum(BigRational),

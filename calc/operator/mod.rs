@@ -329,7 +329,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
 
             let (arg1, arg2) = (try!(args.get(0).eval(env)), try!(args.get(1).eval(env)));
             match (arg1.clone(), arg2.clone()) {
-                (BigNum(_), BigNum(_))  => Ok(Boolean(arg1 < arg2)),
+                (BigNum(x), BigNum(y))  => Ok(Boolean(x < y)),
                 _   => Err("Nonboolean".to_str())
             }
         },
@@ -340,7 +340,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
             }
             let (arg1, arg2) = (try!(args.get(0).eval(env)), try!(args.get(1).eval(env)));
             match (arg1.clone(), arg2.clone()) {
-                (BigNum(_), BigNum(_))  => Ok(Boolean(arg1 <= arg2)),
+                (BigNum(x), BigNum(y))  => Ok(Boolean(x <= y)),
                 _   => Err("Non boolean".to_str())
             }
         },
@@ -365,7 +365,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
 
             let (arg1, arg2) = (try!(args.get(0).eval(env)), try!(args.get(1).eval(env)));
             match (arg1.clone(), arg2.clone()) {
-                (BigNum(_), BigNum(_))  => Ok(Boolean(arg1 >= arg2)),
+                (BigNum(x), BigNum(y))  => Ok(Boolean(x >= y)),
                 _                       => Err("something".to_str())
             }
         },
@@ -378,7 +378,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
             let comparands = try!(unbox_it(args, env));
             let (arg1, arg2) = (comparands.get(0).clone(), comparands.get(1).clone());
             match (arg1.clone(), arg2.clone()) {
-                (BigNum(_), BigNum(_))  => Ok(Boolean(arg1 > arg2)),
+                (BigNum(x), BigNum(y))  => Ok(Boolean(x > y)),
                 _                       => Err("blug".to_str())
             }
         }
