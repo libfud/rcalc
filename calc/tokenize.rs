@@ -51,6 +51,7 @@ impl Iterator<CalcResult<Token>> for TokenStream {
         }
     }
 
+    //returns the lowest amount of possible remaining tokens, and the most possible remaining tokens
     fn size_hint(&self) -> (uint, Option<uint>) {
         if self.index == self.expr.len() {
             (0, None)
