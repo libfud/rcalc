@@ -321,17 +321,14 @@ pub fn get_num_encoding(num_str: &str) -> NumEncoding {
             return Invalid
     }
 
-    let mut divisors = 0u;
-    let mut radices  = 0u;
-    for c in num_str.chars() {
-        match c {
-            '/' => divisors += 1,
-            '.' => radices  += 1,
-            _   => { } // do nothing, it doesn't concern us
+    let (divisors, radices) = num_str.chars().fold((0, 0), |(mut x, mut y), c| {
+        if c == '/' {
+            x += 1
+        } else if c == '.' {
+            y += 1
         }
-    }
-    
-    let divisors = num_str.chars().fold(0, |mut x, c| { if c == '/' { x += 1 } x });
+        (x, y)
+    });
 
     match (divisors, radices) {
         (0, 0) | (0, 1) => NonFraction,
