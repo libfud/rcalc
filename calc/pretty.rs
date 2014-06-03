@@ -54,5 +54,7 @@ pub fn pretty_print(result: &CalcResult, env: &Environment) {
                 _ => println!("as arguments and applies them to {}", fun)
             }
         }
+
+        Void    => { }
     }
 }

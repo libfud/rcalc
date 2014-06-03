@@ -133,6 +133,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
                 Symbol(ref x)   => try!(lookup(x, env)),
                 _   => try!(args.get(1).eval(env).clone())
             };
+
             env.vars.insert(var.clone(), val);
             Ok(Symbol(var))
         },
@@ -153,6 +154,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
             if fn_string.len() == 0 {
                 fail!("Impossible fn length!")
             }
+
             let symbol = fn_string.words().next().unwrap();
             match symbol.chars().next().unwrap() {
                 'a'..'z'|'A'..'Z' => { }, //okay
@@ -176,16 +178,15 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
                     return Err("Illegal function!".to_str())
                 }
             };
-
             let args_string = fn_string.slice(1, args_string_len + 1);
-            let mut arguments: Vec<LiteralType> = Vec::new();
-            for arg in args_string.slice_to(args_string_len).words() {
+
+            let arguments: Vec<LiteralType> = args_string.slice_to(args_string_len).words().map(|arg|
                 if arg.ends_with(")") {
-                    arguments.push(Symbol(arg.slice_to(arg.len() - 1).to_str()))
+                    Symbol(arg.slice_to(arg.len() -1).to_str())
                 } else {
-                    arguments.push(Symbol(arg.to_str()))
+                    Symbol(arg.to_str())
                 }
-            }
+            ).collect();
 
             if fn_string.len() == args_string.len()  {
                 return Err("No procedure found!".to_str())

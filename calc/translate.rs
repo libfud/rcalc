@@ -2,15 +2,13 @@
 
 extern crate num;
 
-use super::{CalcResult, Evaluate, Number, BoolArg, SymbolArg, FunArg};
-use super::constant::{Constant};
-use super::tokenize::{Literal, LParen, RParen, Operator, Name, Variable};
-use super::tokenize::{TokenStream, Fun};
+use super::{CalcResult, Evaluate, Environment, SymbolArg, FunArg};
+use super::constant::Constant;
+use super::tokenize::{Literal, LParen, RParen, Operator, Name, Variable, TokenStream, Fun};
 use super::expression;
 use super::expression::{Expression, Function};
 use super::function;
-use super::literal::{Boolean, BigNum, Symbol, Func};
-use super::{lookup, Environment};
+use super::literal::trans_literal;
 
 pub fn translate(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult<Box<Evaluate>> {
 
@@ -50,13 +48,10 @@ pub fn translate(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult<
         };
 
         match token {
-            Fun(fun)   => {
-                args.push(box FunArg(fun) as Box<Evaluate>);
-            },
+            Fun(fun)   => args.push(box FunArg(fun) as Box<Evaluate>),
 
-            Variable(var) => {
-                args.push(box SymbolArg(var) as Box<Evaluate>);
-            },
+            Variable(var) => args.push(box SymbolArg(var) as Box<Evaluate>),
+
             // Subexpression begins
             LParen  => {
                 //reset the counter to account for the lparen
@@ -75,22 +70,7 @@ pub fn translate(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult<
                 return Err("Operator in wrong position: ".to_str().append(op.to_str().as_slice()))
             },
 
-            Literal(literaltype)  => { 
-                match literaltype {
-                    BigNum(x)   => args.push(box Number(x) as Box<Evaluate>),
-
-                    Boolean(x)  => args.push(box BoolArg(x) as Box<Evaluate>),
-
-                    Symbol(x)   => match try!(lookup(&x, env)) {
-                        BigNum(y)   => args.push(box Number(y) as Box<Evaluate>),
-                        Boolean(y)  => args.push(box BoolArg(y) as Box<Evaluate>),
-                        Symbol(_)   => return Err("2deep5me".to_str()),
-                        Func(_)     => return Err("2deep5me".to_str()),
-                    },
-
-                    Func(_) => return Err("2deep5me".to_str()),
-                }
-            }
+            Literal(literaltype)  => args.push(try!(trans_literal(literaltype, env))),
 
             Name(ref c_name) => {
                 let constant = box try!(Constant::from_str(c_name.as_slice()));

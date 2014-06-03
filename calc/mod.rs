@@ -3,10 +3,9 @@
 extern crate num;
 extern crate collections;
 
-pub use self::literal::LiteralType;
+pub use self::literal::{LiteralType, BigNumArg, BoolArg, SymbolArg, FunArg};
 pub use self::tokenize::TokenStream;
 pub use self::translate::translate;
-pub use self::number::{Number, BoolArg, SymbolArg, FunArg};
 pub use self::common::help;
 pub use self::collections::HashMap;
 
@@ -14,7 +13,6 @@ pub mod literal;
 pub mod tokenize;
 pub mod translate;
 pub mod expression;
-pub mod number;
 pub mod constant;
 pub mod operator;
 pub mod function;
