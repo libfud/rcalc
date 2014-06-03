@@ -112,28 +112,27 @@ pub fn has_bigs_or_bools(args: &Vec<LiteralType>) -> (bool, bool) {
     (bignum_flag, bool_flag)
 }
 
+pub fn define(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+    if args.len() != 2 {
+        return Err("Define must have one symbol and one expression!".to_str())
+    }
+
+    let var = match try!(args.get(0).eval(env)) {
+        Symbol(x)   => x,
+        _   => {
+            return Err("Attempted illegal definition!".to_str())
+        }
+    };
+
+    let val = try!(args.get(1).eval(env));
+    
+    env.vars.insert(var, val);
+    Ok(Void)
+}
+
 pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     match op_type {
-        Define  => {
-            if args.len() != 2 {
-                return Err("Define doesn't work that way!".to_str())
-            }
-
-            let var = match try!(args.get(0).eval(env)) {
-                Symbol(ref x)   => x.clone(),
-                _               => {
-                    return Err("Attempted illegal definition!".to_str())
-                }
-            };
-
-            let val = match try!(args.get(1).eval(env)) {
-                Symbol(ref x)   => try!(lookup(x, env)),
-                _   => try!(args.get(1).eval(env).clone())
-            };
-
-            env.vars.insert(var.clone(), val);
-            Ok(Void)
-        },
+        Define  => define(args, env),
 
         Defun   => function::defun(args, env),
 

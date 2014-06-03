@@ -12,7 +12,7 @@ use super::operator;
 ///Returns a function's name if it's already defined, or an error if it is not found.
 pub fn from_str(name: &str, env: &mut Environment) -> CalcResult<String> {
     match funfind(&name.to_str(), env) {
-        Ok(_)   => Ok(name.to_str().clone()),
+        Ok(_)   => Ok(name.to_str()),
         Err(_)  => Err("Unknown function: ".to_str().append(name.to_str().as_slice()))
     }
 }
