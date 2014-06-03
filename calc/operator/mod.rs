@@ -1,9 +1,9 @@
 //! Operators
 
 use std::num;
-use super::{Evaluate, CalcResult, Environment, lookup, funfind};
+use super::{Evaluate, CalcResult, Environment, lookup, funfind, function};
 use super::common::{rational_to_f64_trig, str_to_rational};
-use super::literal::{LiteralType, Boolean, BigNum, Symbol, Func};
+use super::literal::{LiteralType, Boolean, BigNum, Symbol, Func, Void};
 
 pub mod power;
 pub mod arithmetic;
@@ -80,12 +80,10 @@ pub fn to_str(op: &OperatorType) -> String {
     answer.to_str()
 }
 
-pub fn unbox_it(args:&Vec<Box<Evaluate>>, env: &mut Environment) 
-                                                -> Result<Vec<LiteralType>, String> {
+pub fn unbox_it(args:&Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult<Vec<LiteralType>> {
     let mut literal_vec: Vec<LiteralType> = Vec::new();
-    let mut i = 0;
-    while i < args.len() {
-        let val = try!(args.get(i).eval(env));
+    for arg in args.iter() {
+        let val = try!(arg.eval(env));
         literal_vec.push( match val {
             Symbol(ref var) => try!(lookup(var, env)),
             Func(ref var)   => {
@@ -94,7 +92,6 @@ pub fn unbox_it(args:&Vec<Box<Evaluate>>, env: &mut Environment)
             },
             _   => val
         });
-        i += 1;
     }
 
     Ok(literal_vec)
@@ -135,74 +132,10 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
             };
 
             env.vars.insert(var.clone(), val);
-            Ok(Symbol(var))
+            Ok(Void)
         },
 
-        Defun => {
-            if args.len() != 1 {
-                return Err("bad use of defun!".to_str())
-            }
-            let fn_string = match try!(args.get(0).eval(env)) {
-                Func(ref x) => x.clone(),
-                _           => {
-                    return Err("Attempted illegal defunition!".to_str())
-                }
-            };
-
-            let fn_string = fn_string.as_slice().trim();
-
-            if fn_string.len() == 0 {
-                fail!("Impossible fn length!")
-            }
-
-            let symbol = fn_string.words().next().unwrap();
-            match symbol.chars().next().unwrap() {
-                'a'..'z'|'A'..'Z' => { }, //okay
-                _   => {
-                    return Err("Illegal function name!".to_str())
-                }
-            }
-
-            if fn_string.len() == symbol.len() {
-                return Err("Illegal function!".to_str())
-            }
-
-            let fn_string = fn_string.slice_from(symbol.len()).trim();
-            if fn_string.starts_with("(") == false {
-                return Err("No arguments found!".to_str())
-            }
-
-            let args_string_len = match fn_string.find(|c: char| c == ')') {
-                Some(x) => x,
-                None    => {
-                    return Err("Illegal function!".to_str())
-                }
-            };
-            let args_string = fn_string.slice(1, args_string_len + 1);
-
-            let arguments: Vec<LiteralType> = args_string.slice_to(args_string_len).words().map(|arg|
-                if arg.ends_with(")") {
-                    Symbol(arg.slice_to(arg.len() -1).to_str())
-                } else {
-                    Symbol(arg.to_str())
-                }
-            ).collect();
-
-            if fn_string.len() == args_string.len()  {
-                return Err("No procedure found!".to_str())
-            }
-
-            let fn_string = fn_string.slice_from(args_string.len() + 1).trim();
-
-            if fn_string.starts_with("(") && fn_string.ends_with(")") {
-                env.funs.insert(symbol.to_str(), (arguments, fn_string.to_str()));
-            } else {
-                println!("{}", fn_string);
-                return Err("Illegal fn!".to_str())
-            }
-
-            Ok(Func(symbol.to_str()))
-        },
+        Defun   => function::defun(args, env),
 
         Add => arithmetic::do_op(args, env, 0, |a, b| a + *b, num::zero),
 

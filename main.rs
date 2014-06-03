@@ -16,21 +16,24 @@ use collections::HashMap;
 
 pub mod calc;
 
-#[link(name = "readline")]
+#[link(name = "linenoise")]
 extern {
-    fn readline(p: *c_char) -> *c_char;
-    fn add_history(l: *c_char);
+    fn linenoise(p: *c_char) -> *c_char;
+    fn linenoiseHistoryAdd(l: *c_char);
 }
 
 ///Takes a reference to a string for use as a prompt, and returns an option.
 ///On failure it returns None, which may be the case for ^D or ^C.
 pub fn rust_readline(prompt: &str) -> Option<String> {
-    if prompt.len() == 0 { return None }
+    if prompt.len() == 0 { 
+        return None
+    }
+
     let c_prompt = prompt.to_c_str();
 
     c_prompt.with_ref(|c_buf| {
         unsafe {
-            let ret_str = CString::new(readline(c_buf), true);
+            let ret_str = CString::new(linenoise(c_buf), true);
             if ret_str.is_not_null() {
                 ret_str.as_str().map(|ret_str| ret_str.to_str())
             } else {
@@ -50,7 +53,7 @@ pub fn rust_add_history(line: &str) {
     let c_line = line.to_c_str();
     c_line.with_ref(|c_line| {
         unsafe {
-            add_history(c_line);
+            linenoiseHistoryAdd(c_line);
         }
     });
 }

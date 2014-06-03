@@ -4,7 +4,7 @@ extern crate collections;
 
 use self::collections::HashMap;
 use super::{CalcResult, funfind, Environment, Evaluate};
-use super::literal::{BigNum, Boolean, Symbol};
+use super::literal::{LiteralType, BigNum, Boolean, Symbol, Func, Void};
 use super::tokenize::{TokenStream, Literal, LParen, RParen, Operator, Variable, Token};
 use super::operator::unbox_it;
 use super::operator;
@@ -82,3 +82,76 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) 
     
     super::eval(evaluable_string.as_slice(), env)
 }
+
+pub fn get_name(expr: &str) -> Result<String, String> {
+    let name = expr.words().next().unwrap();
+    if !name.chars().next().unwrap().is_alphabetic() {
+        return Err("illegal name!".to_str())
+    }
+
+    if name.len() == expr.len() {
+        return Err("Empty function!".to_str())
+    }
+
+    Ok(name.to_str())
+}
+
+pub fn get_args(expr: &str) -> Result<(Vec<LiteralType>, uint), String> {
+    if !expr.starts_with("(") {
+        return Err("Improperly formatted arguments!".to_str())
+    }
+
+    let args_len = match expr.find(|c: char| c == ')') {
+        Some(x) => x,
+        None    => return Err("No body found after arguments!".to_str())
+    };
+
+    if args_len == expr.len() {
+        return Err("No body found after arguments!".to_str())
+    }
+
+    let args = expr.slice(1, args_len + 1).words().map(|arg|
+        if arg.ends_with(")") {
+            Symbol(arg.slice_to(arg.len() -1).to_str())
+        } else {
+            Symbol(arg.to_str())
+        }
+    ).collect();
+
+    Ok((args, args_len))
+}
+
+pub fn defun(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+    if args.len() != 1 {
+        return Err("bad use of defun!".to_str())
+    }
+
+    let fn_string = match try!(args.get(0).eval(env)) {
+        Func(x) => x.as_slice().trim().to_str(),
+        _       => return Err("attempted illegal defunition!".to_str())
+    };
+
+    if fn_string.len() == 0 {
+        return Err("That's not a function! That's not anything!".to_str())
+    }
+
+    let name = try!(get_name(fn_string.as_slice()));
+
+    let expr = fn_string.as_slice().slice_from(name.len()).trim();
+    if expr.len() == 0 {
+        return Err("No arguments or body found!".to_str())
+    }
+
+    let (args, args_len) = try!(get_args(expr));
+
+    let body = expr.slice_from(args_len).trim();
+    if body.len() == 0 || !body.starts_with("{") || !body.ends_with(")") {
+        return Err("No proper procedure found!".to_str())
+    }
+
+    env.funs.insert(name, (args, body.to_str()));
+
+    Ok(Void)
+}
+
+
