@@ -2,12 +2,12 @@
 
 use std::num;
 use super::{Evaluate, CalcResult, Environment, lookup, funfind, function};
-use super::common::{rational_to_f64_trig, str_to_rational};
 use super::literal::{LiteralType, Boolean, BigNum, Symbol, Func, Void};
 
 pub mod power;
 pub mod arithmetic;
 pub mod logic;
+pub mod trig;
 
 #[deriving(Show)]
 #[deriving(Clone)]
@@ -159,60 +159,11 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
 
         Pow => power::pow_wrapper(args, env),
 
-        Sin => {
-            if args.len() > 1 {
-                return Err("'sin' takes one argument".to_str())
-            }
+        Sin => trig::trig(args, env, |x| x.sin()),
 
-            let evaluated_array = try!(unbox_it(args, env));
-            let evaluated = match evaluated_array.as_slice()[0] {
-                BigNum(ref x)   => x.clone(),
-                _           => {
-                    return Err("I'm too tired to do this right now.".to_str())
-                },
-            };
-            
-            let ration_as_float = rational_to_f64_trig(&evaluated);
+        Cos => trig::trig(args, env, |x| x.cos()),
 
-            let penult_answer = ration_as_float.sin().to_str();
-            let answer = try!(str_to_rational(penult_answer.as_slice()));
-            
-            Ok(BigNum(answer))
-        },
-
-        Cos => {
-            if args.len() > 1 {
-                return Err("'cos' takes one argument".to_str())
-            }
-            let evaluated = match (try!(unbox_it(args, env))).as_slice()[0] {
-                BigNum(ref x)   => x.clone(),
-                _           => { return Err("Something went wrong".to_str()) }
-            };
-                
-            let ration_as_float = rational_to_f64_trig(&evaluated);
-
-            let penult_answer = ration_as_float.cos().to_str();
-            let answer = try!(str_to_rational(penult_answer.as_slice()));
-            
-            Ok(BigNum(answer))
-        },
-
-        Tan => {
-            if args.len() > 1 {
-                return Err("'cos' takes one argument".to_str())
-            }
-            let evaluated = match (try!(unbox_it(args, env))).as_slice()[0] {
-                BigNum(ref x)   => x.clone(),
-                _           => { return Err("Too tired".to_str()) }
-            };
-
-            let ration_as_float = rational_to_f64_trig(&evaluated);
-
-            let penult_answer = (ration_as_float.sin() / ration_as_float.cos()).to_str();
-            let answer = try!(str_to_rational(penult_answer.as_slice()));
-            
-            Ok(BigNum(answer))
-        },
+        Tan => trig::trig(args, env, |x| x.tan()),
 
         Rad => { /*
             if args.len() != 1 {
@@ -226,7 +177,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
             let radians = degrees.mul(&pi.div(&one80));
 
             Ok(radians) */
-            Ok(Boolean(true))
+            Ok(Void)
         },
 
         Deg => { /*
@@ -242,7 +193,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
 
             Ok(degrees)
             */
-            Ok(Boolean(true))
+            Ok(Void)
         },
 
         If   => logic::cond(args, env),
