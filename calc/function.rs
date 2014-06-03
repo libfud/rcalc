@@ -63,11 +63,8 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) 
         _   => fail!("unbox it returned something it shouldn't have!")
     }).collect();
 
-    //Use hashmap to rewrite string
-    let mut sub_map: HashMap<String, String> = HashMap::new();
-
-    //Populate the hashmap with the arguments as keys as the
-    //substition strings as values
+    //Populate a hashmap with the arguments as keys as the substition strings as values,
+    //and use it to rewrite the expression
     let sub_map = args_strs.move_iter().zip(subs_strings.move_iter()).collect();
 
     let mut tokens = TokenStream {
