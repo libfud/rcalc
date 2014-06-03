@@ -52,17 +52,41 @@ pub fn equality(args: &Vec<Box<Evaluate>>, env: &mut Environment, equal: bool) -
     }
 }
 
-pub fn and_or(args: &Vec<Box<Evaluate>>, env: &mut Environment, op: |bool, bool| -> bool)
-                                                                                -> CalcResult {
-
-    if args.len() != 2 {
-        return Err("And requires two arguments!".to_str())
-    }
-
+pub fn and_or(args: &Vec<Box<Evaluate>>, env: &mut Environment, short: bool) -> CalcResult {
     let vals = try!(unbox_it(args, env));
 
-    match (vals.get(0), vals.get(1)) {
-        (&Boolean(x), &Boolean(y))  => Ok(Boolean(op(x, y))),
-        _   => Err("And doesn't work that way!".to_str())
+    if short == true {
+        for val in vals.iter() {
+            match *val {
+                Boolean(true)   => return Ok(Boolean(short)),
+                Boolean(false)  => { },
+                _   => return Err("Non boolean conditon!".to_str())
+            }
+        }
+        
+        Ok(Boolean(false))
+    } else {
+        for val in vals.iter() {
+            match *val {
+                Boolean(true)   => { },
+                Boolean(false)  => return Ok(Boolean(short)),
+                _   => return Err("Non boolean condition!".to_str())
+            }
+        }
+
+        Ok(Boolean(true))
     }
+}
+
+pub fn not(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+    if args.len() != 1 {
+        return Err("Not only takes one argument".to_str())
+    }
+
+    let val = match try!(unbox_it(args, env)).get(0) {
+        &Boolean(x)  => x,
+        _   => return Err("Non boolean condition!".to_str())
+    };
+
+    Ok(Boolean(!val))
 }

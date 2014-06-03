@@ -31,6 +31,7 @@ pub enum OperatorType {
     If,
     And,
     Or,
+    Not,
     Define,
     Defun,
 }
@@ -56,6 +57,7 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "if"    => Some(If),
         "and"   => Some(And),
         "or"    => Some(Or),
+        "not"   => Some(Not),
         "define"=> Some(Define),
         "defun" => Some(Defun),
         _       => None
@@ -83,6 +85,7 @@ pub fn to_str(op: &OperatorType) -> String {
         If      => "if",
         And     => "and",
         Or      => "or",
+        Not     => "not",
         Define  => "define",
         Defun   => "defun",
     };
@@ -244,9 +247,11 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
 
         If   => logic::cond(args, env),
 
-        And  => logic::and_or(args, env, |a, b| a && b),
+        And  => logic::and_or(args, env, false),
 
-        Or   => logic::and_or(args, env, |a, b| a || b),
+        Or   => logic::and_or(args, env, true),
+
+        Not  => logic::not(args, env),
 
         Lt   => logic::ordering(args, env, |a, b| a < b),
 
