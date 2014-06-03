@@ -43,14 +43,10 @@ pub fn translate(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult<
     let mut args: Vec<Box<Evaluate>> = Vec::new();
 
     loop {
-        let token_maybe = match tokens.next() {
-            Some(x) => x,
-            None    => break
-        };
-
-        let token = match token_maybe {
-            Ok(x)       => x,
-            Err(msg)    => return Err(msg)
+        let token = match tokens.next() {
+            Some(Ok(x))     => x,
+            Some(Err(msg))  => return Err(msg),
+            None            => break
         };
 
         match token {

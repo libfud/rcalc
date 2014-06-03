@@ -31,10 +31,6 @@ impl TokenStream {
     pub fn new(e: String) -> TokenStream {
         TokenStream { expr: e, index: 0 }
     }
-
-    pub fn iter(&mut self) -> TokenStream {
-        self.next()
-    }
 }
 
 pub type MaybeToken<T = Option<CalcResult<Token>>> = (T, uint);

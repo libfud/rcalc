@@ -5,7 +5,7 @@ extern crate collections;
 use self::collections::HashMap;
 use super::{CalcResult, funfind, Environment, Evaluate};
 use super::literal::{BigNum, Boolean, Symbol};
-use super::tokenize::{TokenStream, Literal, LParen, RParen, Operator, Variable};
+use super::tokenize::{TokenStream, Literal, LParen, RParen, Operator, Variable, Token};
 use super::operator::unbox_it;
 use super::operator;
 
@@ -14,6 +14,29 @@ pub fn from_str(name: &str, env: &mut Environment) -> CalcResult<String> {
     match funfind(&name.to_str(), env) {
         Ok(_)   => Ok(name.to_str().clone()),
         Err(_)  => Err("Unknown function: ".to_str().append(name.to_str().as_slice()))
+    }
+}
+
+pub fn token_to_str(token: Token, sub_map: &HashMap<String, String>) -> Result<String, String> {
+    match token {
+        LParen      => Ok("( ".to_str()),
+        RParen      => Ok(") ".to_str()),
+        Literal(x)  => match x {
+            BigNum(y)   => Ok(y.to_str().append(" ")),
+            Boolean(y)  => Ok(y.to_str().append(" ")),
+            _   => fail!("Unexpected type!")
+        },
+        Operator(x) => Ok(operator::to_str(&x).append(" ")),
+        Variable(x) => { //here's the magic
+            let x_to_str = match sub_map.find(&x) {
+                Some(val)   => val.clone(),
+                None        => {
+                    return Err("Variable used in expression not dislcosed in args!".to_str())
+                }
+            };
+            Ok(x_to_str.append(" "))
+        },
+        _   => return Err("Unexpected type for function!".to_str())
     }
 }
 
@@ -56,45 +79,17 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) 
 
     let mut evaluable_string: String = String::new();
 
-    for x in tokens.iter() {
-        println!("{}", x)
-    }
-
-    //This is horribly inefficient
-    loop {
-        let maybe_token = match tokens.next() {
-            Some(x) => x,
-            None    => break
-        };
-
+    for maybe_token in tokens {
         let token = match maybe_token {
             Ok(x)   => x,
             Err(m)  => return Err(m)
         };
 
-        let sub_str = match token {
-            LParen      => "( ".to_str(),
-            RParen      => ") ".to_str(),
-            Literal(x)  => match x {
-                BigNum(y)   => y.to_str().append(" "),
-                Boolean(y)  => y.to_str().append(" "),
-                _   => fail!("Unexpected type!")
-            },
-            Operator(x) => operator::to_str(&x).append(" "),
-            Variable(x) => { //here's the magic
-                let x_to_str = match sub_map.find(&x) {
-                    Some(val)   => val.clone(),
-                    None        => {
-                        return Err("Variable used in expression not dislcosed in args!".to_str())
-                    }
-                };
-                x_to_str.append(" ")
-            },
-            _   => return Err("Unexpected type for function!".to_str())
-        };
+        let sub_str = try!(token_to_str(token, &sub_map));
         
         evaluable_string = evaluable_string.append(sub_str.as_slice());
     }
     
     super::eval(evaluable_string.as_slice(), env)
 }
+
