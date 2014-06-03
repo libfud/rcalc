@@ -153,5 +153,3 @@ pub fn defun(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
 
     Ok(Void)
 }
-
-
