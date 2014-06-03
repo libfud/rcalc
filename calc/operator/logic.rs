@@ -4,6 +4,16 @@ use super::super::{Evaluate, CalcResult, Environment, lookup};
 use super::super::literal::{LiteralType, Boolean, Symbol};
 use super::unbox_it;
 
+pub enum Gates {
+    Nand,
+    And,
+    Not,
+    Or,
+    Nor,
+    Xor,
+    XNor
+}
+
 pub fn cond(args: &Vec<Box<Evaluate>>, env: &mut Environment)  -> CalcResult {
     if args.len() != 3 {
         return Err("`if` requires three arguments".to_str())
