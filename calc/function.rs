@@ -68,9 +68,7 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) 
 
     //Populate the hashmap with the arguments as keys as the
     //substition strings as values
-    for (arg, sub) in args_strs.move_iter().zip(subs_strings.move_iter()) {
-        sub_map.insert(arg, sub);
-    }
+    let sub_map = args_strs.move_iter().zip(subs_strings.move_iter()).collect();
 
     let mut tokens = TokenStream {
         expr: funcstr,
