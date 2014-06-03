@@ -233,32 +233,13 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
             Ok(Boolean(true))
         },
 
-        If  => logic::cond(args, env),
+        If   => logic::cond(args, env),
 
-        Lt  => {
-            if args.len() != 2 {
-                return Err("< requires two arguments".to_str())
-            }
+        Lt   => logic::ordring(args, env, |a, b| a < b),
 
-            let (arg1, arg2) = (try!(args.get(0).eval(env)), try!(args.get(1).eval(env)));
-            match (arg1.clone(), arg2.clone()) {
-                (BigNum(x), BigNum(y))  => Ok(Boolean(x < y)),
-                _   => Err("Nonboolean".to_str())
-            }
-        },
+        LtEq => logic::ordering(args, env, |a, b| a <= b),
 
-        LtEq => {
-            if args.len() != 2 {
-                return Err("<= requires two arguments".to_str())
-            }
-            let (arg1, arg2) = (try!(args.get(0).eval(env)), try!(args.get(1).eval(env)));
-            match (arg1.clone(), arg2.clone()) {
-                (BigNum(x), BigNum(y))  => Ok(Boolean(x <= y)),
-                _   => Err("Non boolean".to_str())
-            }
-        },
-
-        Eq  => logic::ordering(args, env, |a, b| a == b),
+        Eq   => logic::ordering(args, env, |a, b| a == b),
 
         GtEq => logic::ordering(args, env, |a, b| a >= b),
         
