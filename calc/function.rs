@@ -27,7 +27,7 @@ pub fn token_to_str(token: Token, sub_map: &HashMap<String, String>) -> Result<S
             _   => fail!("Unexpected type!")
         },
         Operator(x) => Ok(operator::to_str(&x).append(" ")),
-        Variable(x) => { //here's the magic
+        Variable(x) => { 
             let x_to_str = match sub_map.find(&x) {
                 Some(val)   => val.clone(),
                 None        => {
@@ -74,17 +74,11 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) 
 
     let mut evaluable_string: String = String::new();
 
-    for maybe_token in tokens {
-        let token = match maybe_token {
-            Ok(x)   => x,
-            Err(m)  => return Err(m)
-        };
-
-        let sub_str = try!(token_to_str(token, &sub_map));
+    for token in tokens {
+        let sub_str = try!(token_to_str(try!(token), &sub_map));
         
         evaluable_string = evaluable_string.append(sub_str.as_slice());
     }
     
     super::eval(evaluable_string.as_slice(), env)
 }
-
