@@ -7,6 +7,7 @@ use super::literal::{LiteralType, Boolean, BigNum, Symbol, Func, Void};
 
 pub mod power;
 pub mod arithmetic;
+pub mod logic;
 
 #[deriving(Show)]
 #[deriving(Clone)]
@@ -146,29 +147,6 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
 
         Pow => power::pow_wrapper(args, env),
 
-        If  => {
-            if args.len() != 3 {
-                return Err("'if' requires three arguments".to_str())
-            } 
-            
-            let condition = match try!(args.get(0).eval(env)) {
-                Boolean(x)  => x,
-                Symbol(x)   => {
-                    match try!(lookup(&x, env)) {
-                        Boolean(y)  => y,
-                        _   => return Err("Only booleans can be a condition!".to_str())
-                    }
-                },
-                _           => { return Err("Only booleans can be a condition!".to_str()) }
-            };
-                
-            if condition == true {
-                Ok(try!(args.get(1).eval(env)))
-            } else {
-                Ok(try!(args.get(2).eval(env)))
-            }
-        },
-
         Sin => {
             if args.len() > 1 {
                 return Err("'sin' takes one argument".to_str())
@@ -255,6 +233,8 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
             Ok(Boolean(true))
         },
 
+        If  => logic::cond(args, env),
+
         Lt  => {
             if args.len() != 2 {
                 return Err("< requires two arguments".to_str())
@@ -278,42 +258,10 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
             }
         },
 
-        Eq  => {
-            if args.len() != 2 {
-                return Err("= requires two arguments".to_str())
-            }
+        Eq  => logic::ordering(args, env, |a, b| a == b),
 
-            let arg1 = try!(args.get(0).eval(env));
-            let arg2 = try!(args.get(1).eval(env));
-            match (arg1, arg2) {
-                (BigNum(x), BigNum(y))  => Ok(Boolean(x == y)),
-                _                       => Err("oh snap".to_str())
-            }
-        },
-
-        GtEq => {
-            if args.len() != 2 {
-                return Err(">= requires two arguments".to_str())
-            }
-
-            let (arg1, arg2) = (try!(args.get(0).eval(env)), try!(args.get(1).eval(env)));
-            match (arg1.clone(), arg2.clone()) {
-                (BigNum(x), BigNum(y))  => Ok(Boolean(x >= y)),
-                _                       => Err("something".to_str())
-            }
-        },
+        GtEq => logic::ordering(args, env, |a, b| a >= b),
         
-        Gt   => {
-             if args.len() != 2 {
-                return Err(">= requires two arguments".to_str())
-            }
-
-            let comparands = try!(unbox_it(args, env));
-            let (arg1, arg2) = (comparands.get(0).clone(), comparands.get(1).clone());
-            match (arg1.clone(), arg2.clone()) {
-                (BigNum(x), BigNum(y))  => Ok(Boolean(x > y)),
-                _                       => Err("blug".to_str())
-            }
-        }
+        Gt   => logic::ordering(args, env, |a, b| a > b),
     }
 }
