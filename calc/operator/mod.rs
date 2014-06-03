@@ -23,11 +23,14 @@ pub enum OperatorType {
     Rad,
     Deg,
     Eq,
+    NEq,
     Lt,
     LtEq,
     Gt,
     GtEq,
     If,
+    And,
+    Or,
     Define,
     Defun,
 }
@@ -47,9 +50,12 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "<"     => Some(Lt),
         "<="    => Some(LtEq),
         "="     => Some(Eq),
+        "!="    => Some(NEq),
         ">="    => Some(GtEq),
         ">"     => Some(Gt),
         "if"    => Some(If),
+        "and"   => Some(And),
+        "or"    => Some(Or),
         "define"=> Some(Define),
         "defun" => Some(Defun),
         _       => None
@@ -71,9 +77,12 @@ pub fn to_str(op: &OperatorType) -> String {
         Lt      => "<",
         LtEq    => "<=",
         Eq      => "=",
+        NEq     => "!",
         GtEq    => ">=",
         Gt      => ">",
         If      => "if",
+        And     => "and",
+        Or      => "or",
         Define  => "define",
         Defun   => "defun",
     };
@@ -235,11 +244,17 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
 
         If   => logic::cond(args, env),
 
-        Lt   => logic::ordring(args, env, |a, b| a < b),
+        And  => logic::and_or(args, env, |a, b| a && b),
+
+        Or   => logic::and_or(args, env, |a, b| a || b),
+
+        Lt   => logic::ordering(args, env, |a, b| a < b),
 
         LtEq => logic::ordering(args, env, |a, b| a <= b),
 
-        Eq   => logic::ordering(args, env, |a, b| a == b),
+        Eq   => logic::equality(args, env, true),
+
+        NEq  => logic::equality(args, env, false),
 
         GtEq => logic::ordering(args, env, |a, b| a >= b),
         
