@@ -20,8 +20,6 @@ pub enum OperatorType {
     Sin,
     Cos,
     Tan,
-    Rad,
-    Deg,
     Eq,
     NEq,
     Lt,
@@ -46,8 +44,6 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "sin"   => Some(Sin),
         "cos"   => Some(Cos),
         "tan"   => Some(Tan),
-        "rad"   => Some(Rad),
-        "deg"   => Some(Deg),
         "<"     => Some(Lt),
         "<="    => Some(LtEq),
         "="     => Some(Eq),
@@ -74,8 +70,6 @@ pub fn to_str(op: &OperatorType) -> String {
         Sin     => "sin",
         Cos     => "cos",
         Tan     => "tan",
-        Rad     => "rad",
-        Deg     => "deg",
         Lt      => "<",
         LtEq    => "<=",
         Eq      => "=",
@@ -164,37 +158,6 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
         Cos => trig::trig(args, env, |x| x.cos()),
 
         Tan => trig::trig(args, env, |x| x.tan()),
-
-        Rad => { /*
-            if args.len() != 1 {
-                return Err("'rad' takes one argument".to_str())
-            }
-            
-            let degrees = try!(args.get(0).eval());
-            let pi: BigRational = big_pi();
-            let one80: BigRational = half_circ();
-
-            let radians = degrees.mul(&pi.div(&one80));
-
-            Ok(radians) */
-            Ok(Void)
-        },
-
-        Deg => { /*
-            if args.len() != 1 {
-                return Err("'rad' takes one argument".to_str())
-            }
-
-            let radians = try!(args.get(0).eval());
-            let pi: BigRational = big_pi();
-            let one80: BigRational = half_circ();
-
-            let degrees = radians.mul(&one80.div(&pi));
-
-            Ok(degrees)
-            */
-            Ok(Void)
-        },
 
         If   => logic::cond(args, env),
 

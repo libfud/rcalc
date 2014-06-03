@@ -136,45 +136,33 @@ That's all I have to say on that matter. Below are valid expressions:
 (pow 8 -2)    -> 1/64";
 
     let trig_help =
-"Trigonometric functions. Currently only comprised of sin, cos, tan, rad and
-deg. Each function only takes one term, or an expression which is evaluated to
+"Trigonometric functions. Currently only comprised of sin, cos, and tan. 
+Each function only takes one term, or an expression which is evaluated to
 a single term.";
-
-    let deg_help =
-"Converts a single constant or expression from radians to degrees using the
-formula (* radians (/ 180 pi))";
-
-    let rad_help =
-"Converts a single constant or expression from degrees to radians using the
-formula (* degrees (/ pi 180))";
 
     let sin_help =
 "The sine function. Takes one term. If no terms are supplied, it evaluates
 zero, which is still zero. Uses radians, not degrees. If you want to
-express the angle in degrees, convert with rad.
+express the angle in degrees, convert with (* degrees pi (/ 180)).
 
 (sin pi)    -> 0
 (sin (* 1/2 pi)) -> 1
-(sin (/ (* 2 pi) 3)) -> 0.866025
-(sin (rad 90)) -> 1";
+(sin (/ (* 2 pi) 3)) -> 0.866025";
 
     let cos_help =
 "The cosine function. Takes one term. If no terms are supplied, it evaluates
 zero. Uss radians. If you want to express the angle in degrees, convert with
-the rad function
+the formula (* degrees pi (/ 180))
 
 (cod ) -> 1/1
-(cos pi) -> -1
-(cos (rad 270)) -> 0/1
-(cos (rad 60)) -> 0.5";
+(cos pi) -> -1";
 
     let tan_help =
 "The tangent function. Takes exactly one term.
 
 (tan 1) -> 1.55
 (tan pi) -> 0
-(tan 0) -> 0
-(tan (rad 45)) -> 1";
+(tan 0) -> 0";
 
     let avg_help =
 "Returns the arithmetic mean of a set of numbers. Requires at least one term.
@@ -185,7 +173,7 @@ the rad function
 
     let logic_help =
 "The ordering operators are <, <=, =, >=, >. Additionally, you can compose
-conditional statements with if.
+conditional statements with if. And, Or, and Not are also availalbe.
 
 (> 3 2) -> true
 (= 7 3) -> false
@@ -267,8 +255,6 @@ let defun_help =
             "*"|"multiply"      => mul_help,
             "/"|"division"      => div_help,
             "pow"|"power"       => pow_help,
-            "deg"|"degrees"     => deg_help,
-            "rad"|"radians"     => rad_help,
             "sin"|"sine"        => sin_help,
             "cos"|"cosine"      => cos_help,
             "tan"|"tangent"     => tan_help,
