@@ -62,6 +62,7 @@ impl Evaluate for VoidArg {
     }
 }
 
+/// Translates a literal token into its value
 pub fn trans_literal(lit: LiteralType, env: &mut Environment) -> CalcResult<Box<Evaluate>> {
     match lit {
         BigNum(x)   => Ok(box BigNumArg(x) as Box<Evaluate>),
@@ -71,4 +72,3 @@ pub fn trans_literal(lit: LiteralType, env: &mut Environment) -> CalcResult<Box<
         Void        => Ok(box VoidArg as Box<Evaluate>)
     }
 }
-

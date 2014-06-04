@@ -2,16 +2,14 @@
 #![crate_type = "bin"]
 #![feature(default_type_params, globs, macro_rules)]
 
-//! Polish notation calculator.
+//! Polish notation programmable calculator.
 
 extern crate libc;
-extern crate collections;
 
 use libc::c_char;
 use std::c_str::CString;
 use calc::{eval, Environment};
 use calc::pretty::pretty_print;
-use collections::HashMap;
 
 pub mod calc;
 
@@ -62,10 +60,7 @@ fn main() {
     //env will hold all user defined variables and functions in hashmaps,
     //to be looked up when called. They're in the main function for
     //persistence.
-    let mut env = Environment {
-        vars: HashMap::new(),
-        funs: HashMap::new()
-    };
+    let mut env = Environment::new();
 
     loop {
         let expr = match rust_readline(">>> ") {
@@ -80,7 +75,7 @@ fn main() {
         }
 
         let result = match exit_or_eval.as_slice()[0] {
-            "exit" | "(exit" | "(exit)" => break,
+            "exit" | "(exit" | "(exit)" | ",q" => break,
             "(" => {
                 if exit_or_eval.len() >= 2 {
                     match exit_or_eval.as_slice()[1] {

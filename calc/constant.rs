@@ -10,7 +10,7 @@ use super::literal::{BigNum, LiteralType};
 pub enum ConstantType {
     Pi,
     E,
-    C, //for celery, the speed of lite, in m/s
+    C, 
     ANSWER
 }
 

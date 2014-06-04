@@ -31,15 +31,24 @@ pub struct Environment {
     pub funs: HashMap<String, (Vec<LiteralType>, String)>
 }
 
-///Returns a variable's value from a hashmap, or an error if it doesn't exist
-pub fn lookup(var: &String, env: &mut Environment) -> CalcResult {
-    match env.vars.find(var) {
-        Some(val)   => Ok(val.clone()),
-        None        => Err("value not found!".to_str())
+impl Environment {
+    pub fn new() -> Environment {
+        Environment {vars:  HashMap::new(), funs:  HashMap::new() }
     }
 }
 
-///Returns a tuple of a function's strings and the function itself
+/// Returns a variable's value from a hashmap, or an error if it doesn't exist
+pub fn lookup(var: &String, env: &mut Environment) -> CalcResult {
+    match env.vars.find(var) {
+        Some(val)   => Ok(val.clone()),
+        None        => {
+            println!("{}", var);
+            Err("value not found!".to_str())
+        }
+    }
+}
+
+/// Returns a tuple of a function's strings and the function itself
 pub fn funfind(var: &String, env: &mut Environment) -> Result<(Vec<LiteralType>, String), String> {
     match env.funs.find(var) {
         Some(&(ref args, ref fun))   => Ok((args.clone(), fun.clone())),
@@ -47,12 +56,10 @@ pub fn funfind(var: &String, env: &mut Environment) -> Result<(Vec<LiteralType>,
     }
 }
 
-///Evaluates a string by tokenizing it and iterating over the tokens
+/// Evaluates a string by creating a stream of tokens, translating those tokens
+/// recursively, and then evaluating the top expression.
 pub fn eval(s: &str, env: &mut Environment) -> CalcResult {
-    let mut tokens = TokenStream {
-        expr: s.to_str(),
-        index: 0u
-    };
+    let mut tokens = TokenStream::new(s.to_str());
 
     let expr = try!(translate(&mut tokens, env));
     expr.eval(env)

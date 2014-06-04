@@ -9,7 +9,7 @@ use super::tokenize::{TokenStream, Literal, LParen, RParen, Operator, Variable, 
 use super::operator::unbox_it;
 use super::operator;
 
-///Returns a function's name if it's already defined, or an error if it is not found.
+/// Returns a function's name if it's already defined, or an error if it is not found.
 pub fn from_str(name: &str, env: &mut Environment) -> CalcResult<String> {
     match funfind(&name.to_str(), env) {
         Ok(_)   => Ok(name.to_str()),
@@ -17,6 +17,7 @@ pub fn from_str(name: &str, env: &mut Environment) -> CalcResult<String> {
     }
 }
 
+/// Returns the token's string equivalent for use in rebuilding a string
 pub fn token_to_str(token: Token, sub_map: &HashMap<String, String>, env: &mut Environment)
                                                             -> Result<String, String> {
     match token {
@@ -46,7 +47,7 @@ pub fn token_to_str(token: Token, sub_map: &HashMap<String, String>, env: &mut E
 pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     let (args_to_fulfill, funcstr) = try!(funfind(fn_name, env));
     if args.len() != args_to_fulfill.len() {
-        println!("{}", args_to_fulfill.len());
+        println!("{} {}", args_to_fulfill.len(), args.len());
         return Err("Improper list of arguments!".to_str())
     }
 
@@ -82,6 +83,7 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) 
     super::eval(evaluable_string.as_slice(), env)
 }
 
+/// Returns the name of a function, which must start with an alphabetic letter
 pub fn get_name(expr: &str) -> Result<String, String> {
     let name = expr.words().next().unwrap();
     if !name.chars().next().unwrap().is_alphabetic() {
@@ -95,6 +97,7 @@ pub fn get_name(expr: &str) -> Result<String, String> {
     Ok(name.to_str())
 }
 
+/// Returns the arguments of a function
 pub fn get_args(expr: &str) -> Result<(Vec<LiteralType>, uint), String> {
     if !expr.starts_with("(") {
         return Err("Improperly formatted arguments!".to_str())

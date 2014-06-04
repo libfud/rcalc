@@ -281,7 +281,7 @@ let defun_help =
     return Ok(Void)
 }
 
-//Nonfraction is either just an integer or a number with a radix point.
+/// Enumeration of ways to write numbers.
 pub enum NumEncoding {
     Fraction,
     NonFraction,
@@ -326,38 +326,29 @@ pub fn get_num_encoding(num_str: &str) -> NumEncoding {
     }
 }
 
-/// Reduces a rational to a value between -2 and 2, converts it to an f64
+/// Reduces a rational to a value in f64s range of accuracy, then converts it to an f64
 /// and then returns that value for use in trigonometric functions.
 pub fn rational_to_f64_trig(bigrational_orig: &BigRational) -> f64 {
     let mut bigrational = bigrational_orig.clone();
 
-    let zero: BigRational = num::zero();
-    let one: BigRational = num::one();
-    let two = one.add(&one);
-    let pi = from_str::<BigRational>(PI).unwrap();
-    let twopi = pi.mul(&two);
+    let two: BigRational = num::one::<BigRational>() + num::one();
+    let twopi = from_str::<BigRational>(PI).unwrap().mul(&two);
+    let jump = from_str::<BigRational>("100000000000/1").unwrap() * twopi;
+    let upper = from_str::<BigRational>("9007199254740992/1").unwrap(); //2^53
+    let lower = from_str::<BigRational>("-9007199254740992/1").unwrap();
 
-    match bigrational > zero {
-        true    => {
-            loop {
-                if bigrational < twopi { break }
-                bigrational = bigrational.sub(&twopi);
-            }
-        },
-        false   => {
-            loop {
-                if bigrational > twopi { break }
-                bigrational = bigrational.add(&twopi);
-            }
+    if bigrational > upper {
+        while bigrational > upper {
+            bigrational = bigrational - jump;
+        }
+    } else if bigrational < lower {
+        while bigrational < lower {
+            bigrational = bigrational + jump;
         }
     }
 
-    let numer = bigrational.numer().clone();
-    let denom = bigrational.denom().clone();
+    let numer = bigrational.numer().to_f64().unwrap();
+    let denom = bigrational.denom().to_f64().unwrap();
 
-    //This is cruddy
-    let numer_f64: f64 = from_str::<f64>(numer.to_str().as_slice()).unwrap();
-    let denom_f64: f64 = from_str::<f64>(denom.to_str().as_slice()).unwrap();
-
-    numer_f64 / denom_f64
+    numer / denom
 }
