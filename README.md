@@ -13,7 +13,8 @@ older version, you may not be able to compile it.
 ## Compiling
 
 In order to build it, ensure that you have downloaded or built the latest nightly
-version of rust, and simply run `rustc main.rs`
+version of rust, the development headers for readline, and simply run 
+`rustc main.rs`
 
 This will compile a binary file called rcalc.
 
@@ -23,7 +24,8 @@ rcalc is still immature, and lacks many features. It currently can perform
 the arithmatic operations (addition, subtraction, multiplication, and division),
 perform exponentiation with (some) rational integer exponents, and perform sine, 
 cosine and tangent functions. Additionally, ordering and equality for boolean 
-functions are present.
+functions are present, as well as AND, OR and NOT. User defined functions
+which allow recursion are also present.
 
 rcalc will not be considered complete until it has the following:
 
