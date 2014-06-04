@@ -17,7 +17,8 @@ pub fn from_str(name: &str, env: &mut Environment) -> CalcResult<String> {
     }
 }
 
-pub fn token_to_str(token: Token, sub_map: &HashMap<String, String>) -> Result<String, String> {
+pub fn token_to_str(token: Token, sub_map: &HashMap<String, String>, env: &mut Environment)
+                                                            -> Result<String, String> {
     match token {
         LParen      => Ok("( ".to_str()),
         RParen      => Ok(") ".to_str()),
@@ -30,8 +31,9 @@ pub fn token_to_str(token: Token, sub_map: &HashMap<String, String>) -> Result<S
         Variable(x) => { 
             let x_to_str = match sub_map.find(&x) {
                 Some(val)   => val.clone(),
-                None        => {
-                    return Err("Variable used in expression not dislcosed in args!".to_str())
+                None        => match funfind(&x, env) {
+                    Ok(_)   => x.to_str(),
+                    Err(_)  => return Err("Variable or function not found".to_str())
                 }
             };
             Ok(x_to_str.append(" "))
@@ -75,7 +77,7 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) 
     let mut evaluable_string: String = String::new();
 
     for token in tokens {
-        let sub_str = try!(token_to_str(try!(token), &sub_map));
+        let sub_str = try!(token_to_str(try!(token), &sub_map, env));
         
         evaluable_string = evaluable_string.append(sub_str.as_slice());
     }
