@@ -9,6 +9,8 @@ use super::expression;
 use super::expression::{Expression, Function};
 use super::function;
 use super::literal::trans_literal;
+use super::operator;
+use super::operator::Help;
 
 pub fn translate(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult<Box<Evaluate>> {
 
@@ -67,7 +69,19 @@ pub fn translate(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult<
             },
 
             Operator(op) => {
-                return Err("Operator in wrong position: ".to_str().append(op.to_str().as_slice()))
+                match top_expr {
+                    expression::Operator(x) => {
+                        match x {
+                            Help    => {
+                                args.push(box SymbolArg(operator::to_str((&op))) as Box<Evaluate>)
+                            },
+                            _   => return Err("idgaf".to_str())
+                        }
+                    },
+                    _   => {
+                        return Err("Operator in wrong place: ".to_str().append(op.to_str().as_slice()))
+                    }
+                }
             },
 
             Literal(literaltype)  => args.push(try!(trans_literal(literaltype, env))),

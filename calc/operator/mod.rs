@@ -16,6 +16,7 @@ pub enum OperatorType {
     Sub,
     Mul,
     Div,
+    Rem,
     Pow,
     Sin,
     Cos,
@@ -32,6 +33,7 @@ pub enum OperatorType {
     Not,
     Define,
     Defun,
+    Help,
 }
 
 pub fn from_str(s: &str) -> Option<OperatorType> {
@@ -40,6 +42,7 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "-"     => Some(Sub),
         "*"     => Some(Mul),
         "/"     => Some(Div),
+        "%"     => Some(Rem),
         "pow"   => Some(Pow),
         "sin"   => Some(Sin),
         "cos"   => Some(Cos),
@@ -56,6 +59,7 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "not"   => Some(Not),
         "define"=> Some(Define),
         "defun" => Some(Defun),
+        "help"  => Some(Help),
         _       => None
     }
 }
@@ -66,6 +70,7 @@ pub fn to_str(op: &OperatorType) -> String {
         Sub     => "-",
         Mul     => "*",
         Div     => "/",
+        Rem     => "%",
         Pow     => "pow",
         Sin     => "sin",
         Cos     => "cos",
@@ -82,6 +87,7 @@ pub fn to_str(op: &OperatorType) -> String {
         Not     => "not",
         Define  => "define",
         Defun   => "defun",
+        Help    => "help",
     };
 
     answer.to_str()
@@ -149,7 +155,9 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
 
         Mul => arithmetic::do_op(args, env, 0, |a, b| a * *b, num::one),
 
-        Div => arithmetic::div(args, env), //division can fail with zeros
+        Div => arithmetic::divrem(args, env, |a, b| a / *b), //division can fail with zeros
+
+        Rem => arithmetic::divrem(args, env, |a, b| a % *b),
 
         Pow => power::pow_wrapper(args, env),
 
@@ -178,5 +186,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
         GtEq => logic::ordering(args, env, |a, b| a >= b),
         
         Gt   => logic::ordering(args, env, |a, b| a > b),
+
+        Help => super::common::help(args, env),
     }
 }

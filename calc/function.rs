@@ -144,8 +144,9 @@ pub fn defun(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
 
     let (args, args_len) = try!(get_args(expr));
 
-    let body = expr.slice_from(args_len).trim();
-    if body.len() == 0 || !body.starts_with("{") || !body.ends_with(")") {
+    let body = expr.slice_from(args_len + 1).trim();
+    if body.len() == 0 || body.starts_with("(") == false || body.ends_with(")") == false {
+        println!("{}", body);
         return Err("No proper procedure found!".to_str())
     }
 

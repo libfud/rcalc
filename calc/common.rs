@@ -2,13 +2,15 @@
 
 extern crate num;
 
+use super::{Evaluate, Environment, CalcResult};
+use super::literal::{Symbol, Void};
 use self::num::rational::{BigRational, Ratio};
 use std::num;
 
 pub static DESPAIR: &'static str = "Laundry day is a very dangerous day.";
 static PI: &'static str = "3126535/995207";
 
-pub fn help(list: &[&str]) {
+pub fn help(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     let help_help =
 "The help function has the form (help term1, term2, term3...) and prints out
 examples of how operators are used. You can use help for individual operators
@@ -231,21 +233,22 @@ let defun_help =
 (defun |g (x y) (* x y)|)
 (defun |h (x y z) (/ (* x (+ x 1) (* 2 (+ x 1))) 6)";
 
-    if list.len() == 0 {
-        println!("{}", help_help)
-        return
+    let mut list: Vec<String> = Vec::new();
+    for arg in args.iter() {
+        let word = try!(arg.eval(env));
+        list.push( match word {
+            Symbol(term)  => term,
+            _   => return Err("That doesn't work yet!".to_str())
+        });
     }
 
-    for &term in list.iter() {
-        let word = match term.ends_with(")") {
-            false   => term,
-            true    => {
-                if term.len() > 1 { term.slice_to(term.len() - 1) }
-                else { term }
-            }
-        };
+    if list.len() == 0 {
+        println!("{}", help_help)
+        return Ok(Void)
+    }
 
-        println!("{}", match word {
+    for word in list.iter() {
+        println!("{}", match word.as_slice() {
             "help"              => help_help,
             "use"               => use_help,
             "abs"               => abs_help,
@@ -272,8 +275,10 @@ let defun_help =
             "defun"             => defun_help,
             _                   => "More help is not available at this time."
             }
-        );
+        )
     }
+
+    return Ok(Void)
 }
 
 //Nonfraction is either just an integer or a number with a radix point.

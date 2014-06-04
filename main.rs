@@ -10,7 +10,6 @@ extern crate collections;
 use libc::c_char;
 use std::c_str::CString;
 use calc::{eval, Environment};
-use calc::common::help;
 use calc::pretty::pretty_print;
 use collections::HashMap;
 
@@ -75,31 +74,20 @@ fn main() {
         };
         rust_add_history(expr.as_slice());
 
-        let help_exit_or_eval: Vec<&str> = expr.as_slice().words().collect();
-        if help_exit_or_eval.len() == 0 {
+        let exit_or_eval: Vec<&str> = expr.as_slice().words().collect();
+        if exit_or_eval.len() == 0 {
             continue
         }
 
-        let result = match help_exit_or_eval.as_slice()[0] {
-            "exit" | "(exit" | "(exit)" => { break },
-
-            "help" | "(help" | "(help)" => {
-                help(help_exit_or_eval.slice_from(1));
-                continue;
-            },
-
+        let result = match exit_or_eval.as_slice()[0] {
+            "exit" | "(exit" | "(exit)" => break,
             "(" => {
-                if help_exit_or_eval.len() >= 2 {
-                    match help_exit_or_eval.as_slice()[1] {
-                        "exit" | "exit)"    => { break },
-                        "help" | "help)"    => {
-                            help(help_exit_or_eval.slice_from(2));
-                            continue;
-                        },
+                if exit_or_eval.len() >= 2 {
+                    match exit_or_eval.as_slice()[1] {
+                        "exit" | "exit)"    => break,
                         _   => eval(expr.as_slice().trim(), &mut env),
                     }
-                }
-                else {
+                } else {
                     eval(expr.as_slice().trim(), &mut env)
                 }
             },

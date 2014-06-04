@@ -66,7 +66,7 @@ pub fn do_op(args: &Arguments, env: &mut Environment, min_len: uint,
 ///Divides a vector of bignums. Takes a reference to boxed values for arguments,
 ///and a reference to the environment, and returns a result which is either
 ///Ok(LiteralType) or Err(String).
-pub fn div(args: &Arguments, env: &mut Environment) -> CalcResult {
+pub fn divrem(args: &Arguments, env: &mut Environment, op:|BigRat, &BigRat| -> BigRat) -> CalcResult {
     if args.len() < 1 {
         return Err("Division requires at least one argument!".to_str())
     }
@@ -84,7 +84,7 @@ pub fn div(args: &Arguments, env: &mut Environment) -> CalcResult {
         if *stripped_literals.get(0) == num::zero() {
             return Err("Division by zero is not allowed!".to_str())
         }
-        return Ok(BigNum(one / *stripped_literals.get(0)))
+        return Ok(BigNum(op(one, stripped_literals.get(0))))
     }
 
     let first = stripped_literals.as_slice()[0].clone();
@@ -93,7 +93,7 @@ pub fn div(args: &Arguments, env: &mut Environment) -> CalcResult {
         quot.and_then(|q| if *x == num::zero() {
                 Err(("Division by zero is not allowed!".to_str()))
             } else {
-                Ok(q / *x)
+                Ok(op(q, x))
             }
         )
     ));
