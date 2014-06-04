@@ -45,8 +45,8 @@ pub fn token_to_str(token: Token, sub_map: &HashMap<String, String>, env: &mut E
 ///Returns the value of the function for the arguments given
 pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     let (args_to_fulfill, funcstr) = try!(funfind(fn_name, env));
-
     if args.len() != args_to_fulfill.len() {
+        println!("{}", args_to_fulfill.len());
         return Err("Improper list of arguments!".to_str())
     }
 
@@ -69,10 +69,7 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>, env: &mut Environment) 
     //and use it to rewrite the expression
     let sub_map = args_strs.move_iter().zip(subs_strings.move_iter()).collect();
 
-    let mut tokens = TokenStream {
-        expr: funcstr,
-        index: 0u
-    };
+    let mut tokens = TokenStream::new(funcstr);
 
     let mut evaluable_string: String = String::new();
 
@@ -112,13 +109,24 @@ pub fn get_args(expr: &str) -> Result<(Vec<LiteralType>, uint), String> {
         return Err("No body found after arguments!".to_str())
     }
 
-    let args = expr.slice(1, args_len + 1).words().map(|arg|
+    let args: Vec<LiteralType> = expr.slice(1, args_len + 1).words().map(|arg|
         if arg.ends_with(")") {
             Symbol(arg.slice_to(arg.len() -1).to_str())
         } else {
             Symbol(arg.to_str())
         }
     ).collect();
+
+    if args.len() == 1 {
+        match args.get(0) {
+            &Symbol(ref x) => {
+                if x.len() == 0 {
+                    return Ok((vec![], args_len))
+                }
+            }
+            _   => { }
+        }
+    }
 
     Ok((args, args_len))
 }
