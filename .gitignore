@@ -6,3 +6,4 @@ dummy.rs
 *.swp
 *.swo
 *~
+*.c
