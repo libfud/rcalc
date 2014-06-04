@@ -295,7 +295,7 @@ pub fn str_to_rational(word: &str) -> Result<BigRational, String> {
             Ok(Ratio::from_float(floated).unwrap())
         },
 
-        Invalid     => fail!("Unexpected return type!")
+        Invalid     => Err("Unexpected return type!".to_str())
     }
 }
 
@@ -355,12 +355,4 @@ pub fn rational_to_f64_trig(bigrational_orig: &BigRational) -> f64 {
     let denom_f64: f64 = from_str::<f64>(denom.to_str().as_slice()).unwrap();
 
     numer_f64 / denom_f64
-}
-
-pub fn big_pi() -> BigRational { 
-    from_str::<BigRational>(PI).unwrap()
-}
-
-pub fn half_circ() -> BigRational { 
-    from_str::<BigRational>("180/1").unwrap()
 }

@@ -128,49 +128,10 @@ pub fn is_var(expr: &str) -> MaybeToken {
 pub fn is_number(expr: &str) -> MaybeToken {
     let word = make_word(expr);
 
-    if word.as_slice().starts_with("/") || word.as_slice().ends_with("/") {
-        return (Some(Err("Unrecognized token: ".to_str().append(word.as_slice()))), 0)
-    }
-
-    let mut negative_sign_counter = 0;
-    let mut radix_point_counter = 0;
-    let mut fraction_counter = 0;
-
-    for c in word.as_slice().chars() {
-        match c {
-            '0'..'9'    => { }, //do nothing here
-            '-'         => negative_sign_counter += 1,
-            '.'         => radix_point_counter += 1,
-            '/'         => fraction_counter += 1,
-            _           => return (Some(Err("Unrecognized token!".to_str())), 0)
-        }
-    }
-
-    // Numbers could have a negative sign and, or (exclusively) a divisor or
-    // a radix point.
-    match (fraction_counter, radix_point_counter, negative_sign_counter) {
-        (0, 0, 0) | (1, 0, 0) | (0, 1, 0) => {
-            let number = match str_to_rational(word.as_slice()) {
-                Ok(num) => num,
-                _       => return (Some(Err("Unrecognized token!".to_str())), 0)
-            };
-            (Some(Ok(Literal(BigNum(number)))), word.len())
-        },
-
-        (0, 0, 1) | (0, 1, 1) | (1, 0, 1) => {
-            if word.as_slice().starts_with("-") == true { 
-                let number = match str_to_rational(word.as_slice()) {
-                    Ok(num) => num,
-                    _       => return (Some(Err("unrecognized token!".to_str())), 0)
-                };
-                (Some(Ok(Literal(BigNum(number)))), word.len())
-            } else {
-                (Some(Err("Unrecognized token!".to_str())), 0)
-            }
-        },
-
-        _   => return (None, 0)
-    }
+    match str_to_rational(word.as_slice()) {
+        Ok(num) => (Some(Ok(Literal(BigNum(num)))), word.len()),
+        Err(_)  => (None, 0)
+    } 
 }
 
 pub fn analyze(expr: &str) -> MaybeToken {
