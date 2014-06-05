@@ -76,10 +76,10 @@ pub fn trans_literal(lit: LiteralType, env: &mut Environment) -> CalcResult<Box<
 #[deriving(Show, Clone, PartialEq, PartialOrd)]
 pub enum AbstractType {
     Atom(LiteralType),
-    Set(Vec<LiteralType>),
-    List(Vec<Box<AbstractType>>),
-    Array(Vec<Box<AbstractType>>),
-    Matrix(Vec<Vec<Box<AbstractType>>>)
+    Set(Vec<LiteralType>), //all same type
+    List(Vec<Box<AbstractType>>), //varying types
+    Array(Vec<Box<AbstractType>>), //all same type
+    Matrix(Vec<Vec<Box<AbstractType>>>) //all same type
 }
 
 impl Evaluate for AbstractType {
