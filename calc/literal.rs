@@ -72,3 +72,21 @@ pub fn trans_literal(lit: LiteralType, env: &mut Environment) -> CalcResult<Box<
         Void        => Ok(box VoidArg as Box<Evaluate>)
     }
 }
+
+#[deriving(Show, Clone, PartialEq, PartialOrd)]
+pub enum AbstractType {
+    Atom(LiteralType),
+    Set(Vec<LiteralType>),
+    List(Vec<Box<AbstractType>>),
+    Array(Vec<Box<AbstractType>>),
+    Matrix(Vec<Vec<Box<AbstractType>>>)
+}
+
+impl Evaluate for AbstractType {
+    fn eval(&self, _: &mut Environment) -> CalcResult {
+        match self {
+            &Atom(ref x)    => Ok(x.clone()),
+            _   => fail!("hur")
+        }
+    }
+}
