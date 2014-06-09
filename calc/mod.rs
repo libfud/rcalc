@@ -20,15 +20,12 @@ pub mod common;
 pub mod pretty;
 
 /// A shortcut for the result type that is used everywhere
-pub type CalcResult<T = LiteralType> = Result<T, String>;
-pub trait Evaluate {
-    fn eval(&self, mut env: &mut Environment) -> CalcResult;
-}
+pub type CalcResult<T = BasicType> = Result<T, String>;
 
 /// A structure to allow persistence of variables and functions
 pub struct Environment {
-    pub vars: HashMap<String, LiteralType>,
-    pub funs: HashMap<String, (Vec<LiteralType>, String)>
+    pub procedures: HashMap<String, BasicType>,
+    pub parent: Option<Envi
 }
 
 impl Environment {

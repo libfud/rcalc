@@ -12,12 +12,11 @@ use super::literal::trans_literal;
 use super::operator;
 use super::operator::Help;
 
-pub fn translate(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult<Box<Evaluate>> {
+pub fn translate(tokens: &mut TokenStream, env: &mut Environment) -> Result<Vec<AbstractType>> {
 
     match tokens.next() {
         Some(Ok(LParen))    => {}, //good to go
         Some(Ok(x))         => {
-            println!("{}", x);
             return Err("Incorrectly formatted expression!".to_str());
         },
         Some(Err(msg))      => return Err(msg),
