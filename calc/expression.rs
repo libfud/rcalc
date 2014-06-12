@@ -3,6 +3,7 @@
 use super::{CalcResult, Evaluate};
 use super::{function, operator, Environment};
 use super::operator::OperatorType;
+use super::literal::{LiteralType, Symbol, Func};
 
 #[deriving(Show)]
 pub enum ExprType {
@@ -13,6 +14,23 @@ pub enum ExprType {
 pub struct Expression {
     pub expr_type: ExprType,
     pub args: Vec<Box<Evaluate>>,
+}
+
+impl Expression {
+    pub fn new(e: ExprType, a: Vec<Box<Evaluate>>) -> Expression {
+        Expression { expr_type: e, args: a }
+    }
+
+    pub fn new_raw(e: LiteralType, a: Vec<Box<Evaluate>>) -> Expression {
+        match e {
+            Symbol(x) | Func(x) => Expression::new(Function(x), a),
+            _ => fail!("You used new_raw improperly!")
+        }
+    }
+
+    pub fn box_it(self) -> Box<Evaluate> {
+        box self as Box<Evaluate>
+    }
 }
 
 impl Evaluate for Expression {

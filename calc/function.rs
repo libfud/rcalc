@@ -1,8 +1,6 @@
 //! Evaluate functions defined by the user
 
-extern crate collections;
-
-use self::collections::HashMap;
+use std::collections::HashMap;
 use super::{CalcResult, funfind, Environment, Evaluate};
 use super::literal::{LiteralType, BigNum, Boolean, Symbol, Func, Void};
 use super::tokenize::{TokenStream, Literal, LParen, RParen, Operator, Variable, Token};

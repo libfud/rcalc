@@ -1,13 +1,12 @@
 //! The parent module to every other module in calc.
 
 extern crate num;
-extern crate collections;
 
 pub use self::literal::{LiteralType, BigNumArg, BoolArg, SymbolArg, FunArg};
 pub use self::tokenize::TokenStream;
 pub use self::translate::translate;
 pub use self::common::help;
-pub use self::collections::HashMap;
+pub use std::collections::HashMap;
 
 pub mod literal;
 pub mod tokenize;
@@ -49,7 +48,8 @@ pub fn lookup(var: &String, env: &mut Environment) -> CalcResult {
 }
 
 /// Returns a tuple of a function's strings and the function itself
-pub fn funfind(var: &String, env: &mut Environment) -> Result<(Vec<LiteralType>, String), String> {
+pub fn funfind(var: &String, env: &mut Environment) ->
+                             Result<(Vec<LiteralType>, String), String> {
     match env.funs.find(var) {
         Some(&(ref args, ref fun))   => Ok((args.clone(), fun.clone())),
         None    => Err("fun not found!".to_str())

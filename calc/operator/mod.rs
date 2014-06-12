@@ -1,16 +1,20 @@
 //! Operators
 
+extern crate num;
+
+use self::num::rational::{Ratio, BigRational};
+use self::num::bigint::*;
+
 use std::num;
 use super::{Evaluate, CalcResult, Environment, lookup, funfind, function};
-use super::literal::{LiteralType, Boolean, BigNum, Symbol, Func, Void};
+use super::literal::{LiteralType, Boolean, BigNum, Symbol, Func, Void, trans_literal};
 
 pub mod power;
 pub mod arithmetic;
 pub mod logic;
 pub mod trig;
 
-#[deriving(Show)]
-#[deriving(Clone)]
+#[deriving(Show, Clone)]
 pub enum OperatorType {
     Add,
     Sub,
@@ -33,6 +37,7 @@ pub enum OperatorType {
     Not,
     Define,
     Defun,
+    Sum,
     Help,
 }
 
@@ -59,6 +64,7 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "not"   => Some(Not),
         "define"=> Some(Define),
         "defun" => Some(Defun),
+        "sum"   => Some(Sum),
         "help"  => Some(Help),
         _       => None
     }
@@ -87,13 +93,15 @@ pub fn to_str(op: &OperatorType) -> String {
         Not     => "not",
         Define  => "define",
         Defun   => "defun",
+        Sum     => "sum",
         Help    => "help",
     };
 
     answer.to_str()
 }
 
-pub fn unbox_it(args:&Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult<Vec<LiteralType>> {
+pub fn unbox_it(args:&Vec<Box<Evaluate>>, env: &mut Environment) ->
+                                                         CalcResult<Vec<LiteralType>> {
     let mut literal_vec: Vec<LiteralType> = Vec::new();
     for arg in args.iter() {
         let val = try!(arg.eval(env));
@@ -155,7 +163,8 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
 
         Mul => arithmetic::do_op(args, env, 0, |a, b| a * *b, num::one),
 
-        Div => arithmetic::divrem(args, env, |a, b| a / *b), //division can fail with zeros
+        Div => arithmetic::divrem(args, env, |a, b| a / *b), 
+        //division can fail with zeros
 
         Rem => arithmetic::divrem(args, env, |a, b| a % *b),
 
@@ -187,6 +196,48 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environm
         
         Gt   => logic::ordering(args, env, |a, b| a > b),
 
+        Sum  => sum(args, env),
+
         Help => super::common::help(args, env),
     }
+}
+
+pub fn get_int(arg: LiteralType) -> Result<int, String> {
+    let x = match arg {
+        BigNum(num) => num.to_integer().to_int(),
+        _  => return Err("Not a number!".to_str())
+    };
+
+    if x.is_some() {
+        Ok(x.unwrap())
+    } else {
+        Err("Argument must be an integer!".to_str())
+    }
+}
+
+pub fn sum(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+    if args.len() != 3 {
+        return Err("Not enough args for summation".to_str())
+    }
+
+    match args.get(0).eval(env) {
+        Ok(Symbol(_)) => { },
+        _ => return Err("Not a function!".to_str())
+    }
+
+    let (a, b) = (try!(get_int(try!(args.get(1).eval(env)))), 
+                  try!(get_int(try!(args.get(2).eval(env)))));
+
+    let mut answer: BigRational = num::zero();
+    for x in range(a, b + 1) {
+        let temp = BigNum(Ratio::new(x.to_bigint().unwrap(), num::one()));
+        let expr = super::expression::Expression::new_raw(try!(args.get(0).eval(env)),
+                      vec!(try!(trans_literal(temp, env))));
+        answer = answer + match try!(expr.eval(env)) {
+            BigNum(x) => x,
+            _ => return Err("Invalid return type!".to_str())
+        };
+    }
+
+    Ok(BigNum(answer))
 }
