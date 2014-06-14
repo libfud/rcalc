@@ -28,11 +28,17 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>,
         return Err(msg);
     }
 
-    for arg in args.iter().
+    let mut child_env = Environment::new_frame(env);
+
+    for (arg_key, arg_val) in args_to_fulfill.iter().zip(args.iter()) {
+        child_env.symbols.insert(arg_key.clone(), try!(arg_val.eval(env)));
+    }
+
+    let mut tokens = try!(TokenStream::new_from_tokens(func));
     
-    super::eval(evaluable_string.as_slice(), env)
-*/
-    Ok(super::literal::Boolean(true))
+    let expr = try!(super::translate(&mut tokens, &mut child_env));
+
+    expr.eval(&mut child_env)
 }
 
 pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> Result<(), String> {

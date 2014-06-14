@@ -25,6 +25,7 @@ pub trait Evaluate {
 }
 
 /// A structure to allow persistence of variables and functions
+#[deriving(Clone)]
 pub struct Environment {
     pub symbols: HashMap<String, LiteralType>,
     pub parent: Option<Box<Environment>>
@@ -35,8 +36,8 @@ impl Environment {
         Environment { symbols:  HashMap::new(), parent: None }
     }
 
-    pub fn new_frame(par: Environment) -> Environment {
-        Environment { symbols: HashMap::new(), parent: Some(box par) }
+    pub fn new_frame(par: &mut Environment) -> Environment {
+        Environment { symbols: HashMap::new(), parent: Some(box par.clone()) }
     }
 
     pub fn lookup(&self, var: &String) -> CalcResult {
