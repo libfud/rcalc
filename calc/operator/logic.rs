@@ -1,6 +1,6 @@
 //!Logic and odering.
 
-use super::super::{Evaluate, CalcResult, Environment, lookup};
+use super::super::{Evaluate, CalcResult, Environment};
 use super::super::literal::{LiteralType, Boolean, Symbol};
 use super::unbox_it;
 
@@ -22,7 +22,7 @@ pub fn cond(args: &Vec<Box<Evaluate>>, env: &mut Environment)  -> CalcResult {
     let condition = match try!(args.get(0).eval(env)) {
         Boolean(x)  => x,
         Symbol(x)   => {
-            match try!(lookup(&x, env)) {
+            match try!(env.lookup(&x)) {
                 Boolean(y)  => y,
                 _   => return Err("Only boolean expressions can be a condtion!".to_str())
             }

@@ -11,12 +11,12 @@ use super::operator::{OperatorType};
 
 ///Enumeration of valid tokens. Valid tokens are Operators, Literals, LParens,
 ///RParens, and Names.
-#[deriving(Show, Clone)]
+#[deriving(Show, Clone, PartialOrd, PartialEq)]
 pub enum Token {
     Literal(LiteralType),
     LParen,
     RParen,
-    Fun(String),
+//    Fun(String),
     Operator(OperatorType),
     Name(String),
     Variable(String),
@@ -40,7 +40,8 @@ impl Iterator<CalcResult<Token>> for TokenStream {
         if self.index == self.expr.len() {
             return None
         } else {
-            if self.expr.as_slice().slice_from(self.index).chars().next().unwrap().is_whitespace() {
+            if self.expr.as_slice().slice_from(self.index).chars()
+                .next().unwrap().is_whitespace() {
                 self.index += 1;
                 self.next()
             } else {
@@ -51,7 +52,8 @@ impl Iterator<CalcResult<Token>> for TokenStream {
         }
     }
 
-    //returns the lowest amount of possible remaining tokens, and the most possible remaining tokens
+    //returns the lowest amount of possible remaining tokens,
+    //and the most possible remaining tokens
     fn size_hint(&self) -> (uint, Option<uint>) {
         if self.index == self.expr.len() {
             (0, None)
@@ -63,7 +65,8 @@ impl Iterator<CalcResult<Token>> for TokenStream {
 
 pub fn make_word(expr: &str) -> String {
     let word = expr.words().next().unwrap();
-    word.slice(0, word.find(|c: char| c == ')' || c == '(').unwrap_or(word.len())).to_str()
+    word.slice(0, word.find(|c: char| c == ')'
+               || c == '(').unwrap_or(word.len())).to_str()
 }
 
 pub fn is_paren(expr: &str) -> MaybeToken {
@@ -71,22 +74,6 @@ pub fn is_paren(expr: &str) -> MaybeToken {
         '(' => (Some(Ok(LParen)), 1),
         ')' => (Some(Ok(RParen)), 1),
         _   => (None, 0)
-    }
-}
-
-pub fn is_fun(expr: &str) -> MaybeToken {
-    if expr.starts_with("|") {
-        let fn_last = match expr.slice_from(1).find( |c: char| c == '|') {
-            Some(x) => x,
-            None    => {
-                return (Some(Err("Function with no limit!".to_str())), 0)
-            }
-        };
-
-        let fn_string = expr.as_slice().slice(1, fn_last + 1).to_str();
-        (Some(Ok(Fun(fn_string))), fn_last + 2)
-    } else {
-        (None, 0)
     }
 }
 
@@ -135,7 +122,7 @@ pub fn is_number(expr: &str) -> MaybeToken {
 }
 
 pub fn analyze(expr: &str) -> MaybeToken {
-    let funs = [is_paren, is_fun, is_op, is_const, is_bool, is_var, is_number];
+    let funs = [is_paren, is_op, is_const, is_bool, is_var, is_number];
 
     for &fun in funs.iter() {
         let (token, len) = fun(expr);

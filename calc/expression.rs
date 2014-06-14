@@ -3,7 +3,7 @@
 use super::{CalcResult, Evaluate};
 use super::{function, operator, Environment};
 use super::operator::OperatorType;
-use super::literal::{LiteralType, Symbol, Func};
+use super::literal::{LiteralType, Symbol};
 
 #[deriving(Show)]
 pub enum ExprType {
@@ -23,7 +23,7 @@ impl Expression {
 
     pub fn new_raw(e: LiteralType, a: Vec<Box<Evaluate>>) -> Expression {
         match e {
-            Symbol(x) | Func(x) => Expression::new(Function(x), a),
+            Symbol(x) => Expression::new(Function(x), a),
             _ => fail!("You used new_raw improperly!")
         }
     }

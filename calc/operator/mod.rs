@@ -6,15 +6,15 @@ use self::num::rational::{Ratio, BigRational};
 use self::num::bigint::*;
 
 use std::num;
-use super::{Evaluate, CalcResult, Environment, lookup, funfind, function};
-use super::literal::{LiteralType, Boolean, BigNum, Symbol, Func, Void, trans_literal};
+use super::{Evaluate, CalcResult, Environment};
+use super::literal::{LiteralType, BigNum, Symbol, trans_literal};
 
 pub mod power;
 pub mod arithmetic;
 pub mod logic;
 pub mod trig;
 
-#[deriving(Show, Clone)]
+#[deriving(Show, Clone, PartialOrd, PartialEq)] 
 pub enum OperatorType {
     Add,
     Sub,
@@ -36,7 +36,6 @@ pub enum OperatorType {
     Or,
     Not,
     Define,
-    Defun,
     Sum,
     Help,
 }
@@ -63,7 +62,6 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "or"    => Some(Or),
         "not"   => Some(Not),
         "define"=> Some(Define),
-        "defun" => Some(Defun),
         "sum"   => Some(Sum),
         "help"  => Some(Help),
         _       => None
@@ -92,7 +90,6 @@ pub fn to_str(op: &OperatorType) -> String {
         Or      => "or",
         Not     => "not",
         Define  => "define",
-        Defun   => "defun",
         Sum     => "sum",
         Help    => "help",
     };
@@ -106,11 +103,7 @@ pub fn unbox_it(args:&Vec<Box<Evaluate>>, env: &mut Environment) ->
     for arg in args.iter() {
         let val = try!(arg.eval(env));
         literal_vec.push( match val {
-            Symbol(ref var) => try!(lookup(var, env)),
-            Func(ref var)   => {
-                let (_, fun) = try!(super::funfind(var, env));
-                Func(fun)
-            },
+            Symbol(ref var) => try!(env.lookup(var)),
             _   => val
         });
     }
@@ -118,44 +111,10 @@ pub fn unbox_it(args:&Vec<Box<Evaluate>>, env: &mut Environment) ->
     Ok(literal_vec)
 }
 
-pub fn has_bigs_or_bools(args: &Vec<LiteralType>) -> (bool, bool) {
-    let mut bignum_flag = false;
-    let mut bool_flag = false; //lol
-
-    for literal in args.iter() {
-        match literal {
-            &BigNum(_)  => bignum_flag = true,
-            &Boolean(_) => bool_flag = true,
-            _   => { } //do nothing
-        }
-    }
-
-    (bignum_flag, bool_flag)
-}
-
-pub fn define(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
-    if args.len() != 2 {
-        return Err("Define must have one symbol and one expression!".to_str())
-    }
-
-    let var = match try!(args.get(0).eval(env)) {
-        Symbol(x)   => x,
-        _   => {
-            return Err("Attempted illegal definition!".to_str())
-        }
-    };
-
-    let val = try!(args.get(1).eval(env));
-    
-    env.vars.insert(var, val);
-    Ok(Void)
-}
-
-pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, 
+            env: &mut Environment) -> CalcResult {
     match op_type {
-        Define  => define(args, env),
-
-        Defun   => function::defun(args, env),
+        Define  => Ok(super::literal::Void),
 
         Add => arithmetic::do_op(args, env, 0, |a, b| a + *b, num::zero),
 
@@ -222,11 +181,18 @@ pub fn sum(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
 
     match args.get(0).eval(env) {
         Ok(Symbol(_)) => { },
-        _ => return Err("Not a function!".to_str())
+        _ => {
+            println!("{}", args.get(0).eval(env));
+            return Err("Not a function!".to_str())
+        }
     }
 
     let (a, b) = (try!(get_int(try!(args.get(1).eval(env)))), 
                   try!(get_int(try!(args.get(2).eval(env)))));
+
+    if a > b {
+        return Err("Bad range!".to_str())
+    }
 
     let mut answer: BigRational = num::zero();
     for x in range(a, b + 1) {
@@ -241,3 +207,5 @@ pub fn sum(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
 
     Ok(BigNum(answer))
 }
+
+//pub fn integrate(args: &Vec<Box<Evaluate

@@ -2,8 +2,8 @@
 
 extern crate num;
 
-pub use self::literal::{LiteralType, BigNumArg, BoolArg, SymbolArg, FunArg};
-pub use self::tokenize::TokenStream;
+pub use self::literal::{LiteralType, BigNumArg, BoolArg, SymbolArg};
+pub use self::tokenize::{TokenStream, Token};
 pub use self::translate::translate;
 pub use self::common::help;
 pub use std::collections::HashMap;
@@ -26,33 +26,24 @@ pub trait Evaluate {
 
 /// A structure to allow persistence of variables and functions
 pub struct Environment {
-    pub vars: HashMap<String, LiteralType>,
-    pub funs: HashMap<String, (Vec<LiteralType>, String)>
+    pub symbols: HashMap<String, LiteralType>,
+    pub parent: Option<Box<Environment>>
 }
 
 impl Environment {
-    pub fn new() -> Environment {
-        Environment {vars:  HashMap::new(), funs:  HashMap::new() }
+    pub fn new_global() -> Environment {
+        Environment { symbols:  HashMap::new(), parent: None }
     }
-}
 
-/// Returns a variable's value from a hashmap, or an error if it doesn't exist
-pub fn lookup(var: &String, env: &mut Environment) -> CalcResult {
-    match env.vars.find(var) {
-        Some(val)   => Ok(val.clone()),
-        None        => {
-            println!("{}", var);
-            Err("value not found!".to_str())
+    pub fn new_frame(par: Environment) -> Environment {
+        Environment { symbols: HashMap::new(), parent: Some(box par) }
+    }
+
+    pub fn lookup(&self, var: &String) -> CalcResult {
+        match self.symbols.find(var) {
+            Some(val) => Ok(val.clone()),
+            None      => Err("Unbounded variable ".to_str().append(var.as_slice()))
         }
-    }
-}
-
-/// Returns a tuple of a function's strings and the function itself
-pub fn funfind(var: &String, env: &mut Environment) ->
-                             Result<(Vec<LiteralType>, String), String> {
-    match env.funs.find(var) {
-        Some(&(ref args, ref fun))   => Ok((args.clone(), fun.clone())),
-        None    => Err("fun not found!".to_str())
     }
 }
 

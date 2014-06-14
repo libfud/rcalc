@@ -3,7 +3,7 @@
 extern crate num;
 
 use std::num;
-use super::{has_bigs_or_bools, unbox_it};
+use super::unbox_it;
 use super::super::{CalcResult, Environment, Evaluate};
 use super::super::literal::BigNum;
 use self::num::rational::BigRational;
@@ -42,16 +42,20 @@ pub fn do_op(args: &Arguments, env: &mut Environment, min_len: uint,
     let ident: BigRational = ident_fn();
 
     //Find out the contents of the vector.
-    let (_, bool_flag)  = has_bigs_or_bools(&literals);
-    if bool_flag == true {
-        return Err("Attempted nonsense boolean operation!".to_str())
-    }
+    for lit in literals.iter() {
+        match *lit {
+            BigNum(_) => { },
+            _ => return Err("Arithmetic only works for numbers!".to_str())
+        }
+    };
 
     //it's a vector holding only bigrationals; we're removing the tag from them, so
     //we can work directly with the values
     let stripped_literals: Vec<BigRational> = strip!(literals.move_iter(), BigNum).collect();
-        
-    if args.len() == 1 {
+    if args.len() == 0 {
+        Ok(BigNum(ident))
+    }
+    else if args.len() == 1 {
         //(+ 1) -> 1, (+ -2) -> -2, (- 3) -> -3, (- -4) -> 4
         Ok(BigNum(stripped_literals.iter().fold(ident, op)))
     } else {
@@ -72,12 +76,16 @@ pub fn divrem(args: &Arguments, env: &mut Environment, op:|BigRat, &BigRat| -> B
     }
 
     let literals = try!(unbox_it(args, env));
+
+    for lit in literals.iter() {
+        match *lit {
+            BigNum(_) => { },
+            _ => return Err("Arithmetic only uses numbers!".to_str())
+        }
+    }
+
     let one: BigRational = num::one();
 
-    let (_, bool_flag) = has_bigs_or_bools(&literals);
-    if bool_flag == true {
-        return Err("Attempted nonsensical boolean operation!".to_str())
-    }
     let stripped_literals: Vec<BigRational> = strip!(literals.move_iter(), BigNum).collect();
 
     if args.len() == 1 {

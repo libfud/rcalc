@@ -2,23 +2,23 @@
 
 extern crate num;
 
-use super::{CalcResult, Evaluate, Environment, SymbolArg, FunArg};
+use super::{CalcResult, Evaluate, Environment, SymbolArg};
 use super::constant::Constant;
-use super::tokenize::{Literal, LParen, RParen, Operator, Name, Variable, TokenStream, Fun};
+use super::tokenize::{Literal, LParen, RParen, Operator, Name, Variable, TokenStream};
 use super::expression;
 use super::expression::{Expression, Function};
 use super::function;
-use super::literal::trans_literal;
+use super::literal;
 use super::operator;
-use super::operator::Help;
+use super::operator::{Define, Help};
 
-pub fn translate(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult<Box<Evaluate>> {
+pub fn translate(tokens: &mut TokenStream, 
+                 env: &mut Environment) -> CalcResult<Box<Evaluate>> {
 
     match tokens.next() {
         Some(Ok(LParen))    => {}, //good to go
-        Some(Ok(x))         => {
-            println!("{}", x);
-            return Err("Incorrectly formatted expression!".to_str());
+        Some(Ok(_))         => {
+            return Err("Incorrectly formatnted expression!".to_str());
         },
         Some(Err(msg))      => return Err(msg),
         None                => fail!("Empty expression!")
@@ -31,10 +31,15 @@ pub fn translate(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult<
     };
 
     let top_expr = match top_expr_maybe {
+        Operator(Define)    => {
+            match function::define(tokens, env) {
+                Ok(()) => { },
+                Err(m) => return Err(m)
+            }
+            return Ok(box literal::VoidArg as Box<Evaluate>)
+        }
         Operator(op_type)   => expression::Operator(op_type),
-        Name(ref func_name) | Fun(ref func_name) | Variable(ref func_name) => {
-            Function(try!(function::from_str(func_name.as_slice(), env)))
-        },
+        Variable(func_name) => expression::Function(func_name),
         _                   => {
             return Err(("Operator not at beginning of expr!").to_str())
         }
@@ -50,8 +55,6 @@ pub fn translate(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult<
         };
 
         match token {
-            Fun(fun)   => args.push(box FunArg(fun) as Box<Evaluate>),
-
             Variable(var) => args.push(box SymbolArg(var) as Box<Evaluate>),
 
             // Subexpression begins
@@ -65,7 +68,8 @@ pub fn translate(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult<
 
             RParen => {
                 //make a new expression based on its type and arguments
-                return Ok(box Expression{ expr_type: top_expr, args: args } as Box<Evaluate>)
+                return Ok(box Expression{ expr_type: top_expr, 
+                                          args: args } as Box<Evaluate>)
             },
 
             Operator(op) => {
@@ -73,18 +77,21 @@ pub fn translate(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult<
                     expression::Operator(x) => {
                         match x {
                             Help    => {
-                                args.push(box SymbolArg(operator::to_str((&op))) as Box<Evaluate>)
+                                args.push(box SymbolArg(operator::to_str((&op))) 
+                                          as Box<Evaluate>)
                             },
-                            _   => return Err("idgaf".to_str())
+                            _   => return Err("I suck".to_str())
                         }
                     },
                     _   => {
-                        return Err("Operator in wrong place: ".to_str().append(op.to_str().as_slice()))
+                        return Err("Operator in wrong place: ".to_str().append(
+                            op.to_str().as_slice()))
                     }
                 }
             },
 
-            Literal(literaltype)  => args.push(try!(trans_literal(literaltype, env))),
+            Literal(literaltype)  => args.push(try!(literal::trans_literal(literaltype,
+                                                                           env))),
 
             Name(ref c_name) => {
                 let constant = box try!(Constant::from_str(c_name.as_slice()));

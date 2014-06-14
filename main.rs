@@ -60,7 +60,7 @@ fn main() {
     //env will hold all user defined variables and functions in hashmaps,
     //to be looked up when called. They're in the main function for
     //persistence.
-    let mut env = Environment::new();
+    let mut env = Environment::new_global();
 
     loop {
         let expr = match rust_readline(">>> ") {

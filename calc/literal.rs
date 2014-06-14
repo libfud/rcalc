@@ -3,15 +3,15 @@
 extern crate num;
 
 use self::num::rational::BigRational;
-use super::{CalcResult, Evaluate, Environment};
-use super::lookup;
+use super::{CalcResult, Evaluate, Environment, Token};
 
 #[deriving(Show, Clone, PartialEq, PartialOrd)]
 pub enum LiteralType {
     Boolean(bool),
     BigNum(BigRational),
     Symbol(String),
-    Func(String),
+//    Func(String),
+    Proc(Vec<String>, Vec<Token>),
     Void
 }
 
@@ -45,12 +45,12 @@ impl Evaluate for SymbolArg {
 }
 
 #[deriving(Clone)]
-pub struct FunArg(pub String);
+pub struct ProcArg(pub Vec<String>, pub Vec<Token>);
 
-impl Evaluate for FunArg {
+impl Evaluate for ProcArg {
     fn eval(&self, _: &mut Environment) -> CalcResult {
-        let FunArg(x) = self.clone();
-        Ok(Func(x))
+        let ProcArg(x, y) = self.clone();
+        Ok(Proc(x, y))
     }
 }
 
@@ -67,8 +67,8 @@ pub fn trans_literal(lit: LiteralType, env: &mut Environment) -> CalcResult<Box<
     match lit {
         BigNum(x)   => Ok(box BigNumArg(x) as Box<Evaluate>),
         Boolean(x)  => Ok(box BoolArg(x) as Box<Evaluate>),
-        Func(_)     => fail!("This shouldn't show up here yet!"),
-        Symbol(x)   => trans_literal(try!(lookup(&x, env)), env),
+        Proc(x, y)  => Ok(box ProcArg(x, y) as Box<Evaluate>),
+        Symbol(x)   => trans_literal(try!(env.lookup(&x)), env),
         Void        => Ok(box VoidArg as Box<Evaluate>)
     }
 }
