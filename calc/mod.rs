@@ -7,8 +7,6 @@ pub use self::tokenize::{TokenStream, Token};
 pub use self::translate::translate;
 pub use self::common::help;
 pub use std::collections::HashMap;
-use std::fmt;
-use std::fmt::Show;
 
 pub mod literal;
 pub mod tokenize;
@@ -24,16 +22,10 @@ pub mod pretty;
 pub type CalcResult<T = LiteralType> = Result<T, String>;
 pub trait Evaluate: Clone {
     fn eval(&self, mut env: &mut Environment) -> CalcResult;
-/*
-    fn show_evaluate(&self, f: &mut fmt::Formatter) -> fmt::Result { 
-        self.fmt(f)
-    }
-*/
 
     fn clone_evaluate(&self) -> Box<Evaluate> {
         box self.clone() as Box<Evaluate>
     }
-
 }
 
 impl Clone for Box<Evaluate> {
@@ -60,11 +52,11 @@ impl Environment {
 
     pub fn lookup(&self, var: &String) -> CalcResult {
         match self.symbols.find(var) {
-            Some(val) => Ok(*val),
+            Some(val) => Ok(val.clone()),
             None      => {
                 if self.parent.is_some() {
-                    match self.parent.unwrap().lookup(var) {
-                        Ok(v) => Ok(v),
+                    match self.parent.clone().unwrap().lookup(var) {
+                        Ok(v) => Ok(v.clone()),
                         Err(m) => Err(m)
                      }
                 } else {

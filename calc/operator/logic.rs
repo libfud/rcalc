@@ -4,7 +4,7 @@ extern crate num;
 
 use self::num::rational::BigRational;
 use super::super::{Evaluate, CalcResult, Environment};
-use super::super::literal::{LiteralType, Boolean, Symbol, BigNum};
+use super::super::literal::{Boolean, Symbol, BigNum};
 use super::unbox_it;
 
 pub enum Gates {
@@ -40,10 +40,10 @@ pub fn cond(args: &Vec<Box<Evaluate>>, env: &mut Environment)  -> CalcResult {
     }
 }
 
-type bigrat<T= BigRational> = T;
+type Bigrat<T= BigRational> = T;
 
 pub fn ordering(args: &Vec<Box<Evaluate>>, env: &mut Environment, 
-                        comp: |&bigrat, &bigrat| -> bool) -> CalcResult {
+                        comp: |&Bigrat, &Bigrat| -> bool) -> CalcResult {
 
     if args.len() != 2 {
         return Err("Ordering requires two arguments".to_str())

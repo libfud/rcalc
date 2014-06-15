@@ -7,16 +7,15 @@ extern crate num;
 use super::literal::{LiteralType, Boolean, BigNum};
 use super::common::str_to_rational;
 use super::{CalcResult, operator, constant};
-use super::operator;
 use super::operator::{OperatorType};
 
 ///Enumeration of valid tokens. Valid tokens are Operators, Literals, LParens,
 ///RParens, and Names.
+#[deriving(Clone)]
 pub enum Token {
     Literal(LiteralType),
     LParen,
     RParen,
-//    Fun(String),
     Operator(OperatorType),
     Name(String),
     Variable(String),

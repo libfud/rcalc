@@ -5,7 +5,7 @@ use super::{function, operator, Environment};
 use super::operator::OperatorType;
 use super::literal::{LiteralType, Symbol};
 
-#[deriving(Show)]
+#[deriving(Show, Clone)]
 pub enum ExprType {
     Operator(OperatorType),
     Function(String)
@@ -14,6 +14,15 @@ pub enum ExprType {
 pub struct Expression {
     pub expr_type: ExprType,
     pub args: Vec<Box<Evaluate>>,
+}
+
+impl Clone for Expression {
+    fn clone(&self) -> Expression {
+        Expression {
+            expr_type: self.expr_type.clone(),
+            args: self.args.clone()
+        }
+    }
 }
 
 impl Expression {

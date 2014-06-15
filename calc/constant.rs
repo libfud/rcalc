@@ -6,7 +6,7 @@ use self::num::rational::BigRational;
 use super::{Evaluate, CalcResult, Environment};
 use super::literal::{BigNum, LiteralType};
 
-#[deriving(Show)]
+#[deriving(Show, Clone)]
 pub enum ConstantType {
     Pi,
     E,
@@ -14,6 +14,7 @@ pub enum ConstantType {
     ANSWER
 }
 
+#[deriving(Clone)]
 pub struct Constant(pub ConstantType);
 
 impl Constant {

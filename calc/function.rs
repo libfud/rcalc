@@ -9,13 +9,9 @@ use super::tokenize::{TokenStream, Token, Literal, LParen, RParen, Variable};
 pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>,
             env: &mut Environment) -> CalcResult {
     
-    match env.lookup(fn_name) {
-        _ => println!("foo!")
-    }
-
     let value = try!(env.lookup(fn_name));
 
-    let (args_to_fulfill, func) = match value {
+    let (args_to_fulfill, tokens) = match value {
         Proc(x, y) => (x.clone(), y),
         _ => return Ok(value),
     };
@@ -29,11 +25,13 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>,
     }
 
     let mut child_env = Environment::new_frame(env);
+    let mut expr = try!(TokenStream::new_from_tokens(tokens));
 
     for (arg_key, arg_val) in args_to_fulfill.iter().zip(args.iter()) {
         child_env.symbols.insert(arg_key.clone(), try!(arg_val.eval(env)));
     }
 
+    let func = try!(super::translate(&mut expr, &mut child_env));
     func.eval(&mut child_env)
 }
 
@@ -70,23 +68,47 @@ pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> Result<(), Str
     assert!(symbol_vec.len() >= 1);
     let symbol = symbol_vec.get(0);
 
-    let nt = try!(strip(tokens.next()));
-    let lit = match nt {
-        LParen => {
-            tokens.index -= 1;
-            let expr = try!(super::translate::translate(tokens, env));
-            let params: Vec<String> = symbol_vec.tail().iter().map(|x| 
-                                                                   x.clone()).collect();
-            Proc(params, expr)            
-        },
-        Literal(lit_ty) => lit_ty,
-        Variable(x) => try!(env.lookup(&x)),
-        _ => return Err("Invalid parameter value!".to_str())
-    };
+    let mut lparens = 1;
+    let mut rparens = 0;
+    let mut token_vec: Vec<Token> = Vec::new();
+
+    loop {
+        let nt = try!(strip(tokens.next()));
+        match nt {
+            LParen => {
+                lparens += 1;
+                token_vec.push(nt);
+            },
+            RParen => {
+                rparens += 1;
+                if rparens == lparens {
+                    tokens.index -= 1;
+                    break
+                }
+                token_vec.push(nt);
+            }
+           
+            _ => token_vec.push(nt),
+        }
+    }
 
     match try!(strip(tokens.next())) {
         RParen => {
-            env.symbols.insert(symbol.clone(), lit);
+            match token_vec.len() {
+                0 => return Err("Malformed Expression!".to_str()),
+                1 => {
+                    env.symbols.insert(symbol.clone(), match token_vec.get(0) {
+                        &Variable(ref x) => Symbol(x.clone()),
+                        &Literal(ref lit_ty) => lit_ty.clone(),
+                        _ => return Err("Malformed Expression!".to_str()),
+                    });
+                },
+                _ => {
+                    env.symbols.insert(symbol.clone(),
+                                       Proc(symbol_vec.tail().iter()
+                                            .map(|x| x.clone()).collect(), token_vec));
+                }                
+            }
             Ok(())
         },            
         _ => Err("Malformed expression!".to_str())
