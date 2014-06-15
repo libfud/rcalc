@@ -1,7 +1,10 @@
 //!Logic and odering.
 
+extern crate num;
+
+use self::num::rational::BigRational;
 use super::super::{Evaluate, CalcResult, Environment};
-use super::super::literal::{LiteralType, Boolean, Symbol};
+use super::super::literal::{LiteralType, Boolean, Symbol, BigNum};
 use super::unbox_it;
 
 pub enum Gates {
@@ -37,15 +40,20 @@ pub fn cond(args: &Vec<Box<Evaluate>>, env: &mut Environment)  -> CalcResult {
     }
 }
 
+type bigrat<T= BigRational> = T;
+
 pub fn ordering(args: &Vec<Box<Evaluate>>, env: &mut Environment, 
-                        comp: |&LiteralType, &LiteralType| -> bool) -> CalcResult {
+                        comp: |&bigrat, &bigrat| -> bool) -> CalcResult {
 
     if args.len() != 2 {
         return Err("Ordering requires two arguments".to_str())
     }
-
     let comparands = try!(unbox_it(args, env));
-    Ok(Boolean(comp(comparands.get(0), comparands.get(1))))
+    let (a, b) = match (comparands.get(0), comparands.get(1)) {
+        (&BigNum(ref x), &BigNum(ref y)) => (x.clone(), y.clone()),
+        _ => return Err("Ordering only takes numbers!".to_str())
+    };
+    Ok(Boolean(comp(&a, &b)))
 }
 
 pub fn equality(args: &Vec<Box<Evaluate>>, env: &mut Environment, equal: bool) -> CalcResult {
@@ -56,11 +64,19 @@ pub fn equality(args: &Vec<Box<Evaluate>>, env: &mut Environment, equal: bool) -
     let comparands = try!(unbox_it(args, env));
 
     if equal {
-        Ok(Boolean(comparands.get(0) == comparands.get(1)))
+        match (comparands.get(0), comparands.get(1)) {
+            (&Boolean(x), &Boolean(y)) => Ok(Boolean(x == y)),
+            (&BigNum(ref x), &BigNum(ref y)) => Ok(Boolean(x == y)),
+            _ => Err("Mixed types!".to_str())
+       }
     } else {
-        Ok(Boolean(comparands.get(0) != comparands.get(1)))
+        match (comparands.get(0), comparands.get(1)) {
+            (&Boolean(x), &Boolean(y)) => Ok(Boolean(x == y)),
+            (&BigNum(ref x), &BigNum(ref y)) => Ok(Boolean(x == y)),
+            _ => Err("Mixed types!".to_str())
+       }
     }
-}
+}       
 
 pub fn and_or(args: &Vec<Box<Evaluate>>, env: &mut Environment, short: bool) -> CalcResult {
     let vals = try!(unbox_it(args, env));

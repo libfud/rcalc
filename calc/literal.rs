@@ -5,13 +5,12 @@ extern crate num;
 use self::num::rational::BigRational;
 use super::{CalcResult, Evaluate, Environment, Token};
 
-#[deriving(Show, Clone, PartialEq, PartialOrd)]
+#[deriving(Clone)]
 pub enum LiteralType {
     Boolean(bool),
     BigNum(BigRational),
     Symbol(String),
-//    Func(String),
-    Proc(Vec<String>, Vec<Token>),
+    Proc(Vec<String>, Box<Evaluate>),
     Void
 }
 
@@ -38,19 +37,20 @@ impl Evaluate for BoolArg {
 pub struct SymbolArg(pub String);
 
 impl Evaluate for SymbolArg {
-    fn eval(&self, _: &mut Environment) -> CalcResult {
-        let SymbolArg(x) = self.clone();
-        Ok(Symbol(x))
+    fn eval(&self, env: &mut Environment) -> CalcResult {
+        let arg = match self {
+            &SymbolArg(ref x) => x.clone(),
+        };
+        env.lookup(&arg)
     }
 }
 
-#[deriving(Clone)]
-pub struct ProcArg(pub Vec<String>, pub Vec<Token>);
+pub struct ProcArg(pub Vec<String>, pub Box<Evaluate>);
 
 impl Evaluate for ProcArg {
     fn eval(&self, _: &mut Environment) -> CalcResult {
-        let ProcArg(x, y) = self.clone();
-        Ok(Proc(x, y))
+        let &ProcArg(ref x, ref y) = self;
+        Ok(Proc(x.clone(), *y))
     }
 }
 

@@ -182,7 +182,6 @@ pub fn sum(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     match args.get(0).eval(env) {
         Ok(Symbol(_)) => { },
         _ => {
-            println!("{}", args.get(0).eval(env));
             return Err("Not a function!".to_str())
         }
     }

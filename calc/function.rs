@@ -16,7 +16,7 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>,
     let value = try!(env.lookup(fn_name));
 
     let (args_to_fulfill, func) = match value {
-        Proc(x, y) => (x.clone(), y.clone()),
+        Proc(x, y) => (x.clone(), y),
         _ => return Ok(value),
     };
 
@@ -34,63 +34,61 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>,
         child_env.symbols.insert(arg_key.clone(), try!(arg_val.eval(env)));
     }
 
-    let mut tokens = try!(TokenStream::new_from_tokens(func));
-    
-    let expr = try!(super::translate(&mut tokens, &mut child_env));
+    func.eval(&mut child_env)
+}
 
-    expr.eval(&mut child_env)
+fn strip(t: Option<Result<Token, String>>) -> Result<Token, String> {
+    match t {
+        Some(x) => x,
+	None => Err("No names found!".to_str())
+    }
+}
+
+pub fn get_symbols(tokens: &mut TokenStream) -> Result<Vec<String>, String> {
+    fn multi(tokens: &mut TokenStream) -> Result<Vec<String>, String> {
+        let mut symbols: Vec<String> = Vec::new();
+        loop {
+            let nt = try!(strip(tokens.next()));
+            match nt {
+                Variable(x) => symbols.push(x),
+                RParen => break,
+                _ => return Err("Unexpected token found in parameters!".to_str()),
+            }
+        }
+        Ok(symbols)
+    }
+    
+    match try!(strip(tokens.next())) {
+        LParen => multi(tokens),
+        Variable(x) => Ok(vec!(x)),
+        _ => return Err("Malformed expression!".to_str()),
+    }
 }
 
 pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> Result<(), String> {
+    let symbol_vec = try!(get_symbols(tokens));
+    assert!(symbol_vec.len() >= 1);
+    let symbol = symbol_vec.get(0);
 
-    let symbol = match tokens.next() {
-        Some(Ok(LParen)) => match tokens.next() {
-            Some(Ok(RParen)) => return Err("No name for symbol!".to_str()),
-            Some(Ok(Variable(x))) => x.clone(),
-            Some(Err(m)) => return Err(m),
-            None => return Err("Malformed expression!".to_str()),
-            _ => return Err("Invalid name!".to_str())
+    let nt = try!(strip(tokens.next()));
+    let lit = match nt {
+        LParen => {
+            tokens.index -= 1;
+            let expr = try!(super::translate::translate(tokens, env));
+            let params: Vec<String> = symbol_vec.tail().iter().map(|x| 
+                                                                   x.clone()).collect();
+            Proc(params, expr)            
         },
-        _ => return Err("For now, everying must be wrapped in parens.".to_str())
+        Literal(lit_ty) => lit_ty,
+        Variable(x) => try!(env.lookup(&x)),
+        _ => return Err("Invalid parameter value!".to_str())
     };
 
-    let mut args: Vec<String> = Vec::new();
-
-    loop {
-        match tokens.next() {
-            None => return Err("Malformed expression!".to_str()),
-            Some(Ok(RParen)) => break,
-            Some(Ok(Variable(x))) => args.push(x.clone()),
-            Some(Err(m)) => return Err(m),
-            _ => return Err("Arguments can only be symbols!".to_str())
-        }
+    match try!(strip(tokens.next())) {
+        RParen => {
+            env.symbols.insert(symbol.clone(), lit);
+            Ok(())
+        },            
+        _ => Err("Malformed expression!".to_str())
     }
-
-    let mut body: Vec<Token> = Vec::new();
-    loop {
-        let val = match tokens.next() {
-            None => return Err("Malformed expression!".to_str()),
-            Some(Ok(x)) => x.clone(),
-            Some(Err(m)) => return Err(m)
-        };
-        match val {
-            RParen => {
-                body.push(RParen);
-                break
-            },
-            _ => body.push(val),
-        }
-    }
-
-    env.symbols.insert(symbol, match body.len() {
-        1 => match body.get(1) {
-            &Literal(ref lit_ty) => lit_ty.clone(),
-            &Variable(ref x) => Symbol(x.clone()),
-            _ => return Err("Malformed body!".to_str()),
-        },
-        _  => Proc(args, body),
-    });
-
-            
-    Ok(())
 }

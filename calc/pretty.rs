@@ -23,15 +23,12 @@ pub fn pretty_print(result: &CalcResult, env: &Environment) {
         },
         Boolean(x) => println!("{}", x),
         Symbol(x)  => {
-            let res = match env.symbols.find(&x) {
-                Some(y) => Ok(y.clone()),
-                None    => Err("Not found".to_str())
-            };
+            let val = env.lookup(&x);
             print!("{} = ", x);
-            pretty_print(&res, env)
+            pretty_print(&val, env)
         },
-        Proc(x, y) => {
-            print!("{}, {}", x, y);
+        Proc(_, _) => {
+            print!("Some kind of procedure!")
         },
         Void    => { }
     }

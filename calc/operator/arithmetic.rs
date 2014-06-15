@@ -45,7 +45,9 @@ pub fn do_op(args: &Arguments, env: &mut Environment, min_len: uint,
     for lit in literals.iter() {
         match *lit {
             BigNum(_) => { },
-            _ => return Err("Arithmetic only works for numbers!".to_str())
+            _ => {
+                return Err("Arithmetic only works for numbers!".to_str())
+            }
         }
     };
 

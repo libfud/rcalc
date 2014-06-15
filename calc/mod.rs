@@ -7,6 +7,8 @@ pub use self::tokenize::{TokenStream, Token};
 pub use self::translate::translate;
 pub use self::common::help;
 pub use std::collections::HashMap;
+use std::fmt;
+use std::fmt::Show;
 
 pub mod literal;
 pub mod tokenize;
@@ -22,6 +24,17 @@ pub mod pretty;
 pub type CalcResult<T = LiteralType> = Result<T, String>;
 pub trait Evaluate {
     fn eval(&self, mut env: &mut Environment) -> CalcResult;
+/*
+    fn show_evaluate(&self, f: &mut fmt::Formatter) -> fmt::Result { 
+        self.fmt(f)
+    }
+*/
+
+/*
+    fn clone_evaluate(&self) -> Box<Evaluate> {
+        box self.clone() as Box<Evaluate>
+    }
+*/
 }
 
 /// A structure to allow persistence of variables and functions
@@ -42,8 +55,17 @@ impl Environment {
 
     pub fn lookup(&self, var: &String) -> CalcResult {
         match self.symbols.find(var) {
-            Some(val) => Ok(val.clone()),
-            None      => Err("Unbounded variable ".to_str().append(var.as_slice()))
+            Some(val) => Ok(*val),
+            None      => {
+                if self.parent.is_some() {
+                    match self.parent.unwrap().lookup(var) {
+                        Ok(v) => Ok(v),
+                        Err(m) => Err(m)
+                     }
+                } else {
+                    Err("Unbound variable!".to_str())
+                }
+            }
         }
     }
 }
