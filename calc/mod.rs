@@ -22,7 +22,7 @@ pub mod pretty;
 
 /// A shortcut for the result type that is used everywhere
 pub type CalcResult<T = LiteralType> = Result<T, String>;
-pub trait Evaluate {
+pub trait Evaluate: Clone {
     fn eval(&self, mut env: &mut Environment) -> CalcResult;
 /*
     fn show_evaluate(&self, f: &mut fmt::Formatter) -> fmt::Result { 
@@ -30,11 +30,16 @@ pub trait Evaluate {
     }
 */
 
-/*
     fn clone_evaluate(&self) -> Box<Evaluate> {
         box self.clone() as Box<Evaluate>
     }
-*/
+
+}
+
+impl Clone for Box<Evaluate> {
+    fn clone(&self) -> Box<Evaluate> {
+        self.clone_evaluate()
+    }
 }
 
 /// A structure to allow persistence of variables and functions
