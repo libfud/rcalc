@@ -68,8 +68,7 @@ pub fn translate(tokens: &mut TokenStream,
 
             RParen => {
                 //make a new expression based on its type and arguments
-                return Ok(box Expression{ expr_type: top_expr, 
-                                          args: args } as Box<Evaluate>)
+                return Ok(Expression::new(top_expr, args).box_it())
             },
 
             Operator(op) => {

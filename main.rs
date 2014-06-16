@@ -15,7 +15,7 @@ use calc::pretty::pretty_print;
 use calc::HashMap;
 use std::io::{File, Open, ReadWrite};
 
-pub mod calc;
+mod calc;
 
 #[cfg(target_os = "linux")]
 pub mod r_readline {

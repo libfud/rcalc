@@ -2,7 +2,7 @@
 
 use std::num;
 use super::{Evaluate, CalcResult, Environment};
-use super::literal::{LiteralType, BigNum, Symbol};
+use super::literal::{LiteralType, Symbol};
 
 pub mod power;
 pub mod arithmetic;
@@ -149,18 +149,5 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>,
         Gt   => logic::ordering(args, env, |a, b| a > b),
 
         Help => super::common::help(args),
-    }
-}
-
-pub fn get_int(arg: LiteralType) -> Result<int, String> {
-    let x = match arg {
-        BigNum(num) => num.to_integer().to_int(),
-        _  => return Err("Not a number!".to_str())
-    };
-
-    if x.is_some() {
-        Ok(x.unwrap())
-    } else {
-        Err("Argument must be an integer!".to_str())
     }
 }
