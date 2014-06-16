@@ -76,6 +76,7 @@ pub mod rust_no_readline {
         match reader.read_line() {
             Ok(x) => Some(x),
             Err(m) => None
+        }
     }
 
     pub fn rust_add_history(line: &str) {
