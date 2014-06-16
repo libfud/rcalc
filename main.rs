@@ -4,10 +4,12 @@
 
 //! Polish notation programmable calculator.
 
-extern crate libc;
+#[cfg(target_os = "linux")]
+use r_readline::*;
 
-use libc::c_char;
-use std::c_str::CString;
+#[cfg(not(target_os = "linux"))]
+use rust_no_readline::*;
+
 use calc::{eval, Environment};
 use calc::pretty::pretty_print;
 use calc::HashMap;
@@ -15,46 +17,70 @@ use std::io::{File, Open, ReadWrite};
 
 pub mod calc;
 
-#[link(name = "readline")]
-extern {
-    fn readline(p: *c_char) -> *c_char;
-    fn add_history(l: *c_char);
-}
+#[cfg(target_os = "linux")]
+pub mod r_readline {
+    extern crate libc;
 
-///Takes a reference to a string for use as a prompt, and returns an option.
-///On failure it returns None, which may be the case for ^D or ^C.
-pub fn rust_readline(prompt: &str) -> Option<String> {
-    if prompt.len() == 0 { 
-        return None
+    use self::libc::c_char;
+    use std::c_str::CString;
+    #[link(name = "readline")]
+
+    extern {
+        fn readline(p: *c_char) -> *c_char;
+        fn add_history(l: *c_char);
     }
 
-    let c_prompt = prompt.to_c_str();
-
-    c_prompt.with_ref(|c_buf| {
-        unsafe {
-            let ret_str = CString::new(readline(c_buf), true);
-            if ret_str.is_not_null() {
-                ret_str.as_str().map(|ret_str| ret_str.to_str())
-            } else {
-                None
-            }
+    ///Takes a reference to a string for use as a prompt, and returns an option.
+    ///On failure it returns None, which may be the case for ^D or ^C.
+    pub fn rust_readline(prompt: &str) -> Option<String> {
+        if prompt.len() == 0 { 
+            return None
         }
-    })
+
+        let c_prompt = prompt.to_c_str();
+
+        c_prompt.with_ref(|c_buf| {
+            unsafe {
+                let ret_str = CString::new(readline(c_buf), true);
+                if ret_str.is_not_null() {
+                    ret_str.as_str().map(|ret_str| ret_str.to_str())
+                } else {
+                    None
+                }
+            }
+        })
+    }
+
+    ///Adds a string to a history buffer for use by readline. Does not
+    ///take zero length strings.
+    pub fn rust_add_history(line: &str) {
+        if line.len() == 0 {
+            return
+        }
+
+        let c_line = line.to_c_str();
+        c_line.with_ref(|c_line| {
+            unsafe {
+                add_history(c_line);
+            }
+        });
+    }
 }
 
-///Adds a string to a history buffer for use by readline. Does not
-///take zero length strings.
-pub fn rust_add_history(line: &str) {
-    if line.len() == 0 {
+#[cfg(not(target_os = "linux"))]
+pub mod rust_no_readline {
+    pub fn rust_readline(prompt: &str) -> Option<String> {
+        let mut reader = std::io::stdin();
+        reader.read_line()
+    }
+
+    pub fn rust_add_history(line: &str) {
+        if line.len() == 0 {
+            return
+        }
+
         return
     }
-
-    let c_line = line.to_c_str();
-    c_line.with_ref(|c_line| {
-        unsafe {
-            add_history(c_line);
-        }
-    });
 }
 
 fn main() {
