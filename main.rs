@@ -73,7 +73,9 @@ pub mod rust_no_readline {
 
     pub fn rust_readline(prompt: &str) -> Option<String> {
         let mut reader = io::stdin();
-        reader.read_line()
+        match reader.read_line() {
+            Ok(x) => Some(x),
+            Err(m) => None
     }
 
     pub fn rust_add_history(line: &str) {
