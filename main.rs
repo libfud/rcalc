@@ -69,8 +69,10 @@ pub mod r_readline {
 
 #[cfg(not(target_os = "linux"))]
 pub mod rust_no_readline {
+    use std::io;
+
     pub fn rust_readline(prompt: &str) -> Option<String> {
-        let mut reader = std::io::stdin();
+        let mut reader = io::stdin();
         reader.read_line()
     }
 
