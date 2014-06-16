@@ -53,4 +53,8 @@ impl Evaluate for Expression {
             }
         }
     }
+
+    fn to_symbol(&self) -> String {
+        self.expr_type.to_str()
+    }
 }

@@ -2,10 +2,11 @@
 
 extern crate num;
 
+use std::num;
 use self::num::rational::BigRational;
 use super::{CalcResult, Evaluate, Environment, Token};
 
-#[deriving(Clone)]
+#[deriving(Clone, Show)]
 pub enum LiteralType {
     Boolean(bool),
     BigNum(BigRational),
@@ -22,6 +23,18 @@ impl Evaluate for BigNumArg {
         let BigNumArg(x) = self.clone(); 
         Ok(BigNum(x))
     }
+
+    fn to_symbol(&self) -> String {
+        match self {
+            &BigNumArg(ref x) => {
+                if *x.denom() == num::one() {
+                    x.numer().to_str()
+                } else {
+                    x.to_str()
+                }
+            }
+        }
+    }
 }
 
 #[deriving(Clone)]
@@ -31,6 +44,12 @@ impl Evaluate for BoolArg {
     fn eval(&self, _: &mut Environment)  -> CalcResult {
         let &BoolArg(x) = self;
         Ok(Boolean(x))
+    }
+
+    fn to_symbol(&self) -> String {
+        match self {
+            &BoolArg(x) => x.to_str()
+        }
     }
 }
 
@@ -44,6 +63,12 @@ impl Evaluate for SymbolArg {
         };
         env.lookup(&arg)
     }
+
+    fn to_symbol(&self) -> String {
+        match self {
+            &SymbolArg(ref x) => x.to_str()
+        }
+    }
 }
 
 #[deriving(Clone)]
@@ -54,6 +79,20 @@ impl Evaluate for ProcArg {
         let &ProcArg(ref x, ref y) = self;
         Ok(Proc(x.clone(), y.clone()))
     }
+
+    fn to_symbol(&self) -> String {
+        
+        let (param_string, token_string) = match self {
+            &ProcArg(ref x, ref y) => {
+                (x.iter().fold("".to_str(), |s, p| 
+                               s.append(p.to_str().append(" ").as_slice())),
+                 y.iter().fold("".to_str(), |s, p| 
+                               s.append(p.to_str().append(" ").as_slice())))
+            }
+        };
+        "( ".to_str().append(param_string.append(" , ").as_slice()).append(
+            token_string.append(")").as_slice())
+    }
 }
 
 #[deriving(Clone)]
@@ -62,6 +101,10 @@ pub struct VoidArg;
 impl Evaluate for VoidArg {
     fn eval(&self, _: &mut Environment) -> CalcResult {
         Ok(Void)
+    }
+
+    fn to_symbol(&self) -> String {
+        "".to_str()
     }
 }
 

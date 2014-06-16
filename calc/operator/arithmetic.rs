@@ -5,7 +5,7 @@ extern crate num;
 use std::num;
 use super::unbox_it;
 use super::super::{CalcResult, Environment, Evaluate};
-use super::super::literal::BigNum;
+use super::super::literal::{Symbol, BigNum};
 use self::num::rational::BigRational;
 
 macro_rules! strip (
@@ -42,18 +42,20 @@ pub fn do_op(args: &Arguments, env: &mut Environment, min_len: uint,
     let ident: BigRational = ident_fn();
 
     //Find out the contents of the vector.
-    for lit in literals.iter() {
-        match *lit {
-            BigNum(_) => { },
+    let mut stripped_literals: Vec<BigRat> = Vec::new();
+    for lit in literals.move_iter() {
+        match lit {
+            BigNum(x) => stripped_literals.push(x),
+            Symbol(x) => stripped_literals.push(match try!(env.lookup(&x)) {
+                BigNum(y) => y.clone(),
+                _ => return Err(try!(env.lookup(&x)).to_str()),
+            }),
             _ => {
                 return Err("Arithmetic only works for numbers!".to_str())
             }
         }
     };
 
-    //it's a vector holding only bigrationals; we're removing the tag from them, so
-    //we can work directly with the values
-    let stripped_literals: Vec<BigRational> = strip!(literals.move_iter(), BigNum).collect();
     if args.len() == 0 {
         Ok(BigNum(ident))
     }

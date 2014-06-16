@@ -27,7 +27,8 @@ pub fn cond(args: &Vec<Box<Evaluate>>, env: &mut Environment)  -> CalcResult {
         Symbol(x)   => {
             match try!(env.lookup(&x)) {
                 Boolean(y)  => y,
-                _   => return Err("Only boolean expressions can be a condtion!".to_str())
+                _   => return Err("Only boolean expressions can be a condtion!"
+                                  .to_str())
             }
         },
         _   => return Err("Only boolean expressions can be a condition!".to_str())

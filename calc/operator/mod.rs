@@ -97,8 +97,9 @@ pub fn to_str(op: &OperatorType) -> String {
     answer.to_str()
 }
 
-pub fn unbox_it(args:&Vec<Box<Evaluate>>, env: &mut Environment) ->
-                                                         CalcResult<Vec<LiteralType>> {
+pub fn unbox_it(args:&Vec<Box<Evaluate>>, 
+                env: &mut Environment) -> CalcResult<Vec<LiteralType>> {
+
     let mut literal_vec: Vec<LiteralType> = Vec::new();
     for arg in args.iter() {
         let val = try!(arg.eval(env));
@@ -157,7 +158,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>,
 
         Sum  => sum(args, env),
 
-        Help => super::common::help(args, env),
+        Help => super::common::help(args),
     }
 }
 
@@ -173,38 +174,3 @@ pub fn get_int(arg: LiteralType) -> Result<int, String> {
         Err("Argument must be an integer!".to_str())
     }
 }
-
-pub fn sum(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
-    if args.len() != 3 {
-        return Err("Not enough args for summation".to_str())
-    }
-
-    match args.get(0).eval(env) {
-        Ok(Symbol(_)) => { },
-        _ => {
-            return Err("Not a function!".to_str())
-        }
-    }
-
-    let (a, b) = (try!(get_int(try!(args.get(1).eval(env)))), 
-                  try!(get_int(try!(args.get(2).eval(env)))));
-
-    if a > b {
-        return Err("Bad range!".to_str())
-    }
-
-    let mut answer: BigRational = num::zero();
-    for x in range(a, b + 1) {
-        let temp = BigNum(Ratio::new(x.to_bigint().unwrap(), num::one()));
-        let expr = super::expression::Expression::new_raw(try!(args.get(0).eval(env)),
-                      vec!(try!(trans_literal(temp, env))));
-        answer = answer + match try!(expr.eval(env)) {
-            BigNum(x) => x,
-            _ => return Err("Invalid return type!".to_str())
-        };
-    }
-
-    Ok(BigNum(answer))
-}
-
-//pub fn integrate(args: &Vec<Box<Evaluate

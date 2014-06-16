@@ -39,6 +39,15 @@ impl Evaluate for Constant {
             ANSWER  => Ok(BigNum(from_str::<BigRational>("42/1").unwrap())),
         }
     }
+
+    fn to_symbol(&self) -> String {
+        match self {
+            &Constant(Pi) => "π".to_str(),
+            &Constant(E) => "e".to_str(),
+            &Constant(C) => "c".to_str(),
+            &Constant(ANSWER) => "42".to_str()
+        }
+    }
 }
 
 pub fn from_const_str(s: &str) -> Option<LiteralType> {

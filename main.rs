@@ -2,6 +2,7 @@
 #![crate_type = "bin"]
 #![feature(default_type_params, globs, macro_rules)]
 
+
 //! Polish notation programmable calculator.
 
 extern crate libc;
@@ -10,6 +11,7 @@ use libc::c_char;
 use std::c_str::CString;
 use calc::{eval, Environment};
 use calc::pretty::pretty_print;
+use calc::HashMap;
 
 pub mod calc;
 
@@ -74,6 +76,11 @@ fn main() {
             continue
         }
 
+        if expr.as_slice().starts_with(",") {
+            special(expr.as_slice(), &mut env);
+            continue
+        }
+
         let result = match exit_or_eval.as_slice()[0] {
             "exit" | "(exit" | "(exit)" | ",q" => break,
             "(" => {
@@ -91,5 +98,20 @@ fn main() {
         };
 
         pretty_print(&result, &env);
+    }
+}
+
+fn special(msg: &str, env: &mut Environment) {
+    match msg.trim_right() {
+        ",clear-state" => {
+            env.symbols = HashMap::new();
+        },
+        ",save-state" => {
+            for (k, v) in env.symbols.iter() {
+                println!("{} {}", k, v);
+            }
+        },
+        ",q" => { },
+        _ => println!("There are no other defined actions"),
     }
 }

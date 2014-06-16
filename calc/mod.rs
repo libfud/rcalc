@@ -26,6 +26,8 @@ pub trait Evaluate: Clone {
     fn clone_evaluate(&self) -> Box<Evaluate> {
         box self.clone() as Box<Evaluate>
     }
+
+    fn to_symbol(&self) -> String;
 }
 
 impl Clone for Box<Evaluate> {
