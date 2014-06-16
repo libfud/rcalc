@@ -7,7 +7,6 @@ use super::literal::{ Void};
 use self::num::rational::{BigRational, Ratio};
 use std::num;
 
-pub static DESPAIR: &'static str = "Laundry day is a very dangerous day.";
 static PI: &'static str = "3126535/995207";
 
 pub fn help(args: &Vec<Box<Evaluate>>) -> CalcResult {
