@@ -5,17 +5,8 @@ extern crate num;
 use std::num;
 use super::unbox_it;
 use super::super::{CalcResult, Environment, Evaluate};
-use super::super::literal::{Symbol, BigNum};
+use super::super::literal::{Symbol, BigNum, Void};
 use self::num::rational::BigRational;
-
-macro_rules! strip (
-    ($x: expr, $case: ident) => {
-        $x.map(|y| match y { 
-            $case(n) => n,
-            _   => unreachable!()
-        })
-    }
-)
 
 pub type Arguments<T = Box<Evaluate>> = Vec<T>;
 pub type BigRat = BigRational;
@@ -48,8 +39,10 @@ pub fn do_op(args: &Arguments, env: &mut Environment, min_len: uint,
             BigNum(x) => stripped_literals.push(x),
             Symbol(x) => stripped_literals.push(match try!(env.lookup(&x)) {
                 BigNum(y) => y.clone(),
+                Void => ident.clone(),
                 _ => return Err(try!(env.lookup(&x)).to_str()),
             }),
+            Void => { },
             _ => {
                 return Err("Arithmetic only works for numbers!".to_str())
             }
@@ -81,16 +74,25 @@ pub fn divrem(args: &Arguments, env: &mut Environment, op:|BigRat, &BigRat| -> B
 
     let literals = try!(unbox_it(args, env));
 
-    for lit in literals.iter() {
-        match *lit {
-            BigNum(_) => { },
-            _ => return Err("Arithmetic only uses numbers!".to_str())
-        }
-    }
-
     let one: BigRational = num::one();
 
-    let stripped_literals: Vec<BigRational> = strip!(literals.move_iter(), BigNum).collect();
+    let mut stripped_literals: Vec<BigRat> = Vec::new();
+    for lit in literals.move_iter() {
+        match lit {
+            BigNum(x) => stripped_literals.push(x),
+            Symbol(x) => stripped_literals.push(match try!(env.lookup(&x)) {
+                BigNum(y) => y.clone(),
+                Void => one.clone(),
+                _ => return Err(try!(env.lookup(&x)).to_str()),
+            }),
+            Void => {            }
+            _ => {
+                return Err("Arithmetic only works for numbers!".to_str())
+            }
+        }
+    };
+
+    let one: BigRational = num::one();
 
     if args.len() == 1 {
         if *stripped_literals.get(0) == num::zero() {

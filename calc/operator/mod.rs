@@ -1,13 +1,8 @@
 //! Operators
 
-extern crate num;
-
-use self::num::rational::{Ratio, BigRational};
-use self::num::bigint::*;
-
 use std::num;
 use super::{Evaluate, CalcResult, Environment};
-use super::literal::{LiteralType, BigNum, Symbol, trans_literal};
+use super::literal::{LiteralType, BigNum, Symbol};
 
 pub mod power;
 pub mod arithmetic;
@@ -36,7 +31,6 @@ pub enum OperatorType {
     Or,
     Not,
     Define,
-    Sum,
     Help,
 }
 
@@ -62,7 +56,6 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "or"    => Some(Or),
         "not"   => Some(Not),
         "define"=> Some(Define),
-        "sum"   => Some(Sum),
         "help"  => Some(Help),
         _       => None
     }
@@ -90,7 +83,6 @@ pub fn to_str(op: &OperatorType) -> String {
         Or      => "or",
         Not     => "not",
         Define  => "define",
-        Sum     => "sum",
         Help    => "help",
     };
 
@@ -155,8 +147,6 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>,
         GtEq => logic::ordering(args, env, |a, b| a >= b),
         
         Gt   => logic::ordering(args, env, |a, b| a > b),
-
-        Sum  => sum(args, env),
 
         Help => super::common::help(args),
     }

@@ -2,7 +2,6 @@
 #![crate_type = "bin"]
 #![feature(default_type_params, globs, macro_rules)]
 
-
 //! Polish notation programmable calculator.
 
 extern crate libc;
@@ -12,6 +11,7 @@ use std::c_str::CString;
 use calc::{eval, Environment};
 use calc::pretty::pretty_print;
 use calc::HashMap;
+use std::io::{File, Open, ReadWrite};
 
 pub mod calc;
 
@@ -106,12 +106,42 @@ fn special(msg: &str, env: &mut Environment) {
         ",clear-state" => {
             env.symbols = HashMap::new();
         },
-        ",save-state" => {
-            for (k, v) in env.symbols.iter() {
-                println!("{} {}", k, v);
-            }
-        },
+        ",save-state" => save_state(env),
         ",q" => { },
         _ => println!("There are no other defined actions"),
     }
+}
+
+fn save_state(env: &mut Environment) {
+    let p = Path::new("state.bytes");
+    let mut file = match File::open_mode(&p, Open, ReadWrite) {
+        Ok(f) => f,
+        Err(e) => {
+            println!("{}", e);
+            return
+        }
+    };
+
+    for (key, val) in env.symbols.iter() {
+        match file.write_line(key.clone().append(" ").append
+                        (val.to_str().as_slice()).as_slice()) {
+            Ok(_) => { },
+            Err(m) => {
+                println!("{}", m);
+                return
+            }
+        }
+    }
+
+/*
+    match file.write(env.symbols.to_bytes()) {
+        Ok(_) => { },
+        Err(e) => {
+            println!("{}", e);
+            println!("Recommend quitting.");
+            return
+        }
+    }
+*/
+    println!("Saved to default.txt");
 }
