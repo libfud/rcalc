@@ -1,7 +1,7 @@
 //! Evaluate functions defined by the user
 
 use super::{CalcResult, Environment, Evaluate};
-use super::literal::{Proc, Symbol};
+use super::literal::{Proc, Symbol, Void};
 use super::tokenize::{TokenStream, Token, Literal, LParen, RParen, Variable};
 //use super::operator;
 
@@ -63,11 +63,7 @@ pub fn get_symbols(tokens: &mut TokenStream) -> Result<Vec<String>, String> {
     }
 }
 
-pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> Result<(), String> {
-    let symbol_vec = try!(get_symbols(tokens));
-    assert!(symbol_vec.len() >= 1);
-    let symbol = symbol_vec.get(0);
-
+pub fn get_body(tokens: &mut TokenStream) -> Result<Vec<Token>, String> {
     let mut lparens = 1;
     let mut rparens = 0;
     let mut token_vec: Vec<Token> = Vec::new();
@@ -93,24 +89,34 @@ pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> Result<(), Str
     }
 
     match try!(strip(tokens.next())) {
-        RParen => {
-            match token_vec.len() {
-                0 => return Err("Malformed Expression!".to_str()),
-                1 => {
-                    env.symbols.insert(symbol.clone(), match token_vec.get(0) {
-                        &Variable(ref x) => Symbol(x.clone()),
-                        &Literal(ref lit_ty) => lit_ty.clone(),
-                        _ => return Err("Malformed Expression!".to_str()),
-                    });
-                },
-                _ => {
-                    env.symbols.insert(symbol.clone(),
-                                       Proc(symbol_vec.tail().iter()
-                                            .map(|x| x.clone()).collect(), token_vec));
-                }                
-            }
-            Ok(())
-        },            
+        RParen => Ok(token_vec),
+        /*
+    */
         _ => Err("Malformed expression!".to_str())
     }
+}
+
+pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult {
+    let symbol_vec = try!(get_symbols(tokens));
+    assert!(symbol_vec.len() >= 1);
+    let symbol = symbol_vec.get(0);
+
+    let body = try!(get_body(tokens));
+        
+    match body.len() {
+        0 => return Err("Malformed Expression!".to_str()),
+        1 => {
+            env.symbols.insert(symbol.clone(), match body.get(0) {
+                &Variable(ref x) => Symbol(x.clone()),
+                &Literal(ref lit_ty) => lit_ty.clone(),
+                _ => return Err("Malformed Expression!".to_str()),
+            });
+        },
+        _ => {
+            let symbols = symbol_vec.tail().iter().map(|x| x.clone()).collect();
+            env.symbols.insert(symbol.clone(), Proc(symbols, body));
+        }                
+    }
+
+    Ok(Void)
 }

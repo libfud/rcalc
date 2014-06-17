@@ -33,7 +33,7 @@ pub fn translate(tokens: &mut TokenStream,
     let top_expr = match top_expr_maybe {
         Operator(Define)    => {
             match function::define(tokens, env) {
-                Ok(()) => { },
+                Ok(_) => { },
                 Err(m) => return Err(m)
             }
             return Ok(box literal::VoidArg as Box<Evaluate>)
