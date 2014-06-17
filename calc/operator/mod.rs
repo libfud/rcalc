@@ -30,6 +30,7 @@ pub enum OperatorType {
     And,
     Or,
     Not,
+    Lambda,
     Define,
     Help,
 }
@@ -56,6 +57,7 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "or"    => Some(Or),
         "not"   => Some(Not),
         "define"=> Some(Define),
+        "lambda"=> Some(Lambda),
         "help"  => Some(Help),
         _       => None
     }
@@ -83,6 +85,7 @@ pub fn to_str(op: &OperatorType) -> String {
         Or      => "or",
         Not     => "not",
         Define  => "define",
+        Lambda  => "lambda",
         Help    => "help",
     };
 
@@ -108,6 +111,8 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>,
             env: &mut Environment) -> CalcResult {
     match op_type {
         Define  => Ok(super::literal::Void),
+
+        Lambda => Ok(super::literal::Void),
 
         Add => arithmetic::do_op(args, env, 0, |a, b| a + *b, num::zero),
 

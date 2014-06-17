@@ -4,13 +4,14 @@ extern crate num;
 
 use super::{CalcResult, Evaluate, Environment, SymbolArg};
 use super::constant::Constant;
-use super::tokenize::{Literal, LParen, RParen, Operator, Name, Variable, TokenStream};
+use super::tokenize::{Literal, LParen, RParen, Operator, Name, Variable, 
+                      TokenStream};
 use super::expression;
 use super::expression::{Expression, Function};
 use super::function;
 use super::literal;
 use super::operator;
-use super::operator::{Define, Help};
+use super::operator::{Define, Lambda, Help};
 
 pub fn translate(tokens: &mut TokenStream, 
                  env: &mut Environment) -> CalcResult<Box<Evaluate>> {
@@ -37,7 +38,11 @@ pub fn translate(tokens: &mut TokenStream,
                 Err(m) => return Err(m)
             }
             return Ok(box literal::VoidArg as Box<Evaluate>)
-        }
+        },
+        Operator(Lambda)    => {
+            let (symbols, body) = try!(function::lambda(tokens));
+            return Ok(box literal::ProcArg(symbols, body) as Box<Evaluate>)
+        },
         Operator(op_type)   => expression::Operator(op_type),
         Variable(func_name) => expression::Function(func_name),
         _                   => {

@@ -71,21 +71,17 @@ pub fn get_body(tokens: &mut TokenStream) -> Result<Vec<Token>, String> {
     loop {
         let nt = try!(strip(tokens.next()));
         match nt {
-            LParen => {
-                lparens += 1;
-                token_vec.push(nt);
-            },
+            LParen => lparens += 1,
             RParen => {
                 rparens += 1;
                 if rparens == lparens {
                     tokens.index -= 1;
                     break
                 }
-                token_vec.push(nt);
             }
-           
-            _ => token_vec.push(nt),
+            _ => { },
         }
+        token_vec.push(nt);
     }
 
     match try!(strip(tokens.next())) {
@@ -96,12 +92,16 @@ pub fn get_body(tokens: &mut TokenStream) -> Result<Vec<Token>, String> {
     }
 }
 
-pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult {
-    let symbol_vec = try!(get_symbols(tokens));
-    assert!(symbol_vec.len() >= 1);
-    let symbol = symbol_vec.get(0);
-
+pub fn lambda(tokens: &mut TokenStream) -> CalcResult<(Vec<String>, Vec<Token>)> {
+    let symbols = try!(get_symbols(tokens));
     let body = try!(get_body(tokens));
+
+    Ok((symbols, body))
+}
+
+pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult {
+    let (symbol_vec, body) = try!(lambda(tokens));
+    let symbol = symbol_vec.get(0);
         
     match body.len() {
         0 => return Err("Malformed Expression!".to_str()),
@@ -120,3 +120,4 @@ pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult {
 
     Ok(Void)
 }
+
