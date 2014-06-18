@@ -57,17 +57,9 @@ pub fn equality(args: &Args, env: &mut Env, equal: bool) -> CalcResult {
     let comparands = try!(unbox_it(args, env));
 
     if equal {
-        match (comparands.get(0), comparands.get(1)) {
-            (&Boolean(x), &Boolean(y)) => Ok(Boolean(x == y)),
-            (&BigNum(ref x), &BigNum(ref y)) => Ok(Boolean(x == y)),
-            _ => Err("Mixed types!".to_str())
-       }
+        Ok(Boolean(comparands.get(0) == comparands.get(1)))
     } else {
-        match (comparands.get(0), comparands.get(1)) {
-            (&Boolean(x), &Boolean(y)) => Ok(Boolean(x == y)),
-            (&BigNum(ref x), &BigNum(ref y)) => Ok(Boolean(x == y)),
-            _ => Err("Mixed types!".to_str())
-       }
+        Ok(Boolean(comparands.get(0) != comparands.get(1)))
     }
 }       
 

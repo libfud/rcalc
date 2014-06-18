@@ -6,7 +6,7 @@ use std::num;
 use self::num::rational::BigRational;
 use super::{CalcResult, Evaluate, Environment, Token};
 
-#[deriving(Clone, Show)]
+#[deriving(Clone, Show, PartialEq)]
 pub enum LiteralType {
     Boolean(bool),
     BigNum(BigRational),

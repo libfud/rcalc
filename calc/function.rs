@@ -13,7 +13,7 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>,
     let value = try!(env.lookup(fn_name));
 
     let (args_to_fulfill, tokens) = match value {
-        Proc(x, y) => (x.clone(), y),
+        Proc(x, y) => (x, y),
         _ => return Ok(value),
     };
 
@@ -102,16 +102,16 @@ pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult {
     let (symbol_vec, body) = try!(lambda(tokens));
     let symbol = symbol_vec.get(0);
         
-    match body.len() {
-        0 => return Err("Malformed Expression!".to_str()),
-        1 => {
+    match (symbol_vec.len(), body.len()) {
+        (_, 0) => return Err("Malformed Expression!".to_str()),
+        (1, 1) => {
             env.symbols.insert(symbol.clone(), match body.get(0) {
                 &Variable(ref x) => Symbol(x.clone()),
                 &Literal(ref lit_ty) => lit_ty.clone(),
                 _ => return Err("Malformed Expression!".to_str()),
             });
         },
-        _ => {
+        (1, _) => {
             let tokens = match body.get(0) {
                 &Operator(Quote) => vec![LParen].append(
                 body.as_slice()).append(vec!(RParen).as_slice()),
@@ -129,7 +129,9 @@ pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult {
                     env.symbols.insert(symbol.clone(), Proc(symbols, body));
                 }
             }
-        }                
+        },
+        (_, _) => { env.symbols.insert(symbol.clone(), 
+                                     Proc(symbol_vec.tail().to_owned(), body)); },
     }
 
     Ok(Void)

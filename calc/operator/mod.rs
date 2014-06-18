@@ -7,6 +7,7 @@ use super::literal::{LiteralType, Symbol, cons, car, cdr, list};
 pub mod power;
 pub mod arithmetic;
 pub mod logic;
+pub mod listops;
 pub mod trig;
 
 #[deriving(Show, Clone, PartialOrd, PartialEq)] 
@@ -19,7 +20,7 @@ pub enum OperatorType {
 
     If, And, Or, Not,
 
-    Quote, List, Cons, Car, Cdr,
+    Quote, List, Cons, Car, Cdr, Map, Reduce, Filter,
 
     Define, Lambda,
 
@@ -41,7 +42,8 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "define" => Some(Define), "lambda" => Some(Lambda),
 
         "quote" | "'"  => Some(Quote), "list" => Some(List),  "cons" => Some(Cons),
-        "car" => Some(Car), "cdr" => Some(Cdr),
+        "car" => Some(Car), "cdr" => Some(Cdr), "map" => Some(Map),
+        "reduce" => Some(Reduce), "filter" => Some(Filter),
 
         "help"  => Some(Help),
 
@@ -62,7 +64,7 @@ pub fn to_str(op: &OperatorType) -> String {
         Define => "define", Lambda => "lambda",
 
         Quote => "quote", List => "list", Cons => "cons", Car => "car", 
-        Cdr => "cdr",
+        Cdr => "cdr", Map => "map", Reduce => "reduce", Filter => "filter",
 
         Help  => "help",
     };
@@ -102,6 +104,12 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>,
         Car => car(args, env),
 
         Cdr => cdr(args, env),
+
+        Map => listops::map(args, env),
+
+        Reduce => listops::reduce(args, env),
+
+        Filter => listops::filter(args, env),
 
         Add => arithmetic::do_op(args, env, 0, |a, b| a + *b, num::zero),
 

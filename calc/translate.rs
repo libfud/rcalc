@@ -36,12 +36,21 @@ pub fn get_top_expr(tokens: &mut TokenStream) -> Result<ExprType, String> {
     }
 }
 
-pub fn handle_operator(top_expr: &ExprType, op: OperatorType) -> Expr {
+pub fn handle_operator(tokens: &mut TokenStream, env: &mut Environment,
+                       top_expr: &ExprType, op: OperatorType) -> Expr {
     match *top_expr {
         expression::Operator(Help) => {
             Ok(box SymbolArg(operator::to_str((&op))) as Box<Evaluate>)
         },
-        _   => return Err(format!("Operator in wrong place: {}", op))
+
+        _   => match op {
+            Quote => {
+                let list = try!(list_it(tokens, env));
+                Ok(box ListArg(list) as Box<Evaluate>)
+            },
+            
+            _ => return Err(format!("Operator in wrong place: {}", op))
+        }
     }
 }
 
@@ -68,7 +77,8 @@ pub fn un_special(etype: ExprType, tokens: &mut TokenStream, env: &mut Env) -> E
 
             RParen => return Ok(Expression::new(etype, args).box_it()),
             
-            Operator(op) => args.push(try!(handle_operator(&etype, op))),
+            Operator(op) => args.push(try!(handle_operator(tokens, env, &etype, 
+                                                           op))),
                         
             Literal(literaltype)  => {
                 args.push(try!(trans_literal(literaltype, env)))

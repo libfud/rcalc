@@ -62,7 +62,7 @@ impl Environment {
                         Err(m) => Err(m)
                      }
                 } else {
-                    Err("Unbound variable!".to_str())
+                    Err(format!("Unbound variable {}", var))
                 }
             }
         }

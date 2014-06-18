@@ -11,7 +11,7 @@ use super::operator::{OperatorType};
 
 ///Enumeration of valid tokens. Valid tokens are Operators, Literals, LParens,
 ///RParens, and Names.
-#[deriving(Clone, Show)]
+#[deriving(Clone, Show, PartialEq)]
 pub enum Token {
     Literal(LiteralType),
     LParen,
