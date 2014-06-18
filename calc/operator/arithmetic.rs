@@ -8,8 +8,8 @@ use super::super::{CalcResult, Environment, Evaluate};
 use super::super::literal::{Symbol, BigNum, Void};
 use self::num::rational::BigRational;
 
-pub type Args<T = Box<Evaluate>> = Vec<T>;
-pub type BigR = BigRational;
+type Args<T = Box<Evaluate>> = Vec<T>;
+type BigR = BigRational;
 type Env = Environment;
 
 ///Performs addition, subtraction, and multiplication on BigNums.
