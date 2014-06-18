@@ -2,6 +2,7 @@
 
 use std::num;
 use super::{Evaluate, CalcResult, Environment};
+use super::literal;
 use super::literal::{LiteralType, Symbol};
 
 pub mod power;
@@ -11,43 +12,21 @@ pub mod trig;
 
 #[deriving(Show, Clone, PartialOrd, PartialEq)] 
 pub enum OperatorType {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Rem,
-    Pow,
-    Sin,
-    Cos,
-    Tan,
-    Eq,
-    NEq,
-    Lt,
-    LtEq,
-    Gt,
-    GtEq,
-    If,
-    And,
-    Or,
-    Not,
-    Lambda,
+    Add, Sub, Mul, Div, Rem, Pow,
+    Sin, Cos, Tan,
+    Eq, NEq, Lt, LtEq, Gt, GtEq,
+    If, And, Or, Not,
+    Lambda, List, Quote,
     Define,
     Help,
 }
 
 pub fn from_str(s: &str) -> Option<OperatorType> {
     match s {
-        "+"     => Some(Add),
-        "-"     => Some(Sub),
-        "*"     => Some(Mul),
-        "/"     => Some(Div),
-        "%"     => Some(Rem),
-        "pow"   => Some(Pow),
-        "sin"   => Some(Sin),
-        "cos"   => Some(Cos),
-        "tan"   => Some(Tan),
-        "<"     => Some(Lt),
-        "<="    => Some(LtEq),
+        "+" => Some(Add),  "-" => Some(Sub), "*" => Some(Mul), "/"  => Some(Div),
+        "%" => Some(Rem),  "pow" => Some(Pow),
+        "sin" => Some(Sin), "cos" => Some(Cos), "tan" => Some(Tan),
+        "<"     => Some(Lt), "<="    => Some(LtEq),
         "="     => Some(Eq),
         "!="    => Some(NEq),
         ">="    => Some(GtEq),
@@ -58,6 +37,7 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "not"   => Some(Not),
         "define"=> Some(Define),
         "lambda"=> Some(Lambda),
+        "list"  => Some(List),
         "help"  => Some(Help),
         _       => None
     }
@@ -86,14 +66,16 @@ pub fn to_str(op: &OperatorType) -> String {
         Not     => "not",
         Define  => "define",
         Lambda  => "lambda",
+        List    => "list",
         Help    => "help",
     };
 
     answer.to_str()
 }
 
-pub fn unbox_it(args:&Vec<Box<Evaluate>>, 
-                env: &mut Environment) -> CalcResult<Vec<LiteralType>> {
+pub fn unbox_it(args: &Vec<Box<Evaluate>>, env: &mut Environment)
+                -> CalcResult<Vec<LiteralType>>
+{
 
     let mut literal_vec: Vec<LiteralType> = Vec::new();
     for arg in args.iter() {
@@ -107,12 +89,22 @@ pub fn unbox_it(args:&Vec<Box<Evaluate>>,
     Ok(literal_vec)
 }
 
+pub fn list(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+    let mut list: Vec<LiteralType> = Vec::new();
+    for arg in args.iter() {
+        list.push(try!(arg.eval(env)));
+    }
+    Ok(literal::List(list))
+}
+
 pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, 
             env: &mut Environment) -> CalcResult {
     match op_type {
         Define  => Ok(super::literal::Void),
 
         Lambda => Ok(super::literal::Void),
+
+        List => list(args, env),
 
         Add => arithmetic::do_op(args, env, 0, |a, b| a + *b, num::zero),
 
@@ -153,6 +145,6 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>,
         
         Gt   => logic::ordering(args, env, |a, b| a > b),
 
-        Help => super::common::help(args),
+        Help => super::common::help(args, env),
     }
 }

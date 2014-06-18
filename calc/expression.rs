@@ -1,7 +1,6 @@
 //! Expressions
 
-use super::{CalcResult, Evaluate};
-use super::{function, operator, Environment};
+use super::{function, operator, CalcResult, Evaluate, Environment};
 use super::operator::OperatorType;
 
 #[deriving(Show, Clone)]
@@ -46,7 +45,7 @@ impl Evaluate for Expression {
         }
     }
 
-    fn to_symbol(&self) -> String {
+    fn to_symbol(&self, _: &mut Environment) -> String {
         self.expr_type.to_str()
     }
 }

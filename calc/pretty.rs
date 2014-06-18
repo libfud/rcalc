@@ -1,8 +1,7 @@
 //!Pretty print just prints the "relevant" information for a result.
 
-use super::literal::*;
+use super::literal::trans_literal;
 use super::{Environment, CalcResult};
-use std::num;
 
 pub fn pretty_print(result: &CalcResult, env: &Environment) {
     let success = match result {
@@ -13,23 +12,8 @@ pub fn pretty_print(result: &CalcResult, env: &Environment) {
         }
     };
 
-    match success {
-        BigNum(x)  => {
-            if *x.denom() == num::one() {
-                println!("{}", x.numer())
-            } else {
-                println!("{}", x)
-            }
-        },
-        Boolean(x) => println!("{}", x),
-        Symbol(x)  => {
-            let val = env.lookup(&x);
-            print!("{} = ", x);
-            pretty_print(&val, env)
-        },
-        Proc(_, _) => {
-            print!("Some kind of procedure!")
-        },
-        Void    => { }
-    }
+    println!("{}", match trans_literal(success, &mut env.clone()) {
+        Ok(x) => x.to_symbol(&mut env.clone()),
+        Err(m) => m,
+    });
 }

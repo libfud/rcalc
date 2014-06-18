@@ -24,7 +24,7 @@ impl Constant {
             "e"     => Ok(Constant(E)),
             "c"     => Ok(Constant(C)),
             "answer"=> Ok(Constant(ANSWER)),
-            _       => Err(("Undefined Constant :".to_str().append(s.to_str().as_slice())))
+            _       => Err(format!("Undefined Constant : {}", s))
         }
     }
 }
@@ -40,7 +40,7 @@ impl Evaluate for Constant {
         }
     }
 
-    fn to_symbol(&self) -> String {
+    fn to_symbol(&self, _: &mut Environment) -> String {
         match self {
             &Constant(Pi) => "π".to_str(),
             &Constant(E) => "e".to_str(),
