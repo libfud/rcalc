@@ -2,8 +2,9 @@
 
 use super::{CalcResult, Environment, Evaluate};
 use super::literal::{Proc, Symbol, Void};
-use super::tokenize::{TokenStream, Token, Literal, LParen, RParen, Variable};
-//use super::operator;
+use super::tokenize::{TokenStream, Token, Literal, LParen, RParen, Operator,
+                      Variable};
+use super::operator::Quote;
 
 ///Returns the value of the function for the arguments given
 pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>,
@@ -111,8 +112,23 @@ pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult {
             });
         },
         _ => {
-            let symbols = symbol_vec.tail().iter().map(|x| x.clone()).collect();
-            env.symbols.insert(symbol.clone(), Proc(symbols, body));
+            let tokens = match body.get(0) {
+                &Operator(Quote) => vec![LParen].append(
+                body.as_slice()).append(vec!(RParen).as_slice()),
+            _ => body.clone()
+            };
+            
+            let mut tokenstream = try!(TokenStream::new_from_tokens(tokens));
+            let val_box = try!(super::translate(&mut tokenstream, &mut env.clone()));
+            match val_box.eval(&mut env.clone()) {
+                Ok(x) => {
+                    env.symbols.insert(symbol.clone(), x);
+                },
+                Err(_) => {
+                    let symbols = symbol_vec.tail().to_owned();
+                    env.symbols.insert(symbol.clone(), Proc(symbols, body));
+                }
+            }
         }                
     }
 

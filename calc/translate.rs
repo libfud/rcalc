@@ -20,7 +20,7 @@ pub fn begin_expr(tokens: &mut TokenStream) -> Result<(), String> {
     match tokens.next() {
         Some(Ok(LParen)) => Ok(()),
         Some(Ok(_)) => {
-            return Err("Incorrectly formatnted expression!".to_str());
+            return Err("Incorrectly formatted expression!".to_str());
         },
         Some(Err(msg))      => return Err(msg),
         None                => fail!("Empty expression!")
