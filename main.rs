@@ -154,8 +154,7 @@ fn save_state(env: &mut Environment) {
     };
 
     for (key, val) in env.symbols.iter() {
-        match file.write_line(key.clone().append(" ").append
-                        (val.to_str().as_slice()).as_slice()) {
+        match file.write_line(format!("{} {}", key, val).as_slice()) {
             Ok(_) => { },
             Err(m) => {
                 println!("{}", m);

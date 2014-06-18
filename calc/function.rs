@@ -17,10 +17,8 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>,
     };
 
     if args.len() != args_to_fulfill.len() {
-        let msg = "fn ".to_str().append(fn_name.as_slice()).append(" takes ")
-            .append(args_to_fulfill.len().to_str().as_slice())
-            .append(" arguments, but ").append(args.len().to_str().as_slice())
-            .append(" arguments were given!");
+        let msg = format!("fn {} takes {} arguments but {} arguments were given!",
+                          fn_name, args_to_fulfill.len(), args.len());
         return Err(msg);
     }
 

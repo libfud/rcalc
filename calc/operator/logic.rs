@@ -7,7 +7,10 @@ use super::super::{Evaluate, CalcResult, Environment};
 use super::super::literal::{Boolean, Symbol, BigNum};
 use super::unbox_it;
 
-pub fn cond(args: &Vec<Box<Evaluate>>, env: &mut Environment)  -> CalcResult {
+type Args<T = Vec<Box<Evaluate>>> = T;
+type Env<T = Environment> = T;
+
+pub fn cond(args: &Args, env: &mut Environment)  -> CalcResult {
     if args.len() != 3 {
         return Err("`if` requires three arguments".to_str())
     }
@@ -31,10 +34,9 @@ pub fn cond(args: &Vec<Box<Evaluate>>, env: &mut Environment)  -> CalcResult {
     }
 }
 
-type Bigrat<T= BigRational> = T;
+type BR<T = BigRational> = T;
 
-pub fn ordering(args: &Vec<Box<Evaluate>>, env: &mut Environment, 
-                        comp: |&Bigrat, &Bigrat| -> bool) -> CalcResult {
+pub fn ordering(args: &Args, env: &mut Env, comp: |&BR,&BR| -> bool) -> CalcResult {
 
     if args.len() != 2 {
         return Err("Ordering requires two arguments".to_str())
@@ -47,7 +49,7 @@ pub fn ordering(args: &Vec<Box<Evaluate>>, env: &mut Environment,
     Ok(Boolean(comp(&a, &b)))
 }
 
-pub fn equality(args: &Vec<Box<Evaluate>>, env: &mut Environment, equal: bool) -> CalcResult {
+pub fn equality(args: &Args, env: &mut Env, equal: bool) -> CalcResult {
     if args.len() != 2 {
         return Err("Equality comparisons require two arguments".to_str())
     }

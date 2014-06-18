@@ -81,17 +81,13 @@ impl Evaluate for ProcArg {
     }
 
     fn to_symbol(&self) -> String {
-        
         let (param_string, token_string) = match self {
             &ProcArg(ref x, ref y) => {
-                (x.iter().fold("".to_str(), |s, p| 
-                               s.append(p.to_str().append(" ").as_slice())),
-                 y.iter().fold("".to_str(), |s, p| 
-                               s.append(p.to_str().append(" ").as_slice())))
+                (x.iter().fold("".to_str(), |s, p| format!("{}{} ", s, p)),
+                 y.iter().fold("".to_str(), |s, p| format!("{}{} ", s, p)))
             }
         };
-        "( ".to_str().append(param_string.append(" , ").as_slice()).append(
-            token_string.append(")").as_slice())
+        format!("( {}, {})", param_string, token_string)
     }
 }
 

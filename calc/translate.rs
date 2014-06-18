@@ -8,8 +8,8 @@ use super::tokenize::{Literal, LParen, RParen, Operator, Name, Variable,
                       TokenStream};
 use super::expression;
 use super::expression::{Expression, Function};
-use super::function;
-use super::literal;
+use super::function::{lambda, define};
+use super::literal::{trans_literal, VoidArg, ProcArg};
 use super::operator;
 use super::operator::{Define, Lambda, Help};
 
@@ -33,15 +33,15 @@ pub fn translate(tokens: &mut TokenStream,
 
     let top_expr = match top_expr_maybe {
         Operator(Define)    => {
-            match function::define(tokens, env) {
+            match define(tokens, env) {
                 Ok(_) => { },
                 Err(m) => return Err(m)
             }
-            return Ok(box literal::VoidArg as Box<Evaluate>)
+            return Ok(box VoidArg as Box<Evaluate>)
         },
         Operator(Lambda)    => {
-            let (symbols, body) = try!(function::lambda(tokens));
-            return Ok(box literal::ProcArg(symbols, body) as Box<Evaluate>)
+            let (symbols, body) = try!(lambda(tokens));
+            return Ok(box ProcArg(symbols, body) as Box<Evaluate>)
         },
         Operator(op_type)   => expression::Operator(op_type),
         Variable(func_name) => expression::Function(func_name),
@@ -84,17 +84,17 @@ pub fn translate(tokens: &mut TokenStream,
                                 args.push(box SymbolArg(operator::to_str((&op))) 
                                           as Box<Evaluate>)
                             },
-                            _   => return Err("I suck".to_str())
+                            _   => return Err(
+                                format!("Operator in wrong place: {}", x))
                         }
                     },
                     _   => {
-                        return Err("Operator in wrong place: ".to_str().append(
-                            op.to_str().as_slice()))
+                        return Err(format!("Operator in wrong place: {}", op))
                     }
                 }
             },
 
-            Literal(literaltype)  => args.push(try!(literal::trans_literal(literaltype,
+            Literal(literaltype)  => args.push(try!(trans_literal(literaltype,
                                                                            env))),
 
             Name(ref c_name) => {
