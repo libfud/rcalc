@@ -10,7 +10,7 @@ use super::unbox_it;
 type Args<T = Vec<Box<Evaluate>>> = T;
 type Env<T = Environment> = T;
 
-pub fn cond(args: &Args, env: &mut Environment)  -> CalcResult {
+pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
     if args.len() != 3 {
         return Err("`if` requires three arguments".to_str())
     }
@@ -71,7 +71,7 @@ pub fn equality(args: &Args, env: &mut Env, equal: bool) -> CalcResult {
     }
 }       
 
-pub fn and_or(args: &Vec<Box<Evaluate>>, env: &mut Environment, short: bool) -> CalcResult {
+pub fn and_or(args: &Args, env: &mut Env, short: bool) -> CalcResult {
     let vals = try!(unbox_it(args, env));
 
     if short == true {
@@ -97,7 +97,7 @@ pub fn and_or(args: &Vec<Box<Evaluate>>, env: &mut Environment, short: bool) -> 
     }
 }
 
-pub fn not(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+pub fn not(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() != 1 {
         return Err("Not only takes one argument".to_str())
     }
