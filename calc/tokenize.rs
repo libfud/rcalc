@@ -67,7 +67,8 @@ impl Iterator<CalcResult<Token>> for TokenStream {
                 self.index += 1;
                 self.next()
             } else {
-                let (token, len) = analyze(self.expr.as_slice().slice_from(self.index));
+                let (token, len) = analyze(
+                    self.expr.as_slice().slice_from(self.index));
                 self.index += len;
                 token
             }

@@ -13,11 +13,17 @@ pub mod trig;
 #[deriving(Show, Clone, PartialOrd, PartialEq)] 
 pub enum OperatorType {
     Add, Sub, Mul, Div, Rem, Pow,
+
     Sin, Cos, Tan,
+
     Eq, NEq, Lt, LtEq, Gt, GtEq,
+
     If, And, Or, Not,
-    Lambda, List, Quote,
-    Define,
+
+    Quote, List,
+
+    Define, Lambda,
+
     Help,
 }
 
@@ -25,49 +31,39 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
     match s {
         "+" => Some(Add),  "-" => Some(Sub), "*" => Some(Mul), "/"  => Some(Div),
         "%" => Some(Rem),  "pow" => Some(Pow),
+
         "sin" => Some(Sin), "cos" => Some(Cos), "tan" => Some(Tan),
-        "<"     => Some(Lt), "<="    => Some(LtEq),
-        "="     => Some(Eq),
-        "!="    => Some(NEq),
-        ">="    => Some(GtEq),
-        ">"     => Some(Gt),
-        "if"    => Some(If),
-        "and"   => Some(And),
-        "or"    => Some(Or),
-        "not"   => Some(Not),
-        "define"=> Some(Define),
-        "lambda"=> Some(Lambda),
-        "list"  => Some(List),
+
+        "<" => Some(Lt), "<=" => Some(LtEq), "=" => Some(Eq), "!=" => Some(NEq),
+        ">=" => Some(GtEq), ">" => Some(Gt),
+
+        "if" => Some(If), "and" => Some(And), "or" => Some(Or), "not" => Some(Not),
+
+        "define" => Some(Define), "lambda" => Some(Lambda),
+
+        "quote" | "'"  => Some(Quote), "list" => Some(List),
+
         "help"  => Some(Help),
+
         _       => None
     }
 }
 
 pub fn to_str(op: &OperatorType) -> String {
     let answer = match *op {
-        Add     => "+",
-        Sub     => "-",
-        Mul     => "*",
-        Div     => "/",
-        Rem     => "%",
-        Pow     => "pow",
-        Sin     => "sin",
-        Cos     => "cos",
-        Tan     => "tan",
-        Lt      => "<",
-        LtEq    => "<=",
-        Eq      => "=",
-        NEq     => "!",
-        GtEq    => ">=",
-        Gt      => ">",
-        If      => "if",
-        And     => "and",
-        Or      => "or",
-        Not     => "not",
-        Define  => "define",
-        Lambda  => "lambda",
-        List    => "list",
-        Help    => "help",
+        Add => "+", Sub => "-", Mul => "*", Div => "/", Rem => "%", Pow => "pow",
+
+        Sin => "sin", Cos => "cos", Tan => "tan",
+
+        Lt => "<", LtEq => "<=", Eq => "=", NEq => "!", GtEq => ">=", Gt => ">",
+
+        If => "if", And => "and", Or => "or", Not => "not", 
+
+        Define => "define", Lambda => "lambda",
+
+        Quote => "quote", List => "list",
+
+        Help  => "help",
     };
 
     answer.to_str()
@@ -105,6 +101,8 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>,
         Lambda => Ok(super::literal::Void),
 
         List => list(args, env),
+
+        Quote => Ok(super::literal::Void),
 
         Add => arithmetic::do_op(args, env, 0, |a, b| a + *b, num::zero),
 

@@ -7,58 +7,53 @@ use super::constant::Constant;
 use super::tokenize::{Literal, LParen, RParen, Operator, Name, Variable, 
                       TokenStream};
 use super::expression;
-use super::expression::{Expression, Function};
-use super::function::{lambda, define};
-use super::literal::{trans_literal, VoidArg, ProcArg};
+use super::expression::{Expression, ExprType};
+use super::function::{strip, lambda, define};
+use super::literal::{trans_literal, LiteralType, ListArg, VoidArg, ProcArg};
 use super::operator;
-use super::operator::{Define, Lambda, Help};
+use super::operator::{Define, Lambda, Help, OperatorType};
 
-pub fn translate(tokens: &mut TokenStream, 
-                 env: &mut Environment) -> CalcResult<Box<Evaluate>> {
+type Env<T = Environment> = T;
+type Expr<T = Box<Evaluate>> = CalcResult<T>;
 
+pub fn begin_expr(tokens: &mut TokenStream) -> Result<(), String> {
     match tokens.next() {
-        Some(Ok(LParen))    => {}, //good to go
-        Some(Ok(_))         => {
+        Some(Ok(LParen)) => Ok(()),
+        Some(Ok(_)) => {
             return Err("Incorrectly formatnted expression!".to_str());
         },
         Some(Err(msg))      => return Err(msg),
         None                => fail!("Empty expression!")
     }
+}
 
-    let top_expr_maybe = match tokens.next() {
-        Some(Ok(x))     => x,
-        Some(Err(msg))  => return Err(msg),
-        None            => fail!("Empty expression!")
-    };
+pub fn get_top_expr(tokens: &mut TokenStream) -> Result<ExprType, String> {
+    try!(begin_expr(tokens));
 
-    let top_expr = match top_expr_maybe {
-        Operator(Define)    => {
-            match define(tokens, env) {
-                Ok(_) => { },
-                Err(m) => return Err(m)
-            }
-            return Ok(box VoidArg as Box<Evaluate>)
+    match tokens.next() {
+        Some(x) => super::expression::token_to_expr(try!(x)),
+        None  => fail!("Empty expression!")
+    }
+}
+
+pub fn handle_operator(top_expr: &ExprType, op: OperatorType) -> Expr {
+    match *top_expr {
+        expression::Operator(Help) => {
+            Ok(box SymbolArg(operator::to_str((&op))) as Box<Evaluate>)
         },
-        Operator(Lambda)    => {
-            let (symbols, body) = try!(lambda(tokens));
-            return Ok(box ProcArg(symbols, body) as Box<Evaluate>)
-        },
-        Operator(op_type)   => expression::Operator(op_type),
-        Variable(func_name) => expression::Function(func_name),
-        _                   => {
-            return Err(("Operator not at beginning of expr!").to_str())
-        }
-    };
+        _   => return Err(format!("Operator in wrong place: {}", op))
+    }
+}
 
+pub fn un_special(etype: ExprType, tokens: &mut TokenStream, env: &mut Env) -> Expr {
     let mut args: Vec<Box<Evaluate>> = Vec::new();
-
     loop {
         let token = match tokens.next() {
-            Some(Ok(x))     => x,
-            Some(Err(msg))  => return Err(msg),
-            None            => break
+            Some(Ok(x)) => x,
+            Some(Err(m)) => return Err(m),
+            None => break
         };
-
+         
         match token {
             Variable(var) => args.push(box SymbolArg(var) as Box<Evaluate>),
 
@@ -71,31 +66,13 @@ pub fn translate(tokens: &mut TokenStream,
                 args.push(sub_expr);
             },
 
-            RParen => {
-                //make a new expression based on its type and arguments
-                return Ok(Expression::new(top_expr, args).box_it())
-            },
-
-            Operator(op) => {
-                match top_expr {
-                    expression::Operator(x) => {
-                        match x {
-                            Help    => {
-                                args.push(box SymbolArg(operator::to_str((&op))) 
-                                          as Box<Evaluate>)
-                            },
-                            _   => return Err(
-                                format!("Operator in wrong place: {}", x))
-                        }
-                    },
-                    _   => {
-                        return Err(format!("Operator in wrong place: {}", op))
-                    }
-                }
-            },
-
-            Literal(literaltype)  => args.push(try!(trans_literal(literaltype,
-                                                                           env))),
+            RParen => return Ok(Expression::new(etype, args).box_it()),
+            
+            Operator(op) => args.push(try!(handle_operator(&etype, op))),
+                        
+            Literal(literaltype)  => {
+                args.push(try!(trans_literal(literaltype, env)))
+            }
 
             Name(ref c_name) => {
                 let constant = box try!(Constant::from_str(c_name.as_slice()));
@@ -103,6 +80,59 @@ pub fn translate(tokens: &mut TokenStream,
             }
         }
     }
+}
 
-    Err(("Unable to find last parentheses of expression").to_str())
+pub fn list_it(tokens: &mut TokenStream, env: &mut Env) -> 
+    CalcResult<Vec<LiteralType>>
+{
+    try!(begin_expr(tokens));
+
+    let mut lit_vec: Vec<LiteralType> = Vec::new();
+    loop {
+        let token = try!(strip(tokens.next()));
+        match token {
+            LParen => {
+                tokens.index -= 1;
+                let val = try!(translate(tokens, env));
+                lit_vec.push(try!(val.eval(env)));
+            },
+            Literal(lit_ty) => lit_vec.push(lit_ty),
+            Variable(x) => lit_vec.push(try!(env.lookup(&x))),
+            Name(c) => {
+                let constant = try!(Constant::from_str(c.as_slice()));
+                lit_vec.push(try!(constant.eval(env)));
+            },
+            RParen => break,
+            _ => return Err(format!("Invalid token for list {}", token)),
+        }
+    }
+
+    Ok(lit_vec)
+}
+        
+
+pub fn make_expr(etype: ExprType, tokens: &mut TokenStream, env: &mut Env) -> Expr {
+    match etype {
+        expression::Operator(Define)    => {
+            match define(tokens, env) {
+                Ok(_) => { },
+                Err(m) => return Err(m)
+            }
+            return Ok(box VoidArg as Box<Evaluate>)
+        },
+        expression::Operator(Lambda)    => {
+            let (symbols, body) = try!(lambda(tokens));
+            return Ok(box ProcArg(symbols, body) as Box<Evaluate>)
+        },
+        expression::Operator(Quote)     => {
+            let list = try!(list_it(tokens, env));
+            return Ok(box ListArg(list) as Box<Evaluate>)
+        },
+        _  => return un_special(etype, tokens, env),
+    }
+}
+
+pub fn translate(tokens: &mut TokenStream, env: &mut Env) -> Expr {
+    let top_expr = try!(get_top_expr(tokens));
+    make_expr(top_expr, tokens, env)
 }

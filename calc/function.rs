@@ -33,7 +33,7 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>,
     func.eval(&mut child_env)
 }
 
-fn strip(t: Option<Result<Token, String>>) -> Result<Token, String> {
+pub fn strip(t: Option<Result<Token, String>>) -> Result<Token, String> {
     match t {
         Some(x) => x,
 	None => Err("No names found!".to_str())

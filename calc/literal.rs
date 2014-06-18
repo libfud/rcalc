@@ -93,7 +93,7 @@ impl Evaluate for ProcArg {
 }
 
 #[deriving(Clone)]
-pub struct ListArg(Vec<LiteralType>);
+pub struct ListArg(pub Vec<LiteralType>);
 
 impl Evaluate for ListArg {
     fn eval(&self, _: &mut Environment) -> CalcResult {

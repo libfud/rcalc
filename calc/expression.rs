@@ -1,12 +1,22 @@
 //! Expressions
 
 use super::{function, operator, CalcResult, Evaluate, Environment};
+use super::tokenize;
+use super::tokenize::Token;
 use super::operator::OperatorType;
 
 #[deriving(Show, Clone)]
 pub enum ExprType {
     Operator(OperatorType),
     Function(String)
+}
+
+pub fn token_to_expr(token: Token) -> Result<ExprType, String> {
+    match token {
+        tokenize::Variable(x) => Ok(Function(x)),
+        tokenize::Operator(op_ty) => Ok(Operator(op_ty)),
+        _ => Err("Not a valid token!".to_str())
+    }
 }
 
 pub struct Expression {
