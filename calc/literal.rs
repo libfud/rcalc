@@ -115,6 +115,53 @@ impl Evaluate for ListArg {
     }
 }                
 
+pub fn list(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+    let mut list: Vec<LiteralType> = Vec::new();
+    for arg in args.iter() {
+        list.push(try!(arg.eval(env)));
+    }
+    Ok(List(list))
+}
+
+pub fn cons(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+    if args.len() != 2 {
+        return Err("Wrong number of arguments to `cons'".to_str())
+    }
+
+    let car = try!(args.get(0).eval(env));
+    let cdr = try!(args.get(1).eval(env));
+
+    match cdr {
+        List(x) => Ok(List(vec!(car).append(x.as_slice()))),
+        _ => Ok(List(vec!(car, cdr)))
+    }
+}
+
+pub fn car(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+    if args.len() != 1 {
+        return Err("Wrong number of arguments to `car'".to_str())
+    }
+
+    match try!(args.get(0).eval(env)) {
+        List(x) => Ok(x.get(0).clone()),
+        _ => Err("Wrong type for `car'".to_str())
+    }
+}
+
+pub fn cdr(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+    if args.len() != 1 {
+        return Err("Wrong number of arguments to `cdr'".to_str())
+    }
+
+    match try!(args.get(0).eval(env)) {
+        List(x) => match x.len() {
+            0 => Err("List too short!".to_str()),
+            _ => Ok(List(x.tail().to_owned()))
+        },
+        _ => Err("Wrong type for `cdr'".to_str())
+    }
+}
+
 #[deriving(Clone)]
 pub struct VoidArg;
 

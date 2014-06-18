@@ -11,7 +11,7 @@ use super::expression::{Expression, ExprType};
 use super::function::{strip, lambda, define};
 use super::literal::{trans_literal, LiteralType, ListArg, VoidArg, ProcArg};
 use super::operator;
-use super::operator::{Define, Lambda, Help, OperatorType};
+use super::operator::{Define, Lambda, Quote, Help, OperatorType};
 
 type Env<T = Environment> = T;
 type Expr<T = Box<Evaluate>> = CalcResult<T>;
@@ -80,6 +80,8 @@ pub fn un_special(etype: ExprType, tokens: &mut TokenStream, env: &mut Env) -> E
             }
         }
     }
+
+    Err("No closing paren found!".to_str())
 }
 
 pub fn list_it(tokens: &mut TokenStream, env: &mut Env) -> 

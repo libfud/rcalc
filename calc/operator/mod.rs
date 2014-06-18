@@ -2,8 +2,7 @@
 
 use std::num;
 use super::{Evaluate, CalcResult, Environment};
-use super::literal;
-use super::literal::{LiteralType, Symbol};
+use super::literal::{LiteralType, Symbol, cons, car, cdr, list};
 
 pub mod power;
 pub mod arithmetic;
@@ -20,7 +19,7 @@ pub enum OperatorType {
 
     If, And, Or, Not,
 
-    Quote, List,
+    Quote, List, Cons, Car, Cdr,
 
     Define, Lambda,
 
@@ -41,7 +40,8 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
 
         "define" => Some(Define), "lambda" => Some(Lambda),
 
-        "quote" | "'"  => Some(Quote), "list" => Some(List),
+        "quote" | "'"  => Some(Quote), "list" => Some(List),  "cons" => Some(Cons),
+        "car" => Some(Car), "cdr" => Some(Cdr),
 
         "help"  => Some(Help),
 
@@ -61,7 +61,8 @@ pub fn to_str(op: &OperatorType) -> String {
 
         Define => "define", Lambda => "lambda",
 
-        Quote => "quote", List => "list",
+        Quote => "quote", List => "list", Cons => "cons", Car => "car", 
+        Cdr => "cdr",
 
         Help  => "help",
     };
@@ -85,14 +86,6 @@ pub fn unbox_it(args: &Vec<Box<Evaluate>>, env: &mut Environment)
     Ok(literal_vec)
 }
 
-pub fn list(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
-    let mut list: Vec<LiteralType> = Vec::new();
-    for arg in args.iter() {
-        list.push(try!(arg.eval(env)));
-    }
-    Ok(literal::List(list))
-}
-
 pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, 
             env: &mut Environment) -> CalcResult {
     match op_type {
@@ -103,6 +96,12 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>,
         List => list(args, env),
 
         Quote => Ok(super::literal::Void),
+
+        Cons => cons(args, env),
+
+        Car => car(args, env),
+
+        Cdr => cdr(args, env),
 
         Add => arithmetic::do_op(args, env, 0, |a, b| a + *b, num::zero),
 
