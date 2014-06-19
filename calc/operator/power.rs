@@ -6,14 +6,15 @@ use self::num::rational::BigRational;
 use std::num;
 use super::super::{Evaluate, CalcResult, Environment};
 use super::super::literal::BigNum;
-use super::unbox_it;
 
 pub fn pow_wrapper(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
-    let literals = try!(unbox_it(args, env));
-    let args_vec: Vec<BigRational> = literals.move_iter().map(|x| match x {
-        BigNum(y)   => y,
-        _   => fail!("Can't do anything but bigrationals in pow for now.")
-    }).collect();
+    let mut args_vec: Vec<BigRational> = Vec::new();
+    for arg in args.iter() {
+        match try!(arg.eval(env)) {
+            BigNum(x)   => args_vec.push(x),
+            _ => return Err("Only numbers can be raised to a power".to_str())
+        }
+    }
 
     Ok(BigNum(try!(pow(args_vec.as_slice()))))
 }
