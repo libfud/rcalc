@@ -35,7 +35,7 @@ rcalc will not be considered complete until it has the following:
 * hyperbolic sin, cos and tan
 * logarithms and exp
 * limits
-* --lists,-- matrices and trees
+* -lists,- matrices and trees
 * help message for every feature
 * sorting, filtering and mapping
 * graphing
