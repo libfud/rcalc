@@ -4,6 +4,7 @@ extern crate num;
 
 use std::num;
 use self::num::rational::BigRational;
+use super::expression::Expression;
 use super::{CalcResult, Evaluate, Environment, Token};
 
 #[deriving(Clone, Show, PartialEq, PartialOrd)]
@@ -11,7 +12,7 @@ pub enum LiteralType {
     Boolean(bool),
     BigNum(BigRational),
     Symbol(String),
-    Proc(Vec<String>, Vec<Token>),
+    Proc(Vec<String>, Expression),
     List(Vec<LiteralType>),
     Void
 }
@@ -105,7 +106,7 @@ impl Evaluate for ListArg {
         let list = match self {
             &ListArg(ref x) => x.clone()
         };
-        list.iter().fold("(".to_str(), |s, y| {
+        list.iter().fold("(".to_str(), |mut s, y| {
             s = format!("{} {}", s, match trans_literal(y.clone(), env) {
                 Ok(t) => t.to_symbol(env),
                 Err(m) => m

@@ -54,7 +54,8 @@ pub fn handle_operator(tokens: &mut TokenStream, env: &mut Environment,
     }
 }
 
-pub fn un_special(etype: ExprType, tokens: &mut TokenStream, env: &mut Env) -> Expr {
+pub fn un_special(etype: ExprType, tokens: &mut TokenStream, 
+                  env: &mut Env) -> CalcResult<Expression> {
     let mut args: Vec<Box<Evaluate>> = Vec::new();
     loop {
         let token = match tokens.next() {
@@ -75,7 +76,7 @@ pub fn un_special(etype: ExprType, tokens: &mut TokenStream, env: &mut Env) -> E
                 args.push(sub_expr);
             },
 
-            RParen => return Ok(Expression::new(etype, args).box_it()),
+            RParen => return Ok(Expression::new(etype, args)),
             
             Operator(op) => args.push(try!(handle_operator(tokens, env, &etype, 
                                                            op))),
@@ -144,7 +145,7 @@ pub fn make_expr(etype: ExprType, tokens: &mut TokenStream, env: &mut Env) -> Ex
             let list = try!(list_it(tokens, env));
             return Ok(box ListArg(list) as Box<Evaluate>)
         },
-        _  => return un_special(etype, tokens, env),
+        _  => return Ok(try!(un_special(etype, tokens, env)).box_it()),
     }
 }
 

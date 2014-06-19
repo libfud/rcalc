@@ -19,6 +19,7 @@ pub fn token_to_expr(token: Token) -> Result<ExprType, String> {
     }
 }
 
+#[deriving(PartialEq, PartialOrd, Show)]
 pub struct Expression {
     pub expr_type: ExprType,
     pub args: Vec<Box<Evaluate>>,
