@@ -9,7 +9,7 @@ use super::tokenize::{Literal, LParen, RParen, Operator, Name, Variable,
 use super::expression;
 use super::expression::{Expression, ExprType};
 use super::function::{strip, lambda, define};
-use super::literal::{trans_literal, LiteralType, ListArg, VoidArg, ProcArg};
+use super::literal::{trans_literal, LiteralType, List, ListArg, VoidArg, ProcArg};
 use super::operator;
 use super::operator::{Define, Lambda, Quote, Help, OperatorType};
 
@@ -115,6 +115,10 @@ pub fn list_it(tokens: &mut TokenStream, env: &mut Env) ->
                 lit_vec.push(try!(constant.eval(env)));
             },
             RParen => break,
+            Operator(Quote) => {
+                let sub_list = try!(list_it(tokens, env));
+                lit_vec.push(List(sub_list));
+            },
             _ => return Err(format!("Invalid token for list {}", token)),
         }
     }
