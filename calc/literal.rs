@@ -4,7 +4,6 @@ extern crate num;
 
 use std::num;
 use self::num::rational::BigRational;
-use super::expression::Expression;
 use super::{CalcResult, Evaluate, Environment, Token};
 
 #[deriving(Clone, Show, PartialEq, PartialOrd)]
@@ -12,7 +11,7 @@ pub enum LiteralType {
     Boolean(bool),
     BigNum(BigRational),
     Symbol(String),
-    Proc(Vec<String>, Expression),
+    Proc(Vec<String>, Vec<Token>),
     List(Vec<LiteralType>),
     Void
 }

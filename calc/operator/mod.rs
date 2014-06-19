@@ -25,7 +25,7 @@ pub enum OperatorType {
 
     Define, Lambda,
 
-    Help, Table, Sort,
+    Help, Table, TableList, RangeList, Sort,
 }
 
 pub fn from_str(s: &str) -> Option<OperatorType> {
@@ -46,7 +46,8 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "car" => Some(Car), "cdr" => Some(Cdr), "map" => Some(Map),
         "reduce" => Some(Reduce), "filter" => Some(Filter),
 
-        "help"  => Some(Help), "table" => Some(Table), "sort" => Some(Sort),
+        "help"  => Some(Help), "table" => Some(Table), "table-list" => Some(TableList),
+        "range-list" => Some(RangeList), "sort" => Some(Sort),
 
         _       => None
     }
@@ -67,7 +68,8 @@ pub fn to_str(op: &OperatorType) -> String {
         Quote => "quote", List => "list", Cons => "cons", Car => "car", 
         Cdr => "cdr", Map => "map", Reduce => "reduce", Filter => "filter",
 
-        Help  => "help", Table => "table", Sort => "sort",
+        Help  => "help", Table => "table", TableList => "table-list", 
+        RangeList => "range-list", Sort => "sort",
     };
 
     answer.to_str()
@@ -138,6 +140,10 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>,
         Help => super::common::help(args, env),
 
         Table => special::table(args, env),
+
+        TableList => special::table_list(args, env),
+
+        RangeList => listops::rangelist(args, env),
         
         Sort => special::sort(args, env),
     }

@@ -19,19 +19,10 @@ pub fn token_to_expr(token: Token) -> Result<ExprType, String> {
     }
 }
 
-#[deriving(PartialEq, PartialOrd, Show)]
+#[deriving(Clone)]
 pub struct Expression {
     pub expr_type: ExprType,
     pub args: Vec<Box<Evaluate>>,
-}
-
-impl Clone for Expression {
-    fn clone(&self) -> Expression {
-        Expression {
-            expr_type: self.expr_type.clone(),
-            args: self.args.clone()
-        }
-    }
 }
 
 impl Expression {
