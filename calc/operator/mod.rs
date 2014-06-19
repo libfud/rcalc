@@ -73,22 +73,6 @@ pub fn to_str(op: &OperatorType) -> String {
     answer.to_str()
 }
 
-pub fn unbox_it(args: &Vec<Box<Evaluate>>, env: &mut Environment)
-                -> CalcResult<Vec<LiteralType>>
-{
-
-    let mut literal_vec: Vec<LiteralType> = Vec::new();
-    for arg in args.iter() {
-        let val = try!(arg.eval(env));
-        literal_vec.push( match val {
-            Symbol(ref var) => try!(env.lookup(var)),
-            _   => val
-        });
-    }
-
-    Ok(literal_vec)
-}
-
 pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>, 
             env: &mut Environment) -> CalcResult {
     match op_type {

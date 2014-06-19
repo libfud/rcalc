@@ -2,7 +2,6 @@
 
 use super::super::{Evaluate, CalcResult, Environment};
 use super::super::literal::{Boolean, Symbol, BigNum, LiteralType};
-use super::unbox_it;
 
 type Args<T = Vec<Box<Evaluate>>> = T;
 type Env<T = Environment> = T;
@@ -91,8 +90,8 @@ pub fn not(args: &Args, env: &mut Env) -> CalcResult {
         return Err("Not only takes one argument".to_str())
     }
 
-    let val = match try!(unbox_it(args, env)).get(0) {
-        &Boolean(x)  => x,
+    let val = match try!(args.get(0).eval(env)) {
+        Boolean(x)  => x,
         _   => return Err("Non boolean condition!".to_str())
     };
 
