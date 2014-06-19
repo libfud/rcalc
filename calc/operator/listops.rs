@@ -1,6 +1,6 @@
 //!List operations.
 
-use super::super::{CalcResult, Evaluate, Environment};
+use super::{CalcResult, Evaluate, Environment};
 use super::super::literal::{LiteralType, List, Proc, Boolean};
 use super::super::tokenize::{TokenStream, Token};
 use super::super::translate;

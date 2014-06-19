@@ -143,7 +143,13 @@ pub fn car(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     }
 
     match try!(args.get(0).eval(env)) {
-        List(x) => Ok(x.get(0).clone()),
+        List(x) => {
+            if x.len() < 1 {
+                Err("Empty list!".to_str())
+            } else {
+                Ok(x.get(0).clone())
+            }
+        },
         _ => Err("Wrong type for `car'".to_str())
     }
 }

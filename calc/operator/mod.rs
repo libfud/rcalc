@@ -1,9 +1,10 @@
 //! Operators
 
 use std::num;
-use super::{Evaluate, CalcResult, Environment};
-use super::literal::{LiteralType, Symbol, cons, car, cdr, list};
+pub use super::{Evaluate, CalcResult, Environment};
+pub use super::literal::{LiteralType, Symbol, cons, car, cdr, list};
 
+pub mod special;
 pub mod power;
 pub mod arithmetic;
 pub mod logic;
@@ -24,7 +25,7 @@ pub enum OperatorType {
 
     Define, Lambda,
 
-    Help,
+    Help, Table,
 }
 
 pub fn from_str(s: &str) -> Option<OperatorType> {
@@ -45,7 +46,7 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "car" => Some(Car), "cdr" => Some(Cdr), "map" => Some(Map),
         "reduce" => Some(Reduce), "filter" => Some(Filter),
 
-        "help"  => Some(Help),
+        "help"  => Some(Help), "table" => Some(Table),
 
         _       => None
     }
@@ -66,7 +67,7 @@ pub fn to_str(op: &OperatorType) -> String {
         Quote => "quote", List => "list", Cons => "cons", Car => "car", 
         Cdr => "cdr", Map => "map", Reduce => "reduce", Filter => "filter",
 
-        Help  => "help",
+        Help  => "help", Table => "table"
     };
 
     answer.to_str()
@@ -151,5 +152,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<Box<Evaluate>>,
         Gt   => logic::ordering(args, env, |a, b| a > b),
 
         Help => super::common::help(args, env),
+
+        Table => special::table(args, env),
     }
 }
