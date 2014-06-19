@@ -3,7 +3,6 @@
 extern crate num;
 
 use std::num;
-use super::unbox_it;
 use super::super::{CalcResult, Environment, Evaluate};
 use super::super::literal::{Symbol, BigNum, Void};
 use self::num::rational::BigRational;
@@ -20,16 +19,12 @@ pub fn do_op(args: &Args, env: &mut Env, min_len: uint, op: |BigR, &BigR| -> Big
                     min_len.to_str().as_slice()).append( " arguments!"))
     }
 
-    //args is a vector of boxed expressions, which need to be evaluated. Unbox_it
-    //handles this for us, and returns a vector of literaltypes. Variables and
-    //functions return BigNums, Booleans.
-    let literals = try!(unbox_it(args, env));
     let ident: BigR = ident_fn();
 
     //Find out the contents of the vector.
     let mut stripped_literals: Vec<BigR> = Vec::new();
-    for lit in literals.move_iter() {
-        match lit {
+    for arg in args.iter() {
+        match try!(arg.eval(env)) {
             BigNum(x) => stripped_literals.push(x),
             Symbol(x) => stripped_literals.push(match try!(env.lookup(&x)) {
                 BigNum(y) => y.clone(),
@@ -66,13 +61,11 @@ pub fn divrem(args: &Args, env: &mut Env, op:|BigR, &BigR| -> BigR) -> CalcResul
         return Err("Division requires at least one argument!".to_str())
     }
 
-    let literals = try!(unbox_it(args, env));
-
     let one: BigR = num::one();
 
     let mut stripped_literals: Vec<BigR> = Vec::new();
-    for lit in literals.move_iter() {
-        match lit {
+    for arg in args.iter() {
+        match try!(arg.eval(env)) {
             BigNum(x) => stripped_literals.push(x),
             Symbol(x) => stripped_literals.push(match try!(env.lookup(&x)) {
                 BigNum(y) => y.clone(),
