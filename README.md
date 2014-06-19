@@ -29,12 +29,27 @@ which allow recursion are also present.
 
 rcalc will not be considered complete until it has the following:
 
-* proper rational exponentiation (currently only works for powers which are either an integer or a multiple of 1/2)
+* proper rational exponentiation (currently only works for powers which are
+ either an integer or a multiple of 1/2)
 * arcsine, arccosine, arctangent
 * hyperbolic sin, cos and tan
 * logarithms and exp
 * limits
-* lists, matrices and trees
+* --lists,-- matrices and trees
 * help message for every feature
 * sorting, filtering and mapping
 * graphing
+
+## Features 
+
+(List not necessarily complete)
+
+* Arbitrary precision numbers
+* Sine, Cosine and Tangent functions
+* Some constants (pi, c, e currently)
+* Boolean values, conditional statements and short circuiting operators
+* Comparisons for ordering and equality
+* Lists, constructing and destructuring, map, reduce, filter and sort
+* User define variables and functions
+* Functions are first class, and recursion is possible.
+* Anonymous functions can be used as arguments in lieu of named functions
