@@ -139,4 +139,3 @@ pub fn filter(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
 
     Ok(List(new_list))
 }
-        

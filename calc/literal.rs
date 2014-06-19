@@ -6,7 +6,7 @@ use std::num;
 use self::num::rational::BigRational;
 use super::{CalcResult, Evaluate, Environment, Token};
 
-#[deriving(Clone, Show, PartialEq)]
+#[deriving(Clone, Show, PartialEq, PartialOrd)]
 pub enum LiteralType {
     Boolean(bool),
     BigNum(BigRational),
@@ -103,7 +103,7 @@ impl Evaluate for ListArg {
 
     fn to_symbol(&self, env: &mut Environment) -> String {
         let list = match self {
-            &ListArg(ref x) => x
+            &ListArg(ref x) => x.clone()
         };
         list.iter().fold("(".to_str(), |s, y| {
             s = format!("{} {}", s, match trans_literal(y.clone(), env) {

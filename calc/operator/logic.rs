@@ -1,10 +1,7 @@
 //!Logic and odering.
 
-extern crate num;
-
-use self::num::rational::BigRational;
 use super::super::{Evaluate, CalcResult, Environment};
-use super::super::literal::{Boolean, Symbol, BigNum};
+use super::super::literal::{Boolean, Symbol, BigNum, LiteralType};
 use super::unbox_it;
 
 type Args<T = Vec<Box<Evaluate>>> = T;
@@ -34,18 +31,19 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
     }
 }
 
-type BR<T = BigRational> = T;
+type LT<T = LiteralType> = T;
 
-pub fn ordering(args: &Args, env: &mut Env, comp: |&BR,&BR| -> bool) -> CalcResult {
+pub fn ordering(args: &Args, env: &mut Env, comp: |&LT,&LT| -> bool) -> CalcResult {
 
     if args.len() != 2 {
         return Err("Ordering requires two arguments".to_str())
     }
-    let comparands = try!(unbox_it(args, env));
-    let (a, b) = match (comparands.get(0), comparands.get(1)) {
-        (&BigNum(ref x), &BigNum(ref y)) => (x.clone(), y.clone()),
+    let (a, b) = (try!(args.get(0).eval(env)), try!(args.get(1).eval(env)));
+    match (&a, &b) {
+        (&BigNum(_), &BigNum(_)) => { },
         _ => return Err("Ordering only takes numbers!".to_str())
-    };
+    }
+
     Ok(Boolean(comp(&a, &b)))
 }
 
@@ -54,21 +52,20 @@ pub fn equality(args: &Args, env: &mut Env, equal: bool) -> CalcResult {
         return Err("Equality comparisons require two arguments".to_str())
     }
 
-    let comparands = try!(unbox_it(args, env));
+    let (a, b) = (try!(args.get(0).eval(env)), try!(args.get(1).eval(env)));
 
     if equal {
-        Ok(Boolean(comparands.get(0) == comparands.get(1)))
+        Ok(Boolean(a == b))
     } else {
-        Ok(Boolean(comparands.get(0) != comparands.get(1)))
+        Ok(Boolean(a != b))
     }
 }       
 
 pub fn and_or(args: &Args, env: &mut Env, short: bool) -> CalcResult {
-    let vals = try!(unbox_it(args, env));
 
     if short == true {
-        for val in vals.iter() {
-            match *val {
+        for val in args.iter() {
+            match try!(val.eval(env)) {
                 Boolean(true)   => return Ok(Boolean(short)),
                 Boolean(false)  => { },
                 _   => return Err("Non boolean conditon!".to_str())
@@ -77,8 +74,8 @@ pub fn and_or(args: &Args, env: &mut Env, short: bool) -> CalcResult {
         
         Ok(Boolean(false))
     } else {
-        for val in vals.iter() {
-            match *val {
+        for val in args.iter() {
+            match try!(val.eval(env)) {
                 Boolean(true)   => { },
                 Boolean(false)  => return Ok(Boolean(short)),
                 _   => return Err("Non boolean condition!".to_str())
