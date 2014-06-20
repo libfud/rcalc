@@ -2,7 +2,8 @@
 
 extern crate num;
 
-pub use self::literal::{LiteralType, BigNumArg, BoolArg, SymbolArg};
+pub use self::expression::{arg_to_literal, Atom, SExpr, ArgType};
+pub use self::literal::LiteralType;
 pub use self::tokenize::{TokenStream, Token};
 pub use self::translate::translate;
 pub use self::common::help;
@@ -20,20 +21,11 @@ pub mod pretty;
 
 /// A shortcut for the result type that is used everywhere
 pub type CalcResult<T = LiteralType> = Result<T, String>;
-pub trait Evaluate: Clone {
+
+pub trait Evaluate {
     fn eval(&self, mut env: &mut Environment) -> CalcResult;
 
-    fn clone_evaluate(&self) -> Box<Evaluate> {
-        box self.clone() as Box<Evaluate>
-    }
-
     fn to_symbol(&self, env: &mut Environment) -> String;
-}
-
-impl Clone for Box<Evaluate> {
-    fn clone(&self) -> Box<Evaluate> {
-        self.clone_evaluate()
-    }
 }
 
 /// A structure to allow persistence of variables and functions

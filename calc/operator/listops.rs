@@ -5,19 +5,20 @@ use super::super::literal::{LiteralType, BigNum, List, Proc, Boolean};
 use super::super::tokenize::{TokenStream, Token};
 use super::super::translate;
 use super::special::{range_getter, create_bigrat};
+use super::{ArgType, Atom, SExpr, arg_to_literal};
+use super::super::expression::Expression;
 
-pub fn proc_getter(args: &Vec<Box<Evaluate>>, env: &mut Environment) 
-    -> CalcResult<(Vec<String>, Vec<Token>)> 
-{
-    match try!(args.get(0).eval(env)) {
-        Proc(x, y) => Ok((x.clone(), y.clone())),
-        _ =>  Err(format!("Expected function but found {}", 
-                      try!(args.get(0).eval(env))))
+pub fn proc_getter(args: &Vec<ArgType>, 
+                   env: &mut Environment) -> CalcResult<(Vec<String>, Expression)> {
+    
+    match args.get(0) {
+        Atom(Proc(x, y)) => Ok((x.clone(), y.clone())),
+        _ =>  Err(format!("Expected function but found {}", args.get(0))),
     }
 }
     
 
-pub fn map(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+pub fn map(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 2 {
         return Err("`map' takes at least two arguments".to_str())
     }
@@ -62,7 +63,7 @@ pub fn map(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     Ok(List(result))
 }
 
-pub fn reduce(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+pub fn reduce(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 3 {
         return Err("`reduce' takes at least three arguments".to_str())
     }
@@ -106,7 +107,7 @@ pub fn reduce_helper(names: &[String], initval: &LitTy, list: &[LitTy],
 }
 
 
-pub fn filter(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+pub fn filter(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 2 {
         return Err("`filter' takes at least three arguments".to_str())
     }
@@ -141,7 +142,7 @@ pub fn filter(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
     Ok(List(new_list))
 }
 
-pub fn rangelist(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+pub fn rangelist(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 2 {
         return Err("`rangelist' requires a beginning and end.".to_str())
     }

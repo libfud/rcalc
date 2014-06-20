@@ -27,21 +27,20 @@ pub fn token_to_expr(token: Token) -> Result<ExprType, String> {
     }
 }
 
-#[deriving(Clone)]
+#[deriving(Clone, Show)]
 pub struct Expression {
     pub expr_type: ExprType,
-    pub args: Vec<Box<Evaluate>>,
+    pub args: Vec<ArgType>,
 }
 
 impl Expression {
     pub fn new(e: ExprType, a: Vec<Box<Evaluate>>) -> Expression {
         Expression { expr_type: e, args: a }
     }
-
-    pub fn box_it(self) -> Box<Evaluate> {
-        box self as Box<Evaluate>
-    }
 }
+
+//impl Show for Expression {
+    
 
 impl Evaluate for Expression {
     fn eval(&self, env: &mut Environment) -> CalcResult {
@@ -139,6 +138,13 @@ pub enum BasicType {
     Proc(Vec<String>, SExpression),
     List(Vec<LiteralType>),
     Void
+}
+
+fn arg_to_literal(arg: &ArgType, env: &mut Environment) -> CalcResult {
+    match arg {
+        &SExpr(ref x) => arg_to_basic(&try!(x.eval(env)), env),
+        &Atom(ref x) => Ok(x.clone())
+    }
 }
 
 fn arg_to_basic(arg: &ArgType, env: &mut Frame) -> CalcResult<BasicType> {

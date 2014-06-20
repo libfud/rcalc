@@ -4,14 +4,15 @@ extern crate num;
 
 
 use super::{Evaluate, Environment, CalcResult};
-use super::literal::{ Void};
+use super::literal::Void;
+use super::expression::{ArgType, Atom};
 use self::num::rational::{BigRational, Ratio};
 use std::num;
 use std::collections::hashmap::HashMap;
 
 static PI: &'static str = "3126535/995207";
 
-pub fn help(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+pub fn help(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     let help_help =
 "The help function has the form (help term1, term2, term3...) and prints out
 examples of how operators are used. You can use help for individual operators

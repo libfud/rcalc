@@ -2,19 +2,19 @@
 
 extern crate num;
 
-use super::{CalcResult, Evaluate, Environment, SymbolArg};
+use super::{CalcResult, Evaluate, Environment};
 use super::constant::Constant;
 use super::tokenize::{Literal, LParen, RParen, Operator, Name, Variable, 
                       TokenStream};
 use super::expression;
-use super::expression::{Expression, ExprType};
+use super::expression::{Expression, ExprType, ArgType, Atom, SExpr};
 use super::function::{strip, lambda, define};
-use super::literal::{trans_literal, LiteralType, List, ListArg, VoidArg, ProcArg};
+use super::literal::{LiteralType, Symbol, Proc, List, Void};
 use super::operator;
 use super::operator::{Define, Lambda, Quote, Help, OperatorType};
 
 type Env<T = Environment> = T;
-type Expr<T = Box<Evaluate>> = CalcResult<T>;
+type Expr<T = ArgType> = CalcResult<T>;
 
 pub fn begin_expr(tokens: &mut TokenStream) -> Result<(), String> {
     match tokens.next() {
@@ -40,13 +40,13 @@ pub fn handle_operator(tokens: &mut TokenStream, env: &mut Environment,
                        top_expr: &ExprType, op: OperatorType) -> Expr {
     match *top_expr {
         expression::Operator(Help) => {
-            Ok(box SymbolArg(operator::to_str((&op))) as Box<Evaluate>)
+            Ok(Atom(Symbol(operator::to_str((&op)))))
         },
 
         _   => match op {
             Quote => {
                 let list = try!(list_it(tokens, env));
-                Ok(box ListArg(list) as Box<Evaluate>)
+                Ok(Atom(List(list)))
             },
             
             _ => return Err(format!("Operator in wrong place: {}", op))
@@ -56,7 +56,7 @@ pub fn handle_operator(tokens: &mut TokenStream, env: &mut Environment,
 
 pub fn un_special(etype: ExprType, tokens: &mut TokenStream, 
                   env: &mut Env) -> CalcResult<Expression> {
-    let mut args: Vec<Box<Evaluate>> = Vec::new();
+    let mut args: Vec<ArgType> = Vec::new();
     loop {
         let token = match tokens.next() {
             Some(Ok(x)) => x,
@@ -65,7 +65,7 @@ pub fn un_special(etype: ExprType, tokens: &mut TokenStream,
         };
          
         match token {
-            Variable(var) => args.push(box SymbolArg(var) as Box<Evaluate>),
+            Variable(var) => args.push(Atom(Symbol(var))),
 
             // Subexpression begins
             LParen  => {
@@ -73,7 +73,7 @@ pub fn un_special(etype: ExprType, tokens: &mut TokenStream,
                 tokens.index -= 1;
                 //recurse to build subexpressions into AST
                 let sub_expr = try!(translate(tokens, env));
-                args.push(sub_expr);
+                args.push(SExpr(sub_expr));
             },
 
             RParen => return Ok(Expression::new(etype, args)),
@@ -81,13 +81,11 @@ pub fn un_special(etype: ExprType, tokens: &mut TokenStream,
             Operator(op) => args.push(try!(handle_operator(tokens, env, &etype, 
                                                            op))),
                         
-            Literal(literaltype)  => {
-                args.push(try!(trans_literal(literaltype, env)))
-            }
+            Literal(literaltype)  => args.push(Atom(literaltype)),
 
             Name(ref c_name) => {
-                let constant = box try!(Constant::from_str(c_name.as_slice()));
-                args.push(constant as Box<Evaluate>);
+                let constant = try!(Constant::from_str(c_name.as_slice()));
+                args.push(Atom(constant));
             }
         }
     }
@@ -135,17 +133,17 @@ pub fn make_expr(etype: ExprType, tokens: &mut TokenStream, env: &mut Env) -> Ex
                 Ok(_) => { },
                 Err(m) => return Err(m)
             }
-            return Ok(box VoidArg as Box<Evaluate>)
+            Ok(Atom(Void))
         },
         expression::Operator(Lambda)    => {
             let (symbols, body) = try!(lambda(tokens));
-            return Ok(box ProcArg(symbols, body) as Box<Evaluate>)
+            Ok(Proc(symbols, body))
         },
         expression::Operator(Quote)     => {
             let list = try!(list_it(tokens, env));
-            return Ok(box ListArg(list) as Box<Evaluate>)
+            Ok(List(list))
         },
-        _  => return Ok(try!(un_special(etype, tokens, env)).box_it()),
+        _  => Ok(SExpr(try!(un_special(etype, tokens, env))))
     }
 }
 

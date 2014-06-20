@@ -4,11 +4,11 @@ extern crate num;
 
 use self::num::bigint::*;
 use self::num::rational::{Ratio, BigRational};
-use super::super::literal::{BigNum, List, Void, trans_literal, LiteralType};
+use super::super::literal::{BigNum, List, Void, LiteralType};
 use super::listops::proc_getter;
 use super::{Evaluate, Environment, CalcResult};
+use super::{ArgType, Atom, SExpr, arg_to_literal};
 use super::super::tokenize::TokenStream;
-use super::super::translate;
 
 pub fn range_getter(arg: LiteralType) -> CalcResult<int> {
     match arg {
@@ -21,41 +21,37 @@ pub fn create_bigrat(x: int) -> BigRational {
     Ratio::from_integer(x.to_bigint().unwrap())
 }
 
-pub fn table(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 3 || args.len() > 5 {
         return Err("`table' takes at least 3 arguments, with an option for columns"
                    .to_str())
     }
 
-    let (name, fun) = try!(proc_getter(args, env));
+    let (name, func) = try!(proc_getter(args, env));
     if name.len() != 1 {
         return Err("Only single variables are supported currently".to_str())
     }
     
-    let (from, to) = (try!(range_getter(try!(args.get(1).eval(env)))),
-                      try!(range_getter(try!(args.get(2).eval(env)))));
+    let (from, to) = (try!(range_getter(try!(arg_to_literal(args.get(1), env)))),
+                      try!(range_getter(try!(arg_to_literal(args.get(2), env)))));
     
     let step = match args.len() {
         3 => 1,
-        _ => try!(range_getter(try!(args.get(3).eval(env))))
+        _ => try!(range_getter(try!(arg_to_literal(args.get(3),env)))),
     };
 
     let cols = match args.len() {
         3 | 4 => 1,
-        _ => try!(range_getter(try!(args.get(4).eval(env))))
-
+        _ => try!(range_getter(try!(arg_to_literal(args.get(4), env)))),
     };
 
     if from >= to || step <= 0 || cols <= 0 {
         return Err("Invalid table command".to_str())
     }
 
-    let mut expr = try!(TokenStream::new_from_tokens(fun));
-    let fun_str = expr.expr.clone();
+    let fun_str = func.to_str();
 
     let mut child_env = Environment::new_frame(env);
-    let func = try!(translate::translate(&mut expr, &mut child_env));
-    
 
     let n_len = name.get(0).len();
     let f_len = fun_str.len();
@@ -79,9 +75,7 @@ pub fn table(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
             
             let result = try!(func.eval(&mut child_env));
             let res_str = format!("|{}{}|{}", x + y, " ".repeat(5 - (x + y).to_str().len()),
-                                  (try!(trans_literal(result,
-                                                      &mut child_env))).to_symbol(env));
-
+                                  result.to_str());
             print!("{}{}", res_str, " ".repeat((70 - res_str.len()) / cols as uint));
         }
         println!("|");
@@ -89,15 +83,15 @@ pub fn table(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
         x += cols;
     }
 
-    Ok(Void)
+    Ok(Atom(Void))
 }
 
-pub fn table_list(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+pub fn table_list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 2 || args.len() > 3 {
         return Err("`table' takes at least 2 arguments" .to_str())
     }
 
-    let (name, fun) = try!(proc_getter(args, env));
+    let (name, func) = try!(proc_getter(args, env));
     if name.len() != 1 {
         return Err("Only single variables are supported currently".to_str())
     }
@@ -117,12 +111,8 @@ pub fn table_list(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResul
         return Err("Invalid number of columns".to_str())
     }
 
-    let mut expr = try!(TokenStream::new_from_tokens(fun));
-    let fun_str = expr.expr.clone();
-
     let mut child_env = Environment::new_frame(env);
-    let func = try!(translate::translate(&mut expr, &mut child_env));
-    
+    let fun_str = func.to_str();
 
     let n_len = name.get(0).len();
     let f_len = fun_str.len();
@@ -142,13 +132,12 @@ pub fn table_list(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResul
                 break
             }
             let temp = list.get(x + y);
-            let t_name = try!(trans_literal(temp.clone(), env)).to_symbol(env);
+            let t_name = temp.to_str();
             child_env.symbols.insert(name.get(0).clone(), temp.clone());
             
             let result = try!(func.eval(&mut child_env));
-            let res_str = format!("|{}{}|{}", t_name, " ".repeat(5 - t_name.len()),
-                                  (try!(trans_literal(result,
-                                                      &mut child_env))).to_symbol(env));
+            let res_str = format!("|{}{}|{}", t_name, " ".repeat(5 - t_name.len()), 
+                                  result.to_str());
 
             print!("{}{}", res_str, " ".repeat((70 - res_str.len()) / cols as uint));
         }
@@ -228,7 +217,7 @@ pub fn merge_sort<T: PartialOrd + Clone>(array: &Vec<T>,
     Ok(merge(left, right))
 }
         
-pub fn sort(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 1 {
         return Err("Sort takes one and only one list".to_str())
     }
