@@ -141,21 +141,28 @@ pub enum BasicType {
     Void
 }
 
-fn test_add(args: &Vec<ArgType>, env: &mut Frame) -> CalcResult<ArgType> {
-    let mut numbers: Vec<BigRational> = Vec::new();
-    for arg in args.iter() {
-        match arg {
-            &SExpr(ref x) => match try!(x.eval(env)) {
-                Atom(BigNum(y)) => numbers.push(y),
-                _ => return Err("Whoops".to_str())
-            },
-            &Atom(BigNum(ref x)) => numbers.push(x.clone()),
-            _ => return Err("Not covering that yet".to_str())
-        }
+fn arg_to_basic(arg: &ArgType, env: &mut Frame) -> CalcResult<BasicType> {
+    match arg {
+        &SExpr(ref x) => arg_to_basic(&try!(x.eval(env)), env),
+        &Atom(ref x) => Ok(x.clone())
     }
+}
 
-    let zero: BigRational = num::zero();
-    Ok(Atom(BigNum(numbers.iter().fold(zero, |x, y| x + *y))))
+fn get_number(arg: BasicType, env: &mut Frame) -> CalcResult<BigRational> {
+    match arg {
+        BigNum(x) => Ok(x),
+        Symbol(x) => get_number(try!(env.lookup(&x)), env),
+        _ => Err("Invalid type for numeric argument.".to_str())
+    }
+}
+
+fn test_add(args: &Vec<ArgType>, env: &mut Frame) -> CalcResult<ArgType> {
+    let mut sum: BigRational = num::zero();
+    for arg in args.iter() {
+        sum = sum + try!(get_number(try!(arg_to_basic(arg, env)), env));
+    }
+        
+    Ok(Atom(BigNum(sum)))
 }
 
 //Just seeing if this might be a valid path to walk down.
@@ -165,8 +172,8 @@ pub fn test() {
     let add = Operator(super::operator::Add);
 
     let one: BigRational = num::one();
-    let zero: BigRational = num::zero();
-    let (eins, zwei) = (Atom(BigNum(one + zero)), Atom(BigNum(one + one)));
+    let two: BigRational = one + one;
+    let (eins, zwei) = (Atom(BigNum(one.clone())), Atom(BigNum(two.clone())));
 
     let x = "x".to_str();
 
@@ -177,9 +184,16 @@ pub fn test() {
 
     let new_r = SExpression::new(add.clone(), vec!(SExpr(new_e.clone()), zwei.clone()));
 
-    let answer = new_r.eval(&mut top_frame);
-    let right = Ok(Atom(BigNum(one + one + one)));
+    let mut answer = new_r.eval(&mut top_frame);
+    let mut right = Ok(Atom(BigNum(one + one + one)));
     assert!(answer == right);
 
+    let newest = SExpression::new(add.clone(), vec!(Atom(Symbol(x.clone())),
+                                                    Atom(Symbol(x.clone()))));
 
+    answer = newest.eval(&mut top_frame);
+    right = Ok(Atom(BigNum(two + two)));
+    assert!(answer == right);
+
+    println!("All assertions passed");
 }
