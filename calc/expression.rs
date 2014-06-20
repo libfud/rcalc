@@ -19,7 +19,6 @@ pub enum ExprType {
     Function(String)
 }
 
-
 pub fn token_to_expr(token: Token) -> Result<ExprType, String> {
     match token {
         tokenize::Variable(x) => Ok(Function(x)),
@@ -116,7 +115,7 @@ impl OtherEval for SExpression {
     fn eval(&self, env: &mut Frame) -> CalcResult<ArgType> {
         match self.expr_type {
             Operator(super::operator::Add) => test_add(&self.args, env),
-            Function("f".to_str()) => test_user_def(&self.args, env),
+            Function(_) => test_user_def("f".to_str(), &self.args, env),
             _ => Err("Not yet defined".to_str())
         }
     }
@@ -166,9 +165,26 @@ fn test_add(args: &Vec<ArgType>, env: &mut Frame) -> CalcResult<ArgType> {
     Ok(Atom(BigNum(sum)))
 }
 
-fn test_user_def(args: &Vec<ArgType>, env: &mut Frame) -> CalcResult<ArgType> {
-    let (symbols, fun) = match env.lookup
+fn test_user_def(name: String, args: &Vec<ArgType>, env: &mut Frame) -> CalcResult<ArgType> {
+    let (symbols, fun) = match try!(env.lookup(&name)) {
+        Proc(x, y) => (x, y),
+        _ => return Err("Not a procedure!".to_str())
+    };
 
+    if symbols.len() != args.len() {
+        return Err(format!("Bad number of arguments to `{}': expected {} but found {}.",
+                           name, symbols.len(), args.len()))
+    }
+
+    let mut child_frame = Frame::new_frame(env);
+    
+    for (symbol, value) in symbols.iter().zip(args.iter()) {
+        child_frame.symbols.insert(symbol.clone(), try!(arg_to_basic(value, env)));
+    }
+
+    fun.eval(&mut child_frame)
+}
+ 
 //Just seeing if this might be a valid path to walk down.
 pub fn test() {
     let mut top_frame = Frame::new_global();
@@ -184,7 +200,7 @@ pub fn test() {
     top_frame.symbols.insert("x".to_str(), BigNum(one + one));
 
     let new_e = SExpression::new(add.clone(), vec!(eins.clone()));
-    assert!(Ok(eins) == new_e.eval(&mut top_frame));
+    assert!(Ok(eins.clone()) == new_e.eval(&mut top_frame));
 
     let new_r = SExpression::new(add.clone(), vec!(SExpr(new_e.clone()), zwei.clone()));
 
@@ -192,15 +208,21 @@ pub fn test() {
     let mut right = Ok(Atom(BigNum(one + one + one)));
     assert!(answer == right);
 
-    let newest = SExpression::new(add.clone(), vec!(x.clone(), x.clone());
+    let newest = SExpression::new(add.clone(), vec!(x.clone(), x.clone()));
 
     answer = newest.eval(&mut top_frame);
     right = Ok(Atom(BigNum(two + two)));
     assert!(answer == right);
 
-    top_frame.symbols.insert("f".to_str(), 
+    let f_expr = SExpression::new(add, vec!(x.clone(), Atom(BigNum(two * (two + two)))));
+    top_frame.symbols.insert("f".to_str(), Proc(vec!("x".to_str()), f_expr));
 
-    let user_def = SExpression::new(Function("f".to_str()), vec!
+    let user_def = SExpression::new(Function("f".to_str()), vec!(eins));
+    
+    answer = user_def.eval(&mut top_frame);
+    println!("{}", answer);
+    right = Ok(Atom(BigNum((two + one) * (two + one))));
+    assert!(answer == right);
 
     println!("All assertions passed");
 }
