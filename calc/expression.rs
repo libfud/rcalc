@@ -139,6 +139,6 @@ pub fn test() {
                                       Atom(BigNum(from_str::<BigRational>("2/2").unwrap()))));
 
     let answer = new_r.eval(&mut top_frame);
-    let right = from_str::<BigRational>("3/3").unwrap();
+    let right = from_str::<BigRational>("3/1").unwrap();
     println!("correct: {}, answer: {}", right, answer);
 }
