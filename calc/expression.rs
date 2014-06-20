@@ -136,7 +136,7 @@ pub fn test() {
 
     let new_r = SExpression::new(Operator(super::operator::Add),
                                  vec!(SExpr(new_e), 
-                                      Atom(BigNum(from_str::<BigRational>("2/2").unwrap()))));
+                                      Atom(BigNum(from_str::<BigRational>("2/1").unwrap()))));
 
     let answer = new_r.eval(&mut top_frame);
     let right = from_str::<BigRational>("3/1").unwrap();
