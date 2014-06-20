@@ -138,6 +138,7 @@ pub fn test() {
                                  vec!(SExpr(new_e), 
                                       Atom(BigNum(from_str::<BigRational>("2/2").unwrap()))));
 
-    let answer = from_str::<BigRational>("2/3").unwrap();
-    assert!(Ok(Atom(BigNum(answer))) == new_r.eval(&mut top_frame));
+    let answer = new_r.eval(&mut top_frame);
+    let right = from_str::<BigRational>("3/3").unwrap();
+    println!("correct: {}, answer: {}", right, answer);
 }
