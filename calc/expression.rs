@@ -116,6 +116,7 @@ impl OtherEval for SExpression {
     fn eval(&self, env: &mut Frame) -> CalcResult<ArgType> {
         match self.expr_type {
             Operator(super::operator::Add) => test_add(&self.args, env),
+            Function("f".to_str()) => test_user_def(&self.args, env),
             _ => Err("Not yet defined".to_str())
         }
     }
@@ -165,6 +166,9 @@ fn test_add(args: &Vec<ArgType>, env: &mut Frame) -> CalcResult<ArgType> {
     Ok(Atom(BigNum(sum)))
 }
 
+fn test_user_def(args: &Vec<ArgType>, env: &mut Frame) -> CalcResult<ArgType> {
+    let (symbols, fun) = match env.lookup
+
 //Just seeing if this might be a valid path to walk down.
 pub fn test() {
     let mut top_frame = Frame::new_global();
@@ -175,9 +179,9 @@ pub fn test() {
     let two: BigRational = one + one;
     let (eins, zwei) = (Atom(BigNum(one.clone())), Atom(BigNum(two.clone())));
 
-    let x = "x".to_str();
+    let x = Atom(Symbol("x".to_str()));
 
-    top_frame.symbols.insert(x.clone(), BigNum(one + one));
+    top_frame.symbols.insert("x".to_str(), BigNum(one + one));
 
     let new_e = SExpression::new(add.clone(), vec!(eins.clone()));
     assert!(Ok(eins) == new_e.eval(&mut top_frame));
@@ -188,12 +192,15 @@ pub fn test() {
     let mut right = Ok(Atom(BigNum(one + one + one)));
     assert!(answer == right);
 
-    let newest = SExpression::new(add.clone(), vec!(Atom(Symbol(x.clone())),
-                                                    Atom(Symbol(x.clone()))));
+    let newest = SExpression::new(add.clone(), vec!(x.clone(), x.clone());
 
     answer = newest.eval(&mut top_frame);
     right = Ok(Atom(BigNum(two + two)));
     assert!(answer == right);
+
+    top_frame.symbols.insert("f".to_str(), 
+
+    let user_def = SExpression::new(Function("f".to_str()), vec!
 
     println!("All assertions passed");
 }
