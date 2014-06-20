@@ -1,9 +1,13 @@
 //!Logic and odering.
 
-use super::super::{Evaluate, CalcResult, Environment};
-use super::super::literal::{Boolean, Symbol, BigNum, LiteralType};
+extern crate num;
 
-type Args<T = Vec<Box<Evaluate>>> = T;
+use self::num::rational::BigRational;
+use super::super::{CalcResult, Environment};
+use super::super::literal::{Boolean, Symbol, BigNum};
+use super::{ArgType, Atom, arg_to_literal};
+
+type Args<T = Vec<ArgType>> = T;
 type Env<T = Environment> = T;
 
 pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
@@ -11,7 +15,7 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
         return Err("`if` requires three arguments".to_str())
     }
 
-    let condition = match try!(args.get(0).eval(env)) {
+    let condition = match try!(arg_to_literal(args.get(0), env)) {
         Boolean(x)  => x,
         Symbol(x)   => {
             match try!(env.lookup(&x)) {
@@ -24,26 +28,26 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
     };
 
     if condition {
-        Ok(try!(args.get(1).eval(env)))
+        Ok(args.get(1).clone())
     } else {
-        Ok(try!(args.get(2).eval(env)))
+        Ok(args.get(2).clone())
     }
 }
 
-type LT<T = LiteralType> = T;
+type BR = BigRational;
 
-pub fn ordering(args: &Args, env: &mut Env, comp: |&LT,&LT| -> bool) -> CalcResult {
+pub fn ordering(args: &Args, env: &mut Env, comp: |&BR,&BR| -> bool) -> CalcResult {
 
     if args.len() != 2 {
         return Err("Ordering requires two arguments".to_str())
     }
-    let (a, b) = (try!(args.get(0).eval(env)), try!(args.get(1).eval(env)));
+    let (a, b) = (try!(arg_to_literal(args.get(0), env)),
+                  try!(arg_to_literal(args.get(1), env)));
     match (&a, &b) {
-        (&BigNum(_), &BigNum(_)) => { },
-        _ => return Err("Ordering only takes numbers!".to_str())
+        (&BigNum(ref x), &BigNum(ref y)) => Ok(Atom(Boolean(comp(x, y)))),
+        _ =>  Err(format!("Ordering only takes numbers! {} {}",
+                          a, b))
     }
-
-    Ok(Boolean(comp(&a, &b)))
 }
 
 pub fn equality(args: &Args, env: &mut Env, equal: bool) -> CalcResult {
@@ -51,12 +55,13 @@ pub fn equality(args: &Args, env: &mut Env, equal: bool) -> CalcResult {
         return Err("Equality comparisons require two arguments".to_str())
     }
 
-    let (a, b) = (try!(args.get(0).eval(env)), try!(args.get(1).eval(env)));
+    let (a, b) = (try!(arg_to_literal(args.get(0), env)), 
+                  try!(arg_to_literal(args.get(1), env)));
 
     if equal {
-        Ok(Boolean(a == b))
+        Ok(Atom(Boolean(a == b)))
     } else {
-        Ok(Boolean(a != b))
+        Ok(Atom(Boolean(a != b)))
     }
 }       
 
@@ -64,24 +69,24 @@ pub fn and_or(args: &Args, env: &mut Env, short: bool) -> CalcResult {
 
     if short == true {
         for val in args.iter() {
-            match try!(val.eval(env)) {
-                Boolean(true)   => return Ok(Boolean(short)),
+            match try!(arg_to_literal(val, env)) {
+                Boolean(true)   => return Ok(Atom(Boolean(short))),
                 Boolean(false)  => { },
                 _   => return Err("Non boolean conditon!".to_str())
             }
         }
         
-        Ok(Boolean(false))
+        Ok(Atom(Boolean(false)))
     } else {
         for val in args.iter() {
-            match try!(val.eval(env)) {
+            match try!(arg_to_literal(val,env)) {
                 Boolean(true)   => { },
-                Boolean(false)  => return Ok(Boolean(short)),
+                Boolean(false)  => return Ok(Atom(Boolean(short))),
                 _   => return Err("Non boolean condition!".to_str())
             }
         }
 
-        Ok(Boolean(true))
+        Ok(Atom(Boolean(true)))
     }
 }
 
@@ -90,10 +95,10 @@ pub fn not(args: &Args, env: &mut Env) -> CalcResult {
         return Err("Not only takes one argument".to_str())
     }
 
-    let val = match try!(args.get(0).eval(env)) {
+    let val = match try!(arg_to_literal(args.get(0), env)) {
         Boolean(x)  => x,
         _   => return Err("Non boolean condition!".to_str())
     };
 
-    Ok(Boolean(!val))
+    Ok(Atom(Boolean(!val)))
 }

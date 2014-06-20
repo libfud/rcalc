@@ -4,19 +4,20 @@ extern crate num;
 
 use self::num::rational::BigRational;
 use std::num;
-use super::super::{Evaluate, CalcResult, Environment};
+use super::super::{CalcResult, Environment};
 use super::super::literal::BigNum;
+use super::{ArgType, Atom, arg_to_literal};
 
-pub fn pow_wrapper(args: &Vec<Box<Evaluate>>, env: &mut Environment) -> CalcResult {
+pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     let mut args_vec: Vec<BigRational> = Vec::new();
     for arg in args.iter() {
-        match try!(arg.eval(env)) {
+        match try!(arg_to_literal(arg,env)) {
             BigNum(x)   => args_vec.push(x),
             _ => return Err("Only numbers can be raised to a power".to_str())
         }
     }
 
-    Ok(BigNum(try!(pow(args_vec.as_slice()))))
+    Ok(Atom(BigNum(try!(pow(args_vec.as_slice())))))
 }
 
 /// Pow raises a number to a power - if there are more than one terms, it

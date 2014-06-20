@@ -89,13 +89,6 @@ pub mod rust_no_readline {
 }
 
 fn main() {
-
-    let args = std::os::args();
-
-    if args.len() > 1 && args.get(1) == &"test".to_str() {
-        calc::expression::test();
-        return
-    }
     //env will hold all user defined variables and functions in hashmaps,
     //to be looked up when called. They're in the main function for
     //persistence.

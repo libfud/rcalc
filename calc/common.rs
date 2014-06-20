@@ -2,9 +2,8 @@
 
 extern crate num;
 
-
-use super::{Evaluate, Environment, CalcResult};
-use super::literal::Void;
+use super::{CalcResult};
+use super::literal::{Symbol, Void};
 use super::expression::{ArgType, Atom};
 use self::num::rational::{BigRational, Ratio};
 use std::num;
@@ -12,7 +11,7 @@ use std::collections::hashmap::HashMap;
 
 static PI: &'static str = "3126535/995207";
 
-pub fn help(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn help(args: &Vec<ArgType>) -> CalcResult {
     let help_help =
 "The help function has the form (help term1, term2, term3...) and prints out
 examples of how operators are used. You can use help for individual operators
@@ -202,14 +201,11 @@ function.
     }
                                                        
 
-    let list: Vec<String> = args.iter().map(|x| x.to_symbol(env)).collect();
-
-    if list.len() == 0 {
-        println!("{}", help_help)
-        return Ok(Void)
-    }
-
-    for word in list.iter() {
+    for arg in args.iter() {
+        let word = match arg {
+            &Atom(Symbol(ref x)) => x,
+            _ => continue,
+        };
         println!("{}", match help_map.find(word) {
             Some(val) => format!("{}", val),
             None => format!("Help for `{}' is not available", word)
@@ -243,7 +239,7 @@ function.
 */
     }
 
-    return Ok(Void)
+    Ok(Atom(Void))
 }
 
 /// Enumeration of ways to write numbers.

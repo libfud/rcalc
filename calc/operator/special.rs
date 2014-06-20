@@ -6,9 +6,9 @@ use self::num::bigint::*;
 use self::num::rational::{Ratio, BigRational};
 use super::super::literal::{BigNum, List, Void, LiteralType};
 use super::listops::proc_getter;
-use super::{Evaluate, Environment, CalcResult};
-use super::{ArgType, Atom, SExpr, arg_to_literal};
-use super::super::tokenize::TokenStream;
+use super::{Environment, CalcResult};
+use super::{ArgType, Atom, arg_to_literal};
+use super::super::Evaluate;
 
 pub fn range_getter(arg: LiteralType) -> CalcResult<int> {
     match arg {
@@ -27,7 +27,7 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
                    .to_str())
     }
 
-    let (name, func) = try!(proc_getter(args, env));
+    let (name, func) = try!(proc_getter(args));
     if name.len() != 1 {
         return Err("Only single variables are supported currently".to_str())
     }
@@ -91,19 +91,19 @@ pub fn table_list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err("`table' takes at least 2 arguments" .to_str())
     }
 
-    let (name, func) = try!(proc_getter(args, env));
+    let (name, func) = try!(proc_getter(args));
     if name.len() != 1 {
         return Err("Only single variables are supported currently".to_str())
     }
 
-    let list = match try!(args.get(1).eval(env)) {
+    let list = match try!(arg_to_literal(args.get(1), env)) {
         List(x) => x,
         _ => return Err ("`table-list must take a list as an argument!".to_str())
     };
     
     let cols = match args.len() {
         2 => 1,
-        _ => try!(range_getter(try!(args.get(2).eval(env))))
+        _ => try!(range_getter(try!(arg_to_literal(args.get(2), env))))
 
     };
 
@@ -146,7 +146,7 @@ pub fn table_list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         x += cols as uint;
     }
 
-    Ok(Void)
+    Ok(Atom(Void))
 }
 
 pub fn insertion_sort<T: PartialOrd + Clone>(array_orig: &Vec<T>) -> Vec<T> {
@@ -222,7 +222,7 @@ pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err("Sort takes one and only one list".to_str())
     }
 
-    let list = match try!(args.get(0).eval(env)) {
+    let list = match try!(arg_to_literal(args.get(0), env)) {
         List(x) => x.clone(),
         _ => return Err("Cannot sort items which aren't in a list!".to_str())
     };
@@ -231,5 +231,13 @@ pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err("Sort can only sort numbers!".to_str())
     }
 
-    Ok(List(try!(merge_sort(&list, 100))))
+    let num_list: Vec<BigRational> = list.move_iter().map(|x| match x {
+        BigNum(y) => y,
+        _ => fail!("Impossible!".to_str())
+    }).collect();
+
+    let answer = try!(merge_sort(&num_list, 100)).move_iter().map(|x| 
+                                                                  BigNum(x)).collect();
+
+    Ok(Atom(List(answer)))
 }

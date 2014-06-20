@@ -2,17 +2,16 @@
 
 extern crate num;
 
-use std::num;
 use self::num::rational::BigRational;
-use super::{CalcResult, Evaluate, Environment, Token};
-use super::expression::{SExpression, ArgType, arg_to_basic};
+use super::{CalcResult, Environment, Atom};
+use super::expression::{Expression, ArgType, arg_to_literal};
 
 #[deriving(Clone, Show, PartialEq)]
 pub enum LiteralType {
     Boolean(bool),
     BigNum(BigRational),
     Symbol(String),
-    Proc(Vec<String>, Vec<Token>),
+    Proc(Vec<String>, Expression),
     List(Vec<LiteralType>),
     Void
 }
@@ -20,9 +19,9 @@ pub enum LiteralType {
 pub fn list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     let mut list: Vec<LiteralType> = Vec::new();
     for arg in args.iter() {
-        list.push(try!(arg_to_basic(arg)));
+        list.push(try!(arg_to_literal(arg, env)));
     }
-    Ok(List(list))
+    Ok(Atom(List(list)))
 }
 
 pub fn cons(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
@@ -30,12 +29,12 @@ pub fn cons(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err("Wrong number of arguments to `cons'".to_str())
     }
 
-    let car = try!(args.get(0).eval(env));
-    let cdr = try!(args.get(1).eval(env));
+    let car = try!(arg_to_literal(args.get(0), env));
+    let cdr = try!(arg_to_literal(args.get(1), env));
 
     match cdr {
-        List(x) => Ok(List(vec!(car).append(x.as_slice()))),
-        _ => Ok(List(vec!(car, cdr)))
+        List(x) => Ok(Atom(List(vec!(car).append(x.as_slice())))),
+        _ => Ok(Atom(List(vec!(car, cdr))))
     }
 }
 
@@ -44,12 +43,12 @@ pub fn car(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err("Wrong number of arguments to `car'".to_str())
     }
 
-    match try!(args.get(0).eval(env)) {
+    match try!(arg_to_literal(args.get(0), env)) {
         List(x) => {
             if x.len() < 1 {
                 Err("Empty list!".to_str())
             } else {
-                Ok(x.get(0).clone())
+                Ok(Atom(x.get(0).clone()))
             }
         },
         _ => Err("Wrong type for `car'".to_str())
@@ -61,10 +60,10 @@ pub fn cdr(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err("Wrong number of arguments to `cdr'".to_str())
     }
 
-    match try!(args.get(0).eval(env)) {
+    match try!(arg_to_literal(args.get(0), env)) {
         List(x) => match x.len() {
             0 => Err("List too short!".to_str()),
-            _ => Ok(List(x.tail().to_owned()))
+            _ => Ok(Atom(List(x.tail().to_owned())))
         },
         _ => Err("Wrong type for `cdr'".to_str())
     }

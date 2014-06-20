@@ -11,7 +11,7 @@ use super::operator::{OperatorType};
 
 ///Enumeration of valid tokens. Valid tokens are Operators, Literals, LParens,
 ///RParens, and Names.
-#[deriving(Clone, Show, PartialEq, PartialOrd)]
+#[deriving(Clone, Show, PartialEq)]
 pub enum Token {
     Literal(LiteralType),
     LParen,
@@ -30,31 +30,8 @@ impl TokenStream {
     pub fn new(e: String) -> TokenStream {
         TokenStream { expr: e, index: 0 }
     }
-
-    pub fn new_from_tokens(tokens: Vec<Token>) -> Result<TokenStream, String> {
-        let mut n_expr = "".to_str();
-        for token in tokens.iter() {
-            n_expr = n_expr.append(try!(token_to_str(token)).as_slice());
-        }
-        Ok(TokenStream { expr: n_expr, index: 0 })
-    }
 }
 
-pub fn token_to_str(token: &Token) -> Result<String, String> {
-    match token {
-        &Literal(ref lit_ty) => match lit_ty {
-            &Boolean(ref x) => Ok(x.to_str().append(" ")),
-            &BigNum(ref x) => Ok(x.to_str().append(" ")),
-            _ => Err("idkyet".to_str()),
-        },
-        &LParen => Ok("( ".to_str()),
-        &RParen => Ok(") ".to_str()),
-        &Operator(ref op_ty) => Ok(operator::to_str(op_ty).append(" ")),
-        &Name(ref x) => Ok(x.clone().append(" ")),
-        &Variable(ref x) => Ok(x.clone().append(" ")),
-    }
-}
- 
 pub type MaybeToken<T = Option<CalcResult<Token>>> = (T, uint);
 
 impl Iterator<CalcResult<Token>> for TokenStream {

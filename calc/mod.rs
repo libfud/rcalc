@@ -20,7 +20,7 @@ pub mod common;
 pub mod pretty;
 
 /// A shortcut for the result type that is used everywhere
-pub type CalcResult<T = LiteralType> = Result<T, String>;
+pub type CalcResult<T = ArgType> = Result<T, String>;
 
 pub trait Evaluate {
     fn eval(&self, mut env: &mut Environment) -> CalcResult;
@@ -44,7 +44,7 @@ impl Environment {
         Environment { symbols: HashMap::new(), parent: Some(box par.clone()) }
     }
 
-    pub fn lookup(&self, var: &String) -> CalcResult {
+    pub fn lookup(&self, var: &String) -> CalcResult<LiteralType> {
         match self.symbols.find(var) {
             Some(val) => Ok(val.clone()),
             None      => {
@@ -67,5 +67,8 @@ pub fn eval(s: &str, env: &mut Environment) -> CalcResult {
     let mut tokens = TokenStream::new(s.to_str());
 
     let expr = try!(translate(&mut tokens, env));
-    expr.eval(env)
+    match expr {
+        Atom(_) => Ok(expr),
+        SExpr(x) => x.eval(env)
+    }
 }

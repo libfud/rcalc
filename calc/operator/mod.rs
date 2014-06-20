@@ -1,7 +1,7 @@
 //! Operators
 
 use std::num;
-pub use super::{Evaluate, CalcResult, Environment, ArgType, Atom, SExpr, arg_to_literal};
+pub use super::{CalcResult, Environment, ArgType, Atom, SExpr, arg_to_literal};
 pub use super::literal::{LiteralType, Symbol, cons, car, cdr, list};
 
 pub mod special;
@@ -78,13 +78,13 @@ pub fn to_str(op: &OperatorType) -> String {
 pub fn eval(op_type: OperatorType, args: &Vec<ArgType>, 
             env: &mut Environment) -> CalcResult {
     match op_type {
-        Define  => Ok(super::literal::Void),
+        Define  => Ok(Atom(super::literal::Void)),
 
-        Lambda => Ok(super::literal::Void),
+        Lambda => Ok(Atom(super::literal::Void)),
 
         List => list(args, env),
 
-        Quote => Ok(super::literal::Void),
+        Quote => Ok(Atom(super::literal::Void)),
 
         Cons => cons(args, env),
 
@@ -137,7 +137,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         
         Gt   => logic::ordering(args, env, |a, b| a > b),
 
-        Help => super::common::help(args, env),
+        Help => super::common::help(args),
 
         Table => special::table(args, env),
 

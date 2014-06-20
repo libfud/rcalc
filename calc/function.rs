@@ -1,20 +1,19 @@
 //! Evaluate functions defined by the user
 
-use super::{CalcResult, Environment, Evaluate};
-use super::literal::{Proc, Symbol, Void};
-use super::tokenize::{TokenStream, Token, Literal, LParen, RParen, Operator,
-                      Variable};
-use super::operator::Quote;
+use super::expression::Expression;
+use super::{CalcResult, Environment, Evaluate, ArgType, Atom, SExpr, arg_to_literal};
+use super::literal::{Proc, Void};
+use super::tokenize::{TokenStream, Token, LParen, RParen, Variable};
 
 ///Returns the value of the function for the arguments given
-pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>,
+pub fn eval(fn_name: &String, args: &Vec<ArgType>,
             env: &mut Environment) -> CalcResult {
     
     let value = try!(env.lookup(fn_name));
 
-    let (args_to_fulfill, tokens) = match value {
+    let (args_to_fulfill, func) = match value {
         Proc(x, y) => (x, y),
-        _ => return Ok(value),
+        _ => return Ok(Atom(value)),
     };
 
     if args.len() != args_to_fulfill.len() {
@@ -24,13 +23,10 @@ pub fn eval(fn_name: &String, args: &Vec<Box<Evaluate>>,
     }
 
     let mut child_env = Environment::new_frame(env);
-    let mut expr = try!(TokenStream::new_from_tokens(tokens));
-
-    for (arg_key, arg_val) in args_to_fulfill.iter().zip(args.iter()) {
-        child_env.symbols.insert(arg_key.clone(), try!(arg_val.eval(env)));
+    for (key, val) in args_to_fulfill.iter().zip(args.iter()) {
+        child_env.symbols.insert(key.clone(), try!(arg_to_literal(val, env)));
     }
 
-    let func = try!(super::translate(&mut expr, &mut child_env));
     func.eval(&mut child_env)
 }
 
@@ -62,78 +58,27 @@ pub fn get_symbols(tokens: &mut TokenStream) -> Result<Vec<String>, String> {
     }
 }
 
-pub fn get_body(tokens: &mut TokenStream) -> Result<Vec<Token>, String> {
-    let mut lparens = 1;
-    let mut rparens = 0;
-    let mut token_vec: Vec<Token> = Vec::new();
-
-    loop {
-        let nt = try!(strip(tokens.next()));
-        match nt {
-            LParen => lparens += 1,
-            RParen => {
-                rparens += 1;
-                if rparens == lparens {
-                    tokens.index -= 1;
-                    break
-                }
-            }
-            _ => { },
-        }
-        token_vec.push(nt);
-    }
-
-    match try!(strip(tokens.next())) {
-        RParen => Ok(token_vec),
-        /*
-    */
-        _ => Err("Malformed expression!".to_str())
-    }
-}
-
-pub fn lambda(tokens: &mut TokenStream) -> CalcResult<(Vec<String>, Vec<Token>)> {
+pub fn lambda(tokens: &mut TokenStream, 
+              env: &mut Environment) -> CalcResult<(Vec<String>, Expression)> {
+    
     let symbols = try!(get_symbols(tokens));
-    let body = try!(get_body(tokens));
+    let body = match try!(super::translate(tokens, env)) {
+        SExpr(x) => x,
+        _ => return Err("Not an expression!".to_str()),
+    };
 
     Ok((symbols, body))
 }
 
 pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult {
-    let (symbol_vec, body) = try!(lambda(tokens));
+    let (symbol_vec, body) = try!(lambda(tokens, env));
+    if symbol_vec.len() == 0 {
+        return Err("That should be impossible, but I'm not sure yet.".to_str())
+    }
     let symbol = symbol_vec.get(0);
         
-    match (symbol_vec.len(), body.len()) {
-        (_, 0) => return Err("Malformed Expression!".to_str()),
-        (1, 1) => {
-            env.symbols.insert(symbol.clone(), match body.get(0) {
-                &Variable(ref x) => Symbol(x.clone()),
-                &Literal(ref lit_ty) => lit_ty.clone(),
-                _ => return Err("Malformed Expression!".to_str()),
-            });
-        },
-        (1, _) => {
-            let tokens = match body.get(0) {
-                &Operator(Quote) => vec![LParen].append(
-                body.as_slice()).append(vec!(RParen).as_slice()),
-            _ => body.clone()
-            };
-            
-            let mut tokenstream = try!(TokenStream::new_from_tokens(tokens));
-            let val_box = try!(super::translate(&mut tokenstream, &mut env.clone()));
-            match val_box.eval(&mut env.clone()) {
-                Ok(x) => {
-                    env.symbols.insert(symbol.clone(), x);
-                },
-                Err(_) => {
-                    let symbols = symbol_vec.tail().to_owned();
-                    env.symbols.insert(symbol.clone(), Proc(symbols, body));
-                }
-            }
-        },
-        (_, _) => { env.symbols.insert(symbol.clone(), 
-                                     Proc(symbol_vec.tail().to_owned(), body)); },
-    }
-
-    Ok(Void)
+    env.symbols.insert(symbol.clone(), Proc(symbol_vec.tail().to_owned(), body));
+    
+    Ok(Atom(Void))
 }
 

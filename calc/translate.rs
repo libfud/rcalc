@@ -1,8 +1,6 @@
 //! something
 
-extern crate num;
-
-use super::{CalcResult, Evaluate, Environment};
+use super::{CalcResult, arg_to_literal, Evaluate, Environment};
 use super::constant::Constant;
 use super::tokenize::{Literal, LParen, RParen, Operator, Name, Variable, 
                       TokenStream};
@@ -73,7 +71,7 @@ pub fn un_special(etype: ExprType, tokens: &mut TokenStream,
                 tokens.index -= 1;
                 //recurse to build subexpressions into AST
                 let sub_expr = try!(translate(tokens, env));
-                args.push(SExpr(sub_expr));
+                args.push(sub_expr);
             },
 
             RParen => return Ok(Expression::new(etype, args)),
@@ -84,8 +82,9 @@ pub fn un_special(etype: ExprType, tokens: &mut TokenStream,
             Literal(literaltype)  => args.push(Atom(literaltype)),
 
             Name(ref c_name) => {
-                let constant = try!(Constant::from_str(c_name.as_slice()));
-                args.push(Atom(constant));
+                let constant = try!(try!(Constant::from_str(
+                    c_name.as_slice())).eval(env));
+                args.push(Atom(try!(arg_to_literal(&constant, env))));
             }
         }
     }
@@ -105,13 +104,13 @@ pub fn list_it(tokens: &mut TokenStream, env: &mut Env) ->
             LParen => {
                 tokens.index -= 1;
                 let val = try!(translate(tokens, env));
-                lit_vec.push(try!(val.eval(env)));
+                lit_vec.push(try!(arg_to_literal(&val, env)));
             },
             Literal(lit_ty) => lit_vec.push(lit_ty),
             Variable(x) => lit_vec.push(try!(env.lookup(&x))),
             Name(c) => {
                 let constant = try!(Constant::from_str(c.as_slice()));
-                lit_vec.push(try!(constant.eval(env)));
+                lit_vec.push(try!(arg_to_literal(&try!(constant.eval(env)), env)));
             },
             RParen => break,
             Operator(Quote) => {
@@ -136,12 +135,12 @@ pub fn make_expr(etype: ExprType, tokens: &mut TokenStream, env: &mut Env) -> Ex
             Ok(Atom(Void))
         },
         expression::Operator(Lambda)    => {
-            let (symbols, body) = try!(lambda(tokens));
-            Ok(Proc(symbols, body))
+            let (symbols, body) = try!(lambda(tokens, env));
+            Ok(Atom(Proc(symbols, body)))
         },
         expression::Operator(Quote)     => {
             let list = try!(list_it(tokens, env));
-            Ok(List(list))
+            Ok(Atom(List(list)))
         },
         _  => Ok(SExpr(try!(un_special(etype, tokens, env))))
     }

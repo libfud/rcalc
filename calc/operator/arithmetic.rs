@@ -3,11 +3,12 @@
 extern crate num;
 
 use std::num;
-use super::super::{CalcResult, Environment, Evaluate};
+use super::super::{CalcResult, Environment};
 use super::super::literal::{Symbol, BigNum, Void};
+use super::{ArgType, Atom, arg_to_literal};
 use self::num::rational::BigRational;
 
-type Args<T = Box<Evaluate>> = Vec<T>;
+type Args<T = ArgType> = Vec<T>;
 type BigR = BigRational;
 type Env = Environment;
 
@@ -24,7 +25,7 @@ pub fn do_op(args: &Args, env: &mut Env, min_len: uint, op: |BigR, &BigR| -> Big
     //Find out the contents of the vector.
     let mut stripped_literals: Vec<BigR> = Vec::new();
     for arg in args.iter() {
-        match try!(arg.eval(env)) {
+        match try!(arg_to_literal(arg,env)) {
             BigNum(x) => stripped_literals.push(x),
             Symbol(x) => stripped_literals.push(match try!(env.lookup(&x)) {
                 BigNum(y) => y.clone(),
@@ -39,16 +40,16 @@ pub fn do_op(args: &Args, env: &mut Env, min_len: uint, op: |BigR, &BigR| -> Big
     };
 
     if args.len() == 0 {
-        Ok(BigNum(ident))
+        Ok(Atom(BigNum(ident)))
     }
     else if args.len() == 1 {
         //(+ 1) -> 1, (+ -2) -> -2, (- 3) -> -3, (- -4) -> 4
-        Ok(BigNum(stripped_literals.iter().fold(ident, op)))
+        Ok(Atom(BigNum(stripped_literals.iter().fold(ident, op))))
     } else {
         let first = stripped_literals.as_slice()[0].clone();
         let tail = stripped_literals.slice_from(1);
         //(- 2 3) -> -1
-        Ok(BigNum(tail.iter().fold(first, op)))
+        Ok(Atom(BigNum(tail.iter().fold(first, op))))
     }
 }
 
@@ -65,7 +66,7 @@ pub fn divrem(args: &Args, env: &mut Env, op:|BigR, &BigR| -> BigR) -> CalcResul
 
     let mut stripped_literals: Vec<BigR> = Vec::new();
     for arg in args.iter() {
-        match try!(arg.eval(env)) {
+        match try!(arg_to_literal(arg, env)) {
             BigNum(x) => stripped_literals.push(x),
             Symbol(x) => stripped_literals.push(match try!(env.lookup(&x)) {
                 BigNum(y) => y.clone(),
@@ -85,7 +86,7 @@ pub fn divrem(args: &Args, env: &mut Env, op:|BigR, &BigR| -> BigR) -> CalcResul
         if *stripped_literals.get(0) == num::zero() {
             return Err("Division by zero is not allowed!".to_str())
         }
-        return Ok(BigNum(op(one, stripped_literals.get(0))))
+        return Ok(Atom(BigNum(op(one, stripped_literals.get(0)))))
     }
 
     let first = stripped_literals.as_slice()[0].clone();
@@ -98,5 +99,5 @@ pub fn divrem(args: &Args, env: &mut Env, op:|BigR, &BigR| -> BigR) -> CalcResul
             }
         )
     ));
-    Ok(BigNum(answer))
+    Ok(Atom(BigNum(answer)))
 }

@@ -3,7 +3,7 @@
 extern crate num;
 
 use self::num::rational::BigRational;
-use super::{Evaluate, CalcResult, Environment};
+use super::{Atom, Evaluate, CalcResult, Environment};
 use super::literal::{BigNum, LiteralType};
 
 #[deriving(Show, Clone)]
@@ -32,12 +32,13 @@ impl Constant {
 impl Evaluate for Constant {
     fn eval(&self, _: &mut Environment) -> CalcResult {
         let &Constant(c_type) = self;
-        match c_type {
-            Pi  => Ok(BigNum(from_str::<BigRational>("3126535/995207").unwrap())),
-            E   => Ok(BigNum(from_str::<BigRational>("1084483/398959").unwrap())),
-            C   => Ok(BigNum(from_str::<BigRational>("299792458/1").unwrap())),
-            ANSWER  => Ok(BigNum(from_str::<BigRational>("42/1").unwrap())),
-        }
+        let answer = match c_type {
+            Pi  => from_str::<BigRational>("3126535/995207").unwrap(),
+            E   => from_str::<BigRational>("1084483/398959").unwrap(),
+            C   => from_str::<BigRational>("299792458/1").unwrap(),
+            ANSWER  => from_str::<BigRational>("42/1").unwrap(),
+        };
+        Ok(Atom(BigNum(answer)))
     }
 
     fn to_symbol(&self, _: &mut Environment) -> String {
