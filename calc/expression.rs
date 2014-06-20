@@ -11,6 +11,8 @@ use super::tokenize::Token;
 use super::operator::OperatorType;
 use super::literal::LiteralType;
 
+use std::collections::hashmap::HashMap;
+
 #[deriving(Show, Clone, PartialEq)]
 pub enum ExprType {
     Operator(OperatorType),
@@ -59,6 +61,39 @@ impl Evaluate for Expression {
     }
 }
 
+/// A structure to allow persistence of variables and functions
+#[deriving(Clone)]
+pub struct Frame {
+    pub symbols: HashMap<String, BasicType>,
+    pub parent: Option<Box<Frame>>
+}
+
+impl Frame {
+    pub fn new_global() -> Frame {
+        Frame { symbols:  HashMap::new(), parent: None }
+    }
+
+    pub fn new_frame(par: &mut Frame) -> Frame {
+        Frame { symbols: HashMap::new(), parent: Some(box par.clone()) }
+    }
+
+    pub fn lookup(&self, var: &String) -> CalcResult<BasicType> {
+        match self.symbols.find(var) {
+            Some(val) => Ok(val.clone()),
+            None      => {
+                if self.parent.is_some() {
+                    match self.parent.clone().unwrap().lookup(var) {
+                        Ok(v) => Ok(v.clone()),
+                        Err(m) => Err(m)
+                     }
+                } else {
+                    Err(format!("Unbound variable {}", var))
+                }
+            }
+        }
+    }
+}
+
 #[deriving(Show, Clone, PartialEq)]
 pub struct SExpression {
     pub expr_type: ExprType,
@@ -72,20 +107,20 @@ impl SExpression {
 }
 
 pub trait OtherEval {
-    fn eval(&self, mut env: &mut Environment) -> CalcResult<ArgType>;
+    fn eval(&self, mut env: &mut Frame) -> CalcResult<ArgType>;
 
-    fn to_symbol(&self, env: &mut Environment) -> String;
+    fn to_symbol(&self, env: &mut Frame) -> String;
 }
 
 impl OtherEval for SExpression {
-    fn eval(&self, env: &mut Environment) -> CalcResult<ArgType> {
+    fn eval(&self, env: &mut Frame) -> CalcResult<ArgType> {
         match self.expr_type {
             Operator(super::operator::Add) => test_add(&self.args, env),
             _ => Err("Not yet defined".to_str())
         }
     }
 
-    fn to_symbol(&self, _: &mut Environment) -> String {
+    fn to_symbol(&self, _: &mut Frame) -> String {
         self.expr_type.to_str()
     }
 }
@@ -106,7 +141,7 @@ pub enum BasicType {
     Void
 }
 
-fn test_add(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult<ArgType> {
+fn test_add(args: &Vec<ArgType>, env: &mut Frame) -> CalcResult<ArgType> {
     let mut numbers: Vec<BigRational> = Vec::new();
     for arg in args.iter() {
         match arg {
@@ -119,27 +154,32 @@ fn test_add(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult<ArgType> {
         }
     }
 
-    for num in numbers.iter() {
-        println!("{}", num);
-    }
-
     let zero: BigRational = num::zero();
     Ok(Atom(BigNum(numbers.iter().fold(zero, |x, y| x + *y))))
 }
 
 //Just seeing if this might be a valid path to walk down.
 pub fn test() {
-    let mut top_frame = super::Environment::new_global();
+    let mut top_frame = Frame::new_global();
 
-    let new_e = SExpression::new(Operator(super::operator::Add),
-                                 vec!(Atom(BigNum(from_str::<BigRational>("1/1").unwrap()))));
+    let add = Operator(super::operator::Add);
 
-    let new_r = SExpression::new(Operator(super::operator::Add),
-                                 vec!(SExpr(new_e), 
-                                      Atom(BigNum(from_str::<BigRational>("2/1").unwrap()))));
+    let one: BigRational = num::one();
+    let zero: BigRational = num::zero();
+    let (eins, zwei) = (Atom(BigNum(one + zero)), Atom(BigNum(one + one)));
+
+    let x = "x".to_str();
+
+    top_frame.symbols.insert(x.clone(), BigNum(one + one));
+
+    let new_e = SExpression::new(add.clone(), vec!(eins.clone()));
+    assert!(Ok(eins) == new_e.eval(&mut top_frame));
+
+    let new_r = SExpression::new(add.clone(), vec!(SExpr(new_e.clone()), zwei.clone()));
 
     let answer = new_r.eval(&mut top_frame);
-    let right = from_str::<BigRational>("3/1").unwrap();
-    println!("correct: {}, answer: {}", right, answer);
-    assert!(Ok(Atom(BigNum(right))) == answer);
+    let right = Ok(Atom(BigNum(one + one + one)));
+    assert!(answer == right);
+
+
 }
