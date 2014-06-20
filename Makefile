@@ -1,4 +1,4 @@
-RUSTC = rustc --opt-level=3 --out-dir bin/
+RUSTC = rustc --out-dir bin/
 
 .PHONY : rcalc clean
 

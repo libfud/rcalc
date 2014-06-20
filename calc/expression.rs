@@ -2,6 +2,7 @@
 
 extern crate num;
 
+use std::num;
 use self::num::rational::BigRational;
 
 use super::{function, operator, CalcResult, Evaluate, Environment};
@@ -10,7 +11,7 @@ use super::tokenize::Token;
 use super::operator::OperatorType;
 use super::literal::LiteralType;
 
-#[deriving(Show, Clone)]
+#[deriving(Show, Clone, PartialEq)]
 pub enum ExprType {
     Operator(OperatorType),
     Function(String)
@@ -58,7 +59,7 @@ impl Evaluate for Expression {
     }
 }
 
-#[deriving(Show, Clone)]
+#[deriving(Show, Clone, PartialEq)]
 pub struct SExpression {
     pub expr_type: ExprType,
     pub args: Vec<ArgType>,
@@ -70,9 +71,18 @@ impl SExpression {
     }
 }
 
-impl Evaluate for SExpression {
-    fn eval(&self, _: &mut Environment) -> CalcResult {
-        Ok(super::literal::Void)
+pub trait OtherEval {
+    fn eval(&self, mut env: &mut Environment) -> CalcResult<ArgType>;
+
+    fn to_symbol(&self, env: &mut Environment) -> String;
+}
+
+impl OtherEval for SExpression {
+    fn eval(&self, env: &mut Environment) -> CalcResult<ArgType> {
+        match self.expr_type {
+            Operator(super::operator::Add) => test_add(&self.args, env),
+            _ => Err("Not yet defined".to_str())
+        }
     }
 
     fn to_symbol(&self, _: &mut Environment) -> String {
@@ -80,13 +90,13 @@ impl Evaluate for SExpression {
     }
 }
 
-#[deriving(Clone, Show)]
+#[deriving(Clone, Show, PartialEq)]
 pub enum ArgType {
     Atom(BasicType),
     SExpr(SExpression),
 }
 
-#[deriving(Clone, Show)]
+#[deriving(Clone, Show, PartialEq)]
 pub enum BasicType {
     Boolean(bool),
     BigNum(BigRational),
@@ -96,13 +106,38 @@ pub enum BasicType {
     Void
 }
 
+fn test_add(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult<ArgType> {
+    let mut numbers: Vec<BigRational> = Vec::new();
+    for arg in args.iter() {
+        match arg {
+            &SExpr(ref x) => match try!(x.eval(env)) {
+                Atom(BigNum(y)) => numbers.push(y),
+                _ => return Err("Whoops".to_str())
+            },
+            &Atom(BigNum(ref x)) => numbers.push(x.clone()),
+            _ => return Err("Not covering that yet".to_str())
+        }
+    }
+
+    for num in numbers.iter() {
+        println!("{}", num);
+    }
+
+    let zero: BigRational = num::zero();
+    Ok(Atom(BigNum(numbers.iter().fold(zero, |x, y| x + *y))))
+}
+
 //Just seeing if this might be a valid path to walk down.
-fn test() {
+pub fn test() {
+    let mut top_frame = super::Environment::new_global();
+
     let new_e = SExpression::new(Operator(super::operator::Add),
-                                 vec!(Atom(
-                                     BigNum(from_str::<BigRational>("1/1").
-                                                             unwrap()))));
+                                 vec!(Atom(BigNum(from_str::<BigRational>("1/1").unwrap()))));
 
     let new_r = SExpression::new(Operator(super::operator::Add),
-                                 vec!(SExpr(new_e)));
+                                 vec!(SExpr(new_e), 
+                                      Atom(BigNum(from_str::<BigRational>("2/2").unwrap()))));
+
+    let answer = from_str::<BigRational>("2/3").unwrap();
+    assert!(Ok(Atom(BigNum(answer))) == new_r.eval(&mut top_frame));
 }
