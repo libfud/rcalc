@@ -141,4 +141,5 @@ pub fn test() {
     let answer = new_r.eval(&mut top_frame);
     let right = from_str::<BigRational>("3/1").unwrap();
     println!("correct: {}, answer: {}", right, answer);
+    assert!(Ok(Atom(BigNum(right))) == answer);
 }
