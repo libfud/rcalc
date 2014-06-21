@@ -1,7 +1,8 @@
 //! Operators
 
 use std::num;
-pub use super::{CalcResult, Environment, ArgType, Atom, SExpr, arg_to_literal};
+pub use super::{CalcResult, Environment, ArgType, Atom, SExpr, desymbolize, 
+                arg_to_literal};
 pub use super::literal::{LiteralType, Symbol, cons, car, cdr, list};
 
 pub mod special;

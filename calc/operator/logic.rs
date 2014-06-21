@@ -5,7 +5,7 @@ extern crate num;
 use self::num::rational::BigRational;
 use super::super::{CalcResult, Environment};
 use super::super::literal::{Boolean, Symbol, BigNum};
-use super::{ArgType, Atom, arg_to_literal};
+use super::{ArgType, Atom, arg_to_literal, desymbolize};
 
 type Args<T = Vec<ArgType>> = T;
 type Env<T = Environment> = T;
@@ -36,13 +36,16 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
 
 type BR = BigRational;
 
+/*
+pub fn to_num(arg: LiteralType, env: &mut Environment) -> LiteralType 
+*/
 pub fn ordering(args: &Args, env: &mut Env, comp: |&BR,&BR| -> bool) -> CalcResult {
 
     if args.len() != 2 {
         return Err("Ordering requires two arguments".to_str())
     }
-    let (a, b) = (try!(arg_to_literal(args.get(0), env)),
-                  try!(arg_to_literal(args.get(1), env)));
+    let (a, b) = (try!(desymbolize(args.get(0), env)),
+                  try!(desymbolize(args.get(1), env)));
     match (&a, &b) {
         (&BigNum(ref x), &BigNum(ref y)) => Ok(Atom(Boolean(comp(x, y)))),
         _ =>  Err(format!("Ordering only takes numbers! {} {}",

@@ -6,7 +6,6 @@ use super::tokenize::{Literal, LParen, RParen, Operator, Name, Variable,
                       TokenStream};
 use super::expression;
 use super::expression::{Expression, ExprType, ArgType, Atom, SExpr};
-use super::function::{strip, lambda, define};
 use super::literal::{LiteralType, Symbol, Proc, List, Void};
 use super::operator;
 use super::operator::{Define, Lambda, Quote, Help, OperatorType};
@@ -26,12 +25,75 @@ pub fn begin_expr(tokens: &mut TokenStream) -> Result<(), String> {
 }
 
 pub fn get_top_expr(tokens: &mut TokenStream) -> Result<ExprType, String> {
-    try!(begin_expr(tokens));
+    try!(begin_expr(tokens)); //This screws up a lot of things apparently 
 
     match tokens.next() {
         Some(x) => super::expression::token_to_expr(try!(x)),
         None  => fail!("Empty expression!")
     }
+}
+
+pub fn strip<T>(t: Option<Result<T, String>>) -> Result<T, String> {
+    match t {
+        Some(x) => x,
+	None => Err("No names found!".to_str())
+    }
+}
+
+pub fn get_symbols(tokens: &mut TokenStream) -> Result<Vec<String>, String> {
+    fn multi(tokens: &mut TokenStream) -> Result<Vec<String>, String> {
+        let mut symbols: Vec<String> = Vec::new();
+        loop {
+            let nt = try!(strip(tokens.next()));
+            match nt {
+                Variable(x) => symbols.push(x),
+                RParen => break,
+                _ => return Err("Unexpected token found in parameters!".to_str()),
+            }
+        }
+        Ok(symbols)
+    }
+    
+    match try!(strip(tokens.next())) {
+        LParen => multi(tokens),
+        Variable(x) => Ok(vec!(x)),
+        _ => return Err("Malformed expression!".to_str()),
+    }
+}
+
+pub fn lambda(tokens: &mut TokenStream, 
+              env: &mut Environment) -> CalcResult<(Vec<String>, Expression)> {
+    
+    let symbols = try!(get_symbols(tokens));
+    let body = match try!(super::translate(tokens, env)) {
+        SExpr(x) => x,
+        _ => return Err("Not an expression!".to_str()),
+    };
+
+    Ok((symbols, body))
+}
+
+pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult {
+    let (symbol_vec, body) = try!(lambda(tokens, env));
+    if symbol_vec.len() == 0 {
+        return Err("That should be impossible, but I'm not sure yet.".to_str())
+    }
+    let symbol = symbol_vec.get(0);
+        
+    match body.eval(&mut env.clone()) {
+        Ok(x) => {
+            let val = match try!(arg_to_literal(&x, env)) {
+                Symbol(y) => try!(env.lookup(&y)),
+                y => y,
+            };
+            env.symbols.insert(symbol.clone(), val);
+        },
+        _ => {
+            env.symbols.insert(symbol.clone(), Proc(symbol_vec.tail().to_owned(), body));
+        }
+    }
+    
+    Ok(Atom(Void))
 }
 
 pub fn handle_operator(tokens: &mut TokenStream, env: &mut Environment,

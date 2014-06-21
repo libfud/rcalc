@@ -49,15 +49,19 @@ impl Environment {
             Some(val) => Ok(val.clone()),
             None      => {
                 if self.parent.is_some() {
-                    match self.parent.clone().unwrap().lookup(var) {
-                        Ok(v) => Ok(v.clone()),
-                        Err(m) => Err(m)
-                     }
+                    self.parent.clone().unwrap().lookup(var)
                 } else {
                     Err(format!("Unbound variable {}", var))
                 }
             }
         }
+    }
+}
+
+pub fn desymbolize(arg: &ArgType, env: &mut Environment) -> CalcResult<LiteralType> {
+    match try!(arg_to_literal(arg, env)) {
+        literal::Symbol(x) => env.lookup(&x),
+        otherwise => Ok(otherwise)
     }
 }
 
