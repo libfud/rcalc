@@ -28,9 +28,9 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
     };
 
     if condition {
-        Ok(args.get(1).clone())
+        Ok(Atom(try!(desymbolize(args.get(1), env))))
     } else {
-        Ok(args.get(2).clone())
+        Ok(Atom(try!(desymbolize(args.get(2), env))))
     }
 }
 
