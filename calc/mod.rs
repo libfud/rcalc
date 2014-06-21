@@ -13,7 +13,6 @@ pub mod literal;
 pub mod tokenize;
 pub mod translate;
 pub mod expression;
-pub mod constant;
 pub mod operator;
 pub mod function;
 pub mod common;
@@ -21,12 +20,6 @@ pub mod pretty;
 
 /// A shortcut for the result type that is used everywhere
 pub type CalcResult<T = ArgType> = Result<T, String>;
-
-pub trait Evaluate {
-    fn eval(&self, mut env: &mut Environment) -> CalcResult;
-
-    fn to_symbol(&self, env: &mut Environment) -> String;
-}
 
 /// A structure to allow persistence of variables and functions
 #[deriving(Clone)]

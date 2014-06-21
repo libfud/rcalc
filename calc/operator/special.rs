@@ -8,7 +8,6 @@ use super::super::literal::{BigNum, List, Void, LiteralType};
 use super::listops::proc_getter;
 use super::{Environment, CalcResult};
 use super::{ArgType, Atom, arg_to_literal};
-use super::super::Evaluate;
 
 pub fn range_getter(arg: LiteralType) -> CalcResult<int> {
     match arg {

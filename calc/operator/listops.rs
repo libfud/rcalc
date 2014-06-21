@@ -2,7 +2,6 @@
 
 use super::{CalcResult, Environment};
 use super::super::literal::{LiteralType, BigNum, List, Proc, Boolean};
-use super::super::{Evaluate};
 use super::special::{range_getter, create_bigrat};
 use super::{ArgType, Atom, arg_to_literal};
 use super::super::expression::Expression;

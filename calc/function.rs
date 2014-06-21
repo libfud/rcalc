@@ -1,6 +1,6 @@
 //! Evaluate functions defined by the user
 
-use super::{CalcResult, Environment, Evaluate, ArgType, Atom, arg_to_literal};
+use super::{CalcResult, Environment, ArgType, Atom, arg_to_literal};
 use super::literal::{Proc, Symbol};
 
 ///Returns the value of the function for the arguments given

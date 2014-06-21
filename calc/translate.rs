@@ -1,9 +1,7 @@
 //! something
 
-use super::{CalcResult, arg_to_literal, Evaluate, Environment};
-use super::constant::Constant;
-use super::tokenize::{Literal, LParen, RParen, Operator, Name, Variable, 
-                      TokenStream};
+use super::{CalcResult, arg_to_literal, Environment};
+use super::tokenize::{Literal, LParen, RParen, Operator, Variable, TokenStream};
 use super::expression;
 use super::expression::{Expression, ExprType, ArgType, Atom, SExpr};
 use super::literal::{LiteralType, Symbol, Proc, List, Void};
@@ -59,16 +57,27 @@ pub fn get_symbols(tokens: &mut TokenStream) -> Result<Vec<String>, String> {
         Variable(x) => Ok(vec!(x)),
         _ => return Err("Malformed expression!".to_str()),
     }
-}
+}                
 
 pub fn lambda(tokens: &mut TokenStream, 
-              env: &mut Environment) -> CalcResult<(Vec<String>, Expression)> {
+              env: &mut Environment) -> CalcResult<(Vec<String>, ArgType)> {
     
     let symbols = try!(get_symbols(tokens));
-    let body = match try!(super::translate(tokens, env)) {
-        SExpr(x) => x,
-        _ => return Err("Not an expression!".to_str()),
+    let body = match try!(strip(tokens.next())) {
+        LParen => {
+            tokens.index -= 1;
+            try!(translate(tokens, env))
+        },
+        Variable(x) => Atom(Symbol(x)),
+        Literal(x) => Atom(x),
+        Operator(_) => return Err("Invalid body for lambda!".to_str()),
+        RParen => return Err("unexpected rparen!".to_str())
     };
+
+    match try!(strip(tokens.next())) {
+        RParen => { },
+        _ => return Err("No closing paren found!".to_str())
+    }
 
     Ok((symbols, body))
 }
@@ -80,16 +89,12 @@ pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult {
     }
     let symbol = symbol_vec.get(0);
         
-    match body.eval(&mut env.clone()) {
-        Ok(x) => {
-            let val = match try!(arg_to_literal(&x, env)) {
-                Symbol(y) => try!(env.lookup(&y)),
-                y => y,
-            };
-            env.symbols.insert(symbol.clone(), val);
+    match body {
+        Atom(x) => {
+            env.symbols.insert(symbol.clone(), x);
         },
-        _ => {
-            env.symbols.insert(symbol.clone(), Proc(symbol_vec.tail().to_owned(), body));
+        SExpr(x) => {
+            env.symbols.insert(symbol.clone(), Proc(symbol_vec.tail().to_owned(), x));
         }
     }
     
@@ -127,27 +132,17 @@ pub fn un_special(etype: ExprType, tokens: &mut TokenStream,
         match token {
             Variable(var) => args.push(Atom(Symbol(var))),
 
-            // Subexpression begins
             LParen  => {
-                //reset the counter to account for the lparen
                 tokens.index -= 1;
-                //recurse to build subexpressions into AST
                 let sub_expr = try!(translate(tokens, env));
                 args.push(sub_expr);
             },
 
             RParen => return Ok(Expression::new(etype, args)),
-            
-            Operator(op) => args.push(try!(handle_operator(tokens, env, &etype, 
-                                                           op))),
-                        
-            Literal(literaltype)  => args.push(Atom(literaltype)),
 
-            Name(ref c_name) => {
-                let constant = try!(try!(Constant::from_str(
-                    c_name.as_slice())).eval(env));
-                args.push(Atom(try!(arg_to_literal(&constant, env))));
-            }
+            Operator(op) => args.push(try!(handle_operator(tokens, env, &etype, op))),
+
+            Literal(literaltype)  => args.push(Atom(literaltype)),
         }
     }
 
@@ -170,10 +165,6 @@ pub fn list_it(tokens: &mut TokenStream, env: &mut Env) ->
             },
             Literal(lit_ty) => lit_vec.push(lit_ty),
             Variable(x) => lit_vec.push(try!(env.lookup(&x))),
-            Name(c) => {
-                let constant = try!(Constant::from_str(c.as_slice()));
-                lit_vec.push(try!(arg_to_literal(&try!(constant.eval(env)), env)));
-            },
             RParen => break,
             Operator(Quote) => {
                 let sub_list = try!(list_it(tokens, env));
@@ -198,7 +189,10 @@ pub fn make_expr(etype: ExprType, tokens: &mut TokenStream, env: &mut Env) -> Ex
         },
         expression::Operator(Lambda)    => {
             let (symbols, body) = try!(lambda(tokens, env));
-            Ok(Atom(Proc(symbols, body)))
+            match body {
+                Atom(_) => Ok(body),
+                SExpr(x) => Ok(Atom(Proc(symbols, x))),
+            }
         },
         expression::Operator(Quote)     => {
             let list = try!(list_it(tokens, env));

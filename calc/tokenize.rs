@@ -6,7 +6,7 @@ extern crate num;
 
 use super::literal::{LiteralType, Boolean, BigNum};
 use super::common::str_to_rational;
-use super::{CalcResult, operator, constant};
+use super::{CalcResult, operator};
 use super::operator::{OperatorType};
 
 ///Enumeration of valid tokens. Valid tokens are Operators, Literals, LParens,
@@ -17,7 +17,6 @@ pub enum Token {
     LParen,
     RParen,
     Operator(OperatorType),
-    Name(String),
     Variable(String),
 }
 
@@ -85,14 +84,6 @@ pub fn is_op(expr: &str) -> MaybeToken {
     }
 }
 
-pub fn is_const(expr: &str) -> MaybeToken {
-    let word = make_word(expr);
-    match constant::from_const_str(word.as_slice()) {
-        Some(c) => (Some(Ok(Literal(c))), word.len()),
-        _       => (None, 0)
-    }
-}
-
 pub fn is_bool(expr: &str) -> MaybeToken {
     let word = make_word(expr);
     match word.as_slice() {
@@ -122,7 +113,7 @@ pub fn is_number(expr: &str) -> MaybeToken {
 }
 
 pub fn analyze(expr: &str) -> MaybeToken {
-    let funs = [is_paren, is_op, is_const, is_bool, is_var, is_number];
+    let funs = [is_paren, is_op, is_bool, is_var, is_number];
 
     for &fun in funs.iter() {
         let (token, len) = fun(expr);
