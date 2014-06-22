@@ -3,7 +3,7 @@
 use super::{LiteralType, function, operator, CalcResult, Environment};
 use super::tokenize;
 use super::tokenize::Token;
-use super::literal::Void;
+use super::literal::Boolean;
 use super::operator::OperatorType;
 
 #[deriving(Show, Clone, PartialEq)]
@@ -32,10 +32,48 @@ impl Expression {
     }
   
     pub fn eval(&self, env: &mut Environment) -> CalcResult {
-        if self.expr_type == Operator(operator::If) {
-            return operator::eval(operator::If , &self.args, env)
+        let mut e_type = self.expr_type.clone();
+        let mut arguments = self.args.clone();
+
+        loop {
+            if e_type == Operator(operator::If) {
+                if arguments.len() != 3 {
+                    return Err("`if` requires three arguments".to_str())
+                }
+            
+                let condition = match arguments.get(0) {
+                    &Atom(ref x) => match x {
+                        &Boolean(val) => val,
+                        _   => return Err("Only boolean expressions can be a condition!".to_str()),
+                    },
+                    &SExpr(ref x) => match try!(x.eval(env)) {
+                        Atom(Boolean(val)) => val,
+                        _ => return Err("Only booleans can be conditions!".to_str())
+                    }
+                };
+
+                if condition {
+                    match arguments.get(1).clone() {
+                        Atom(_) => return Ok(arguments.get(1).clone()),
+                        SExpr(x) => {
+                            e_type = x.expr_type.clone();
+                            arguments = x.args.clone();
+                        }
+                    }
+                } else {
+                    match arguments.get(2).clone() {
+                        Atom(_) => return Ok(arguments.get(2).clone()),
+                        SExpr(ref x) => {
+                            e_type = x.expr_type.clone();
+                            arguments = x.args.clone();
+                        }
+                    }
+                }
+            } else {
+                break
+            }
         }
-        
+
         let mut data =  Vec::new();
         
         for arg in self.args.iter() {
@@ -43,7 +81,7 @@ impl Expression {
                 &Atom(ref x) => data.push(Atom(x.clone())),
                 &SExpr(ref x) => data.push( match x.clone().expr_type {
                     Operator(op_type)   => try!(operator::eval(op_type, &x.args, env)),
-                    Function(ref fn_name) => try!(function::eval(fn_name, &x.args, env)),
+                    Function(ref fn_name) => try!(function::eval(fn_name, &x.args, env))
                 }),
             }
         }
