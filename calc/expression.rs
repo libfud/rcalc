@@ -36,29 +36,23 @@ impl Expression {
             return operator::eval(operator::If , &self.args, env)
         }
         
-        let mut instructions = Vec::new();
         let mut data =  Vec::new();
         
-        self.args.iter().rev().map(|arg| match arg {
-            &Atom(Void) => { },
-            _ => instructions.push(arg.clone()),
-        });
-
-        loop {
-            match instructions.pop() {
-                Some(Atom(x)) => data.push(x),
-                Some(SExpr(x)) => data.push( match x.expr_type {
-                    Operator(op_type)   => {
-                        try!(operator::eval(op_type, &out_stack, env))
-                    }
-                    Function(ref fn_name)    => {
-                        try!(function::eval(fn_name, &out_stack, env))
-                    }
+        for arg in self.args.iter() {
+            match arg {
+                &Atom(ref x) => data.push(Atom(x.clone())),
+                &SExpr(ref x) => data.push( match x.clone().expr_type {
+                    Operator(op_type)   => try!(operator::eval(op_type, &x.args, env)),
+                    Function(ref fn_name) => try!(function::eval(fn_name, &x.args, env)),
                 }),
-                None
-                
-*/
-        Ok(Atom(Void))
+            }
+        }
+
+        match self.expr_type {
+            Operator(op) => operator::eval(op, &data, env),
+            Function(ref fn_name) => function::eval(fn_name, &data, env),
+        }
+    }
 }
 
 #[deriving(Clone, Show, PartialEq)]
