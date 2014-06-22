@@ -50,10 +50,10 @@ impl Expression {
 
         match self.expr_type {
             Operator(op_type)   => {
-                operator::eval(op_type, &self.args, env)
+                operator::eval(op_type, &out_stack, env)
             }
             Function(ref fn_name)    => {
-                function::eval(fn_name, &self.args, env)
+                function::eval(fn_name, &out_stack, env)
             }
         }
     }
