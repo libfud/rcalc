@@ -35,19 +35,20 @@ impl Expression {
         if self.expr_type == Operator(operator::If) {
             return operator::eval(operator::If , &self.args, env)
         }
+        
+        let mut instructions = Vec::new();
+        let mut data =  Vec::new();
+        
+        self.args.iter().rev().map(|arg| match arg {
+            &Atom(Void) => { },
+            _ => instructions.push(arg.clone()),
+        });
 
-        let mut out_stack: Vec<ArgType> = Vec::new();
-        for arg in self.args.iter() {
-            match arg {
-                &Atom(Void) => { },
-                &Atom(_) => out_stack.push(arg.clone()),
-                &SExpr(ref x) => match try!(x.eval(env)) {
-                    Atom(Void) => { },
-                    y => out_stack.push(y)
-                }
-            }
-        }
-
+        loop {
+            match instructions.pop() {
+                Some(Atom(x)) => data.push(x),
+                Some(SExpr(x)) => /* do stuff with data */
+/*
         match self.expr_type {
             Operator(op_type)   => {
                 operator::eval(op_type, &out_stack, env)
@@ -57,6 +58,8 @@ impl Expression {
             }
         }
     }
+*/
+        Ok(Atom(Void))
 }
 
 #[deriving(Clone, Show, PartialEq)]
