@@ -38,6 +38,7 @@ impl Expression {
         loop {
             if e_type == Operator(operator::If) {
                 if arguments.len() != 3 {
+                    println!("{}", arguments);
                     return Err("`if` requires three arguments".to_str())
                 }
             
@@ -56,16 +57,24 @@ impl Expression {
                     match arguments.get(1).clone() {
                         Atom(_) => return Ok(arguments.get(1).clone()),
                         SExpr(x) => {
-                            e_type = x.expr_type.clone();
-                            arguments = x.args.clone();
+                            if x.expr_type == Operator(operator::If) {
+                                e_type = x.expr_type.clone();
+                                arguments = x.args.clone();
+                            } else {
+                                return x.eval(env)
+                            }
                         }
                     }
                 } else {
                     match arguments.get(2).clone() {
                         Atom(_) => return Ok(arguments.get(2).clone()),
                         SExpr(ref x) => {
-                            e_type = x.expr_type.clone();
-                            arguments = x.args.clone();
+                            if x.expr_type == Operator(operator::If) {
+                                e_type = x.expr_type.clone();
+                                arguments = x.args.clone();
+                            } else {
+                                return x.eval(env)
+                            }
                         }
                     }
                 }
@@ -76,10 +85,10 @@ impl Expression {
 
         let mut data =  Vec::new();
         
-        for arg in self.args.iter() {
+        for arg in arguments.move_iter() {
             match arg {
-                &Atom(ref x) => data.push(Atom(x.clone())),
-                &SExpr(ref x) => data.push( match x.clone().expr_type {
+                Atom(_) => data.push(arg),
+                SExpr(x) => data.push( match x.expr_type {
                     Operator(op_type)   => try!(operator::eval(op_type, &x.args, env)),
                     Function(ref fn_name) => try!(function::eval(fn_name, &x.args, env))
                 }),
