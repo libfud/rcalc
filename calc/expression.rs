@@ -3,6 +3,7 @@
 use super::{LiteralType, function, operator, CalcResult, Environment};
 use super::tokenize;
 use super::tokenize::Token;
+use super::literal::Void;
 use super::operator::OperatorType;
 
 #[deriving(Show, Clone, PartialEq)]
@@ -29,7 +30,24 @@ impl Expression {
     pub fn new(e: ExprType, a: Vec<ArgType>) -> Expression {
         Expression { expr_type: e, args: a }
     }
+  
     pub fn eval(&self, env: &mut Environment) -> CalcResult {
+        if self.expr_type == Operator(operator::If) {
+            return operator::eval(operator::If , &self.args, env)
+        }
+
+        let mut out_stack: Vec<ArgType> = Vec::new();
+        for arg in self.args.iter() {
+            match arg {
+                &Atom(Void) => { },
+                &Atom(_) => out_stack.push(arg.clone()),
+                &SExpr(ref x) => match try!(x.eval(env)) {
+                    Atom(Void) => { },
+                    y => out_stack.push(y)
+                }
+            }
+        }
+
         match self.expr_type {
             Operator(op_type)   => {
                 operator::eval(op_type, &self.args, env)
