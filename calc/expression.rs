@@ -47,17 +47,16 @@ impl Expression {
         loop {
             match instructions.pop() {
                 Some(Atom(x)) => data.push(x),
-                Some(SExpr(x)) => /* do stuff with data */
-/*
-        match self.expr_type {
-            Operator(op_type)   => {
-                operator::eval(op_type, &out_stack, env)
-            }
-            Function(ref fn_name)    => {
-                function::eval(fn_name, &out_stack, env)
-            }
-        }
-    }
+                Some(SExpr(x)) => data.push( match x.expr_type {
+                    Operator(op_type)   => {
+                        try!(operator::eval(op_type, &out_stack, env))
+                    }
+                    Function(ref fn_name)    => {
+                        try!(function::eval(fn_name, &out_stack, env))
+                    }
+                }),
+                None
+                
 */
         Ok(Atom(Void))
 }
