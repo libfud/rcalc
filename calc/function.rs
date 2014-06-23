@@ -1,9 +1,10 @@
 //! Evaluate functions defined by the user
 
-use super::{CalcResult, Environment, ArgType, Atom, SExpr, arg_to_literal};
-use super::literal::{Boolean, Proc, Symbol};
+use super::{CalcResult, Environment, Atom, SExpr, arg_to_literal};
+use super::literal::{Proc, Boolean, Symbol};
 use super::operator;
-use super::expression::Operator;
+use super::operator::If;
+use super::expression::{Operator, ExprType, Expression, Function, ArgType};
 
 ///Returns the value of the function for the arguments given
 pub fn eval(fn_name: &String, args: &Vec<ArgType>,

@@ -3,9 +3,9 @@
 extern crate num;
 
 use self::num::rational::BigRational;
-use super::super::expression::{Expression, Operator, ExprType};
+use super::super::expression::{Expression, Operator};
 use super::super::{CalcResult, Environment};
-use super::super::literal::{Boolean, Symbol, BigNum};
+use super::super::literal::{Boolean, BigNum};
 use super::{If, ArgType, Atom, SExpr, arg_to_literal, desymbolize};
 
 type Args<T = Vec<ArgType>> = T;

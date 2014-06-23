@@ -3,7 +3,6 @@
 use super::{LiteralType, function, operator, CalcResult, Environment};
 use super::tokenize;
 use super::tokenize::Token;
-use super::literal::Boolean;
 use super::operator::OperatorType;
 
 #[deriving(Show, Clone, PartialEq)]
@@ -37,14 +36,14 @@ impl Expression {
 
         let mut holding_block: Vec<Vec<ArgType>> = Vec::new();
         loop {
-            let mut arguments = data.pop().unwrap();
+            let arguments = data.pop().unwrap();
             data.push(vec![]);
 
             let mut arg_index = 0;
             while arg_index < arguments.len() {
                 match arguments.as_slice()[arg_index].clone() {
                     Atom(_) => data.mut_last().unwrap().push(arguments.get(arg_index).clone()),
-                    SExpr(mut x) => {
+                    SExpr(x) => {
                         ops_stack.push(x.expr_type);
                         data.push(x.args);
                         if arguments.len() + 1 - arg_index > 0 {
@@ -111,5 +110,3 @@ pub fn arg_to_literal(arg: &ArgType, env: &mut Environment) -> CalcResult<Litera
         &Atom(ref x) => Ok(x.clone())
     }
 }
-
- 
