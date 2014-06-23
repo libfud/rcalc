@@ -32,59 +32,55 @@ impl Expression {
     }
   
     pub fn eval(&self, env: &mut Environment) -> CalcResult {
-        let mut e_type = self.expr_type.clone();
-        let mut arguments = self.args.clone();
+        let mut ops_stack: Vec<ExprType> = Vec::new();
+        let mut data: Vec<Vec<ArgType>> = vec!(self.args.clone());
 
+        let mut holding_block: Vec<Vec<ArgType>> = Vec::new();
         loop {
-            if e_type == Operator(operator::If) {
-                if arguments.len() != 3 {
-                    println!("{}", arguments);
-                    return Err("`if` requires three arguments".to_str())
-                }
-            
-                let condition = match arguments.get(0) {
-                    &Atom(ref x) => match x {
-                        &Boolean(val) => val,
-                        _   => return Err("Only boolean expressions can be a condition!".to_str()),
-                    },
-                    &SExpr(ref x) => match try!(x.eval(env)) {
-                        Atom(Boolean(val)) => val,
-                        _ => return Err("Only booleans can be conditions!".to_str())
-                    }
-                };
+            let mut arguments = data.pop().unwrap();
+            data.push(vec![]);
 
-                if condition {
-                    match arguments.get(1).clone() {
-                        Atom(_) => return Ok(arguments.get(1).clone()),
-                        SExpr(x) => {
-                            if x.expr_type == Operator(operator::If) {
-                                e_type = x.expr_type.clone();
-                                arguments = x.args.clone();
-                            } else {
-                                return x.eval(env)
-                            }
+            let mut arg_index = 0;
+            while arg_index < arguments.len() {
+                match arguments.as_slice()[arg_index].clone() {
+                    Atom(_) => data.mut_last().unwrap().push(arguments.get(arg_index).clone()),
+                    SExpr(mut x) => {
+                        ops_stack.push(x.expr_type);
+                        data.push(x.args);
+                        if arguments.len() + 1 - arg_index > 0 {
+                            holding_block.push(arguments.slice_from(arg_index + 1).to_owned());
+                        } else {
+                            holding_block.push(vec![])
                         }
-                    }
-                } else {
-                    match arguments.get(2).clone() {
-                        Atom(_) => return Ok(arguments.get(2).clone()),
-                        SExpr(ref x) => {
-                            if x.expr_type == Operator(operator::If) {
-                                e_type = x.expr_type.clone();
-                                arguments = x.args.clone();
-                            } else {
-                                return x.eval(env)
-                            }
-                        }
+                        break
                     }
                 }
-            } else {
-                break
+                arg_index += 1;
             }
-        }
 
-        let mut data =  Vec::new();
+            if ops_stack.len() > 0 {
+                if data.last().unwrap().iter().all(|x| match x {
+                    &Atom(_) => true,
+                    &SExpr(_) => false,
+                }) {
+                    let op_args = data.pop().unwrap();
+                    let result = match ops_stack.pop().unwrap() {
+                        Operator(op) => try!(operator::eval(op, &op_args, env)),
+                        Function(ref f) => try!(function::eval(f, &op_args, env)),
+                    };
+                    data.mut_last().unwrap().push(result);
+                    data.mut_last().unwrap().push_all(holding_block.pop().unwrap().as_slice());
+                }
+            }
+
+            if ops_stack.len() == 0 {
+                break
+            }                             
+        }
         
+        
+        /* Facilitate recursive user def functions */
+        /*
         for arg in arguments.move_iter() {
             match arg {
                 Atom(_) => data.push(arg),
@@ -94,11 +90,12 @@ impl Expression {
                 }),
             }
         }
-
+                        */
         match self.expr_type {
-            Operator(op) => operator::eval(op, &data, env),
-            Function(ref fn_name) => function::eval(fn_name, &data, env),
+            Operator(op) => operator::eval(op, data.get(0), env),
+            Function(ref fn_name) => function::eval(fn_name, data.get(0), env),
         }
+
     }
 }
 

@@ -3,34 +3,61 @@
 extern crate num;
 
 use self::num::rational::BigRational;
+use super::super::expression::{Expression, Operator, ExprType};
 use super::super::{CalcResult, Environment};
 use super::super::literal::{Boolean, Symbol, BigNum};
-use super::{ArgType, Atom, arg_to_literal, desymbolize};
+use super::{If, ArgType, Atom, SExpr, arg_to_literal, desymbolize};
 
 type Args<T = Vec<ArgType>> = T;
 type Env<T = Environment> = T;
 
 pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
-    if args.len() != 3 {
-        return Err("`if` requires three arguments".to_str())
-    }
+    let mut expr_type = Operator(If);
+    let mut arguments = args.clone();
 
-    let condition = match try!(arg_to_literal(args.get(0), env)) {
-        Boolean(x)  => x,
-        Symbol(x)   => {
-            match try!(env.lookup(&x)) {
-                Boolean(y)  => y,
-                _   => return Err("Only boolean expressions can be a condtion!"
-                                  .to_str())
+    loop {
+        if expr_type != Operator(If) {
+            return Expression::new(expr_type, arguments).eval(env)
+        }
+        
+        if args.len() != 3 {
+            return Err("`if` requires three arguments".to_str())
+        }
+
+        let condition = match arguments.get(0) {
+            &Atom(Boolean(x))  => x,
+            &SExpr(ref x)   => match try!(x.eval(env)) {
+                Atom(Boolean(y))  => y,
+                _   => return Err("Only boolean expressions can be a condtion!".to_str())
+            },
+            _   => return Err("Only boolean expressions can be a condition!".to_str())
+        };
+        
+        if condition {
+            match arguments.get(1).clone() {
+                Atom(_) => return Ok(arguments.get(1).clone()),
+                SExpr(x) => {
+                    if x.expr_type == Operator(If) {
+                        expr_type = x.expr_type.clone();
+                        arguments = x.args.clone();
+                    } else {
+                        return x.eval(env)
+                    }
+                }
             }
-        },
-        _   => return Err("Only boolean expressions can be a condition!".to_str())
-    };
-
-    if condition {
-        Ok(Atom(try!(desymbolize(args.get(1), env))))
-    } else {
-        Ok(Atom(try!(desymbolize(args.get(2), env))))
+        } else {
+            match arguments.get(2).clone() {
+                Atom(_) => return Ok(arguments.get(2).clone()),
+                SExpr(ref x) => {
+                    if x.expr_type == Operator(If) {
+                        expr_type = x.expr_type.clone();
+                        arguments = x.args.clone();
+                    } else {
+                        return x.eval(env)
+                    }
+                }
+            }
+        }
     }
 }
 
