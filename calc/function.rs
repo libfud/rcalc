@@ -4,7 +4,7 @@ use super::{CalcResult, Environment, Atom, SExpr, arg_to_literal};
 use super::literal::{Proc, Boolean, Symbol};
 use super::operator;
 use super::operator::If;
-use super::expression::{Operator, ExprType, Expression, Function, ArgType};
+use super::expression::{Operator, ArgType};
 
 ///Returns the value of the function for the arguments given
 pub fn eval(fn_name: &String, args: &Vec<ArgType>,
