@@ -51,28 +51,20 @@ pub fn eval(fn_name: &String, args: &Vec<ArgType>,
                 }
             };
             
-            if condition {
-                match func.args.get(1).clone() {
-                    Atom(_) => return Ok(func.args.get(1).clone()),
-                    SExpr(x) => {
-                        if x.expr_type == Operator(operator::If) {
-                            func.expr_type = x.expr_type.clone();
-                            func.args = x.args.clone();
-                        } else {
-                            return x.eval(&mut child_env)
-                        }
-                    }
-                }
+            let result = if condition {
+                args.get(1).clone()
             } else {
-                match func.args.get(2).clone() {
-                    Atom(_) => return Ok(func.args.get(2).clone()),
-                    SExpr(ref x) => {
-                        if x.expr_type == Operator(operator::If) {
-                            func.expr_type = x.expr_type.clone();
-                            func.args = x.args.clone();
-                        } else {
-                            return x.eval(&mut child_env)
-                        }
+                args.get(2).clone()
+            };
+
+            match result {
+                Atom(_) => return Ok(func.args.get(2).clone()),
+                SExpr(ref x) => {
+                    if x.expr_type == Operator(operator::If) {
+                        func.expr_type = x.expr_type.clone();
+                        func.args = x.args.clone();
+                    } else {
+                        return x.eval(&mut child_env)
                     }
                 }
             }
