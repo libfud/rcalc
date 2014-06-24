@@ -58,8 +58,6 @@ impl Expression {
                 arg_index += 1;
             }
             
-            println!("{}\n{}\n{}", data, ops_stack, holding_block);
-
             if ops_stack.len() > 0 {
                 if data.last().unwrap().iter().all(|x| match x {
                     &Atom(_) => true,
@@ -68,76 +66,7 @@ impl Expression {
                     let op_args = data.pop().unwrap();
                     let result = match ops_stack.pop().unwrap() {
                         Operator(op) => try!(operator::eval(op, &op_args, env)),
-                        Function(ref fn_name) => {
-                            let final_result;
-
-                            let value = try!(env.lookup(fn_name));
-
-                            let (args_to_fulfill, mut func) = match value {
-                                Proc(x, y) => (x, y),
-                                _ => return Ok(Atom(value)),
-                            };
-
-                            if op_args.len() != args_to_fulfill.len() {
-                                let msg = format!("fn {} takes {} arguments but got {} arguments!",
-                                                  fn_name, args_to_fulfill.len(), op_args.len());
-                                return Err(msg);
-                            }
-
-                            let mut child_env = Environment::new_frame(env);
-                            for (key, value) in args_to_fulfill.iter().zip(op_args.iter()) {
-                                let val = match try!(arg_to_literal(value, env)) {
-                                    super::literal::Symbol(x) => try!(env.lookup(&x)),
-                                    otherwise => otherwise,
-                                };
-                                child_env.symbols.insert(key.clone(), val);
-                            }
-
-                            loop {
-                                if func.expr_type != Operator(operator::If) {
-                                    final_result = try!(func.eval(&mut child_env));
-                                    break
-                                }
-
-                                if func.args.len() != 3 {
-                                    return Err("`if` requires three arguments".to_str())
-                                }
-                                    
-                                let condition = match func.args.get(0) {
-                                    &Atom(ref x) => match x {
-                                        &Boolean(val) => val,
-                                        _ => return Err("Only booleans!".to_str()),
-                                    },
-                                    &SExpr(ref x) => match try!(x.eval(&mut child_env)) {
-                                        Atom(Boolean(val)) => val,
-                                        _ => return Err("Only booleans!".to_str())
-                                    }
-                                };
-                                
-                                let result = if condition {
-                                    func.args.get(1).clone()
-                                } else {
-                                    func.args.get(2).clone()
-                                };
-
-                                match result {
-                                    Atom(_) => {
-                                        final_result = func.args.get(1).clone();
-                                        break
-                                    }
-                                    SExpr(x) => {
-                                        if x.expr_type == Operator(operator::If) {
-                                            func.expr_type = x.expr_type.clone();
-                                            func.args = x.args.clone();
-                                        } else {
-                                            final_result = try!(x.eval(&mut child_env));
-                                            break
-                                        }
-                                    }
-                                }
-                            }
-                            final_result
-                        }
+                        Function(ref fn_name) => try!(function::eval(fn_name, &op_args, env)),
                     };
                     data.mut_last().unwrap().push(result);
                     data.mut_last().unwrap().push_all(holding_block.pop().unwrap().as_slice());
