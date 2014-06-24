@@ -32,29 +32,21 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
             },
             _   => return Err("Only boolean expressions can be a condition!".to_str())
         };
-        
-        if condition {
-            match arguments.get(1).clone() {
-                Atom(_) => return Ok(arguments.get(1).clone()),
-                SExpr(x) => {
-                    if x.expr_type == Operator(If) {
-                        expr_type = x.expr_type.clone();
-                        arguments = x.args.clone();
-                    } else {
-                        return x.eval(env)
-                    }
-                }
-            }
+
+        let result = if condition {
+            arguments.get(1).clone()
         } else {
-            match arguments.get(2).clone() {
-                Atom(_) => return Ok(arguments.get(2).clone()),
-                SExpr(ref x) => {
-                    if x.expr_type == Operator(If) {
-                        expr_type = x.expr_type.clone();
-                        arguments = x.args.clone();
-                    } else {
-                        return x.eval(env)
-                    }
+            arguments.get(2).clone()
+        };
+        
+        match result {
+            Atom(_) => return Ok(result),
+            SExpr(ref x) => {
+                if x.expr_type == Operator(If) {
+                    expr_type = x.expr_type.clone();
+                    arguments = x.args.clone();
+                } else {
+                    return x.eval(env)
                 }
             }
         }

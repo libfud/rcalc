@@ -4,6 +4,7 @@ use super::{LiteralType, function, operator, CalcResult, Environment};
 use super::tokenize;
 use super::tokenize::Token;
 use super::operator::OperatorType;
+use super::literal::{Proc, Symbol, Boolean};
 
 #[deriving(Show, Clone, PartialEq)]
 pub enum ExprType {
@@ -56,6 +57,8 @@ impl Expression {
                 }
                 arg_index += 1;
             }
+            
+            println!("{}\n{}\n{}", data, ops_stack, holding_block);
 
             if ops_stack.len() > 0 {
                 if data.last().unwrap().iter().all(|x| match x {
@@ -65,75 +68,75 @@ impl Expression {
                     let op_args = data.pop().unwrap();
                     let result = match ops_stack.pop().unwrap() {
                         Operator(op) => try!(operator::eval(op, &op_args, env)),
-                        Function(f) => {
-                            let fn_name = f.clone();
-                            let mut res = Atom(super::literal::Void);
+                        Function(ref fn_name) => {
+                            let final_result;
 
-                            let (args_to_fulfill, mut func) = match try!(env.lookup(&fn_name)) {
-                                super::literal::Proc(x, y) => (x, y),
-                                x => {
-                                    res = Atom(x);
-                                    break;
-                                }
+                            let value = try!(env.lookup(fn_name));
+
+                            let (args_to_fulfill, mut func) = match value {
+                                Proc(x, y) => (x, y),
+                                _ => return Ok(Atom(value)),
                             };
-                            
+
                             if op_args.len() != args_to_fulfill.len() {
-                                return Err("Bad number of arguments for fn!".to_str())
+                                let msg = format!("fn {} takes {} arguments but got {} arguments!",
+                                                  fn_name, args_to_fulfill.len(), op_args.len());
+                                return Err(msg);
                             }
-                            
+
                             let mut child_env = Environment::new_frame(env);
                             for (key, value) in args_to_fulfill.iter().zip(op_args.iter()) {
-                                child_env.symbols.insert(key.clone(), match value {
-                                    &Atom(super::literal::Symbol(ref x)) => try!(env.lookup(x)),
-                                    &Atom(ref x) => x.clone(),
-                                    &SExpr(ref x) => match try!(x.eval(env)) {
-                                        Atom(x) => x,
-                                        SExpr(_) => return Err("2deep5me".to_str())
-                                    }
-                                });
+                                let val = match try!(arg_to_literal(value, env)) {
+                                    super::literal::Symbol(x) => try!(env.lookup(&x)),
+                                    otherwise => otherwise,
+                                };
+                                child_env.symbols.insert(key.clone(), val);
                             }
-                            
+
                             loop {
                                 if func.expr_type != Operator(operator::If) {
+                                    final_result = try!(func.eval(&mut child_env));
                                     break
                                 }
-                                
+
                                 if func.args.len() != 3 {
-                                    return Err("If requires 3 args".to_str())
+                                    return Err("`if` requires three arguments".to_str())
                                 }
-                                
-                                let cond = match func.args.get(0) {
-                                    &Atom(super::literal::Boolean(val)) => val,
-                                    &Atom(_) => return Err("Non boolean cond".to_str()),
-                                    &SExpr(ref x) => match try!(x.eval(env)) {
-                                        Atom(super::literal::Boolean(val)) => val,
-                                        _ => return Err("Non boolean cond".to_str())
+                                    
+                                let condition = match func.args.get(0) {
+                                    &Atom(ref x) => match x {
+                                        &Boolean(val) => val,
+                                        _ => return Err("Only booleans!".to_str()),
+                                    },
+                                    &SExpr(ref x) => match try!(x.eval(&mut child_env)) {
+                                        Atom(Boolean(val)) => val,
+                                        _ => return Err("Only booleans!".to_str())
                                     }
                                 };
                                 
-                                let subres = if cond {
+                                let result = if condition {
                                     func.args.get(1).clone()
                                 } else {
                                     func.args.get(2).clone()
                                 };
-                                
-                                match subres {
+
+                                match result {
                                     Atom(_) => {
-                                        res = subres;
+                                        final_result = func.args.get(1).clone();
                                         break
-                                    },
-                                    SExpr(ref x) => {
+                                    }
+                                    SExpr(x) => {
                                         if x.expr_type == Operator(operator::If) {
+                                            func.expr_type = x.expr_type.clone();
                                             func.args = x.args.clone();
                                         } else {
-                                            res = try!(x.eval(&mut child_env));
-                                            break;
+                                            final_result = try!(x.eval(&mut child_env));
+                                            break
                                         }
                                     }
                                 }
                             }
-
-                            res
+                            final_result
                         }
                     };
                     data.mut_last().unwrap().push(result);
@@ -146,19 +149,6 @@ impl Expression {
             }                             
         }
         
-        
-        /* Facilitate recursive user def functions */
-        /*
-        for arg in arguments.move_iter() {
-            match arg {
-                Atom(_) => data.push(arg),
-                SExpr(x) => data.push( match x.expr_type {
-                    Operator(op_type)   => try!(operator::eval(op_type, &x.args, env)),
-                    Function(ref fn_name) => try!(function::eval(fn_name, &x.args, env))
-                }),
-            }
-        }
-                        */
         match self.expr_type {
             Operator(op) => operator::eval(op, data.get(0), env),
             Function(ref fn_name) => function::eval(fn_name, data.get(0), env),

@@ -1,4 +1,4 @@
-//! something
+//! Translation of a TokenStream into SExpressions for evaluation.
 
 use super::{CalcResult, arg_to_literal, Environment};
 use super::tokenize::{Literal, LParen, RParen, Operator, Variable, TokenStream};
