@@ -5,11 +5,11 @@ pub use super::{CalcResult, Environment, ArgType, Atom, SExpr, desymbolize,
                 arg_to_literal};
 pub use super::literal::{LiteralType, Symbol, cons, car, cdr, list};
 
-pub mod special;
+//pub mod special;
 pub mod power;
 pub mod arithmetic;
 pub mod logic;
-pub mod listops;
+// pub mod listops;
 pub mod trig;
 
 #[deriving(Show, Clone, PartialOrd, PartialEq)] 
@@ -22,11 +22,11 @@ pub enum OperatorType {
 
     If, And, Or, Not,
 
-    Quote, List, Cons, Car, Cdr, Map, Reduce, Filter,
+    Quote, List, Cons, Car, Cdr,/* Map, Reduce, Filter,*/
 
     Define, Lambda,
 
-    Help, Table, TableList, RangeList, Sort,
+    Help, /*Table, TableList, RangeList, Sort,*/
 }
 
 pub fn from_str(s: &str) -> Option<OperatorType> {
@@ -44,11 +44,11 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "define" => Some(Define), "lambda" => Some(Lambda),
 
         "quote" | "'"  => Some(Quote), "list" => Some(List),  "cons" => Some(Cons),
-        "car" => Some(Car), "cdr" => Some(Cdr), "map" => Some(Map),
-        "reduce" => Some(Reduce), "filter" => Some(Filter),
+        "car" => Some(Car), "cdr" => Some(Cdr), /*"map" => Some(Map),
+        "reduce" => Some(Reduce), "filter" => Some(Filter),*/
 
-        "help"  => Some(Help), "table" => Some(Table), "table-list" => Some(TableList),
-        "range-list" => Some(RangeList), "sort" => Some(Sort),
+        "help"  => Some(Help),/* "table" => Some(Table), "table-list" => Some(TableList),
+        "range-list" => Some(RangeList), "sort" => Some(Sort),*/
 
         _       => None
     }
@@ -67,10 +67,10 @@ pub fn to_str(op: &OperatorType) -> String {
         Define => "define", Lambda => "lambda",
 
         Quote => "quote", List => "list", Cons => "cons", Car => "car", 
-        Cdr => "cdr", Map => "map", Reduce => "reduce", Filter => "filter",
+        Cdr => "cdr", /*Map => "map", Reduce => "reduce", Filter => "filter",*/
 
-        Help  => "help", Table => "table", TableList => "table-list", 
-        RangeList => "range-list", Sort => "sort",
+        Help  => "help", /*Table => "table", TableList => "table-list", 
+        RangeList => "range-list", Sort => "sort",*/
     };
 
     answer.to_str()
@@ -92,13 +92,13 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         Car => car(args, env),
 
         Cdr => cdr(args, env),
-
+/*
         Map => listops::map(args, env),
 
         Reduce => listops::reduce(args, env),
 
         Filter => listops::filter(args, env),
-
+*/
         Add => arithmetic::do_op(args, env, 0, |a, b| a + *b, num::zero),
 
         Sub => arithmetic::do_op(args, env, 1, |a, b| a - *b, num::zero),
@@ -139,7 +139,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         Gt   => logic::ordering(args, env, |a, b| a > b),
 
         Help => super::common::help(args),
-
+/*
         Table => special::table(args, env),
 
         TableList => special::table_list(args, env),
@@ -147,5 +147,6 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         RangeList => listops::rangelist(args, env),
         
         Sort => special::sort(args, env),
+*/
     }
 }

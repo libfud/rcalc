@@ -8,13 +8,13 @@ use super::expression::{Operator, ArgType};
 
 ///Returns the value of the function for the arguments given
 pub fn eval(fn_name: &String, args: &Vec<ArgType>,
-            env: &mut Environment) -> CalcResult {
+            env: &mut Environment) -> CalcResult<(ArgType, Environment)> {
     
     let value = try!(env.lookup(fn_name));
 
     let (args_to_fulfill, mut func) = match value {
         Proc(x, y) => (x, y),
-        _ => return Ok(Atom(value)),
+        _ => return Ok((Atom(value), env.clone()))
     };
 
     if args.len() != args_to_fulfill.len() {
@@ -34,7 +34,8 @@ pub fn eval(fn_name: &String, args: &Vec<ArgType>,
 
     loop {
         if func.expr_type != Operator(operator::If) {
-            return func.eval(&mut child_env)
+            return Ok((SExpr(func), child_env))
+//            return func.eval(&mut child_env)
         } else {
             if func.args.len() != 3 {
                 return Err("`if` requires three arguments".to_str())
@@ -51,28 +52,20 @@ pub fn eval(fn_name: &String, args: &Vec<ArgType>,
                 }
             };
             
-            if condition {
-                match func.args.get(1).clone() {
-                    Atom(_) => return Ok(func.args.get(1).clone()),
-                    SExpr(x) => {
-                        if x.expr_type == Operator(operator::If) {
-                            func.expr_type = x.expr_type.clone();
-                            func.args = x.args.clone();
-                        } else {
-                            return x.eval(&mut child_env)
-                        }
-                    }
-                }
+            let result = if condition {
+                func.args.get(1).clone()
             } else {
-                match func.args.get(2).clone() {
-                    Atom(_) => return Ok(func.args.get(2).clone()),
-                    SExpr(ref x) => {
-                        if x.expr_type == Operator(operator::If) {
-                            func.expr_type = x.expr_type.clone();
-                            func.args = x.args.clone();
-                        } else {
-                            return x.eval(&mut child_env)
-                        }
+                func.args.get(2).clone()
+            };
+
+            match result {
+                Atom(_) => return Ok((func.args.get(2).clone(), child_env)),
+                SExpr(ref x) => {
+                    if x.expr_type == Operator(operator::If) {
+                        func.expr_type = x.expr_type.clone();
+                        func.args = x.args.clone();
+                    } else {
+                        return Ok((SExpr(x.clone()), child_env))
                     }
                 }
             }
