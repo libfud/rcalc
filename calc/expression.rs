@@ -30,10 +30,9 @@ impl Expression {
         Expression { expr_type: e, args: a }
     }
   
-    pub fn eval(&self, env_orig: &mut Environment) -> CalcResult {
+    pub fn eval(&self, env: &mut Environment) -> CalcResult {
         let mut ops_stack: Vec<ExprType> = Vec::new();
         let mut data: Vec<Vec<ArgType>> = vec!(self.args.clone());
-        let mut env = env_orig.clone();
 
         let mut holding_block: Vec<Vec<ArgType>> = Vec::new();
         loop {
@@ -64,27 +63,12 @@ impl Expression {
                     &SExpr(_) => false,
                 }) {
                     let op_args = data.pop().unwrap();
-                    let result;
-                    match ops_stack.pop().unwrap() {
-                        Operator(op) => result = try!(operator::eval(op, &op_args, &mut env)),
-                        Function(ref f) => {
-                            let (sub_res, t_env) = try!(function::eval(f, &op_args, &mut env));
-                            result = sub_res;
-                            env = t_env;
-                        }
-                    }
-                    match result {
-                        Atom(_) => {
-                            data.mut_last().unwrap().push(result);
-                            data.mut_last().unwrap().push_all(
-                                holding_block.pop().unwrap().as_slice());
-                        },
-                        SExpr(x) => {
-                            ops_stack.push(x.expr_type);
-                            data.push(x.args);
-                            holding_block.push(vec![]);
-                        }
-                    }
+                    let result = match ops_stack.pop().unwrap() {
+                        Operator(op) => try!(operator::eval(op, &op_args, env)),
+                        Function(ref f) => try!(function::eval(f, &op_args, env)),
+                    };
+                    data.mut_last().unwrap().push(result);
+                    data.mut_last().unwrap().push_all(holding_block.pop().unwrap().as_slice());
                 }
             }
 
@@ -94,9 +78,8 @@ impl Expression {
         }
         
         match self.expr_type {
-            Operator(op) => operator::eval(op, data.get(0), &mut env),
-            Function(_) => return Err("This shouldn't happen!".to_str())
-                //function::eval(fn_name, data.get(0), &mut env),
+            Operator(op) => operator::eval(op, data.get(0), env),
+            Function(ref fn_name) => function::eval(fn_name, data.get(0), env),
         }
 
     }
