@@ -127,7 +127,7 @@ fn main() {
             _   => eval(expr.as_slice().trim(), &mut env)
         };
 
-        pretty_print(&result, &env);
+        println!("{}", pretty_print(&result, &env));
     }
 }
 

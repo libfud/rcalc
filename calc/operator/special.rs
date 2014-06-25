@@ -7,7 +7,8 @@ use self::num::rational::{Ratio, BigRational};
 use super::super::literal::{BigNum, List, Void, LiteralType};
 use super::listops::proc_getter;
 use super::{Environment, CalcResult};
-use super::{ArgType, Atom, arg_to_literal};
+use super::{ArgType, Atom, arg_to_literal, desymbolize};
+use super::super::pretty::{pretty_print, pretty};
 
 pub fn range_getter(arg: LiteralType) -> CalcResult<int> {
     match arg {
@@ -26,7 +27,7 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
                    .to_str())
     }
 
-    let (name, func) = try!(proc_getter(args));
+    let (name, func) = try!(proc_getter(args, env));
     if name.len() != 1 {
         return Err("Only single variables are supported currently".to_str())
     }
@@ -48,15 +49,20 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err("Invalid table command".to_str())
     }
 
-    let fun_str = func.to_str();
+    let fun_str = func.to_symbol(env);
 
     let mut child_env = Environment::new_frame(env);
 
     let n_len = name.get(0).len();
     let f_len = fun_str.len();
-    let top_line = (format!("|{}    |{}{}", name.get(0), fun_str,
-                            " ".repeat((60 - (n_len + 4 + f_len)) / cols as uint)))
-                    .repeat(cols as uint).append("|");
+    let blank = if 60 > (n_len + 4 + f_len) {
+        " ".repeat((60 - (n_len + 4 + f_len)) / cols as uint)
+    } else {
+        "".to_str()
+    };
+
+    let top_line = (format!("|{}    |{}{}", name.get(0), 
+                            fun_str, blank).repeat(cols as uint)).append("|");
 
     println!("{}", "_".repeat(80));
     println!("{}", top_line);
@@ -72,10 +78,16 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
             let temp = BigNum(create_bigrat(x + y));
             child_env.symbols.insert(name.get(0).clone(), temp);
             
-            let result = try!(func.eval(&mut child_env));
+            let result = pretty_print(&func.eval(&mut child_env), env);
             let res_str = format!("|{}{}|{}", x + y, " ".repeat(5 - (x + y).to_str().len()),
                                   result.to_str());
-            print!("{}{}", res_str, " ".repeat((70 - res_str.len()) / cols as uint));
+            let blank = if 70 >= res_str.len() {
+                " ".repeat((70 - res_str.len()) / cols as uint)
+            } else {
+                "".to_str()
+            };
+
+            print!("{}{}", res_str, blank);
         }
         println!("|");
         println!("{}", "¯".repeat(80));
@@ -85,66 +97,97 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     Ok(Atom(Void))
 }
 
-pub fn table_list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn table_list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {    
     if args.len() < 2 || args.len() > 3 {
-        return Err("`table' takes at least 2 arguments" .to_str())
+        return Err("`table-list' takes a function, a list and optionally columns"
+                   .to_str())
     }
 
-    let (name, func) = try!(proc_getter(args));
+    let (name, func) = try!(proc_getter(args, env));
     if name.len() != 1 {
         return Err("Only single variables are supported currently".to_str())
     }
-
-    let list = match try!(arg_to_literal(args.get(1), env)) {
-        List(x) => x,
-        _ => return Err ("`table-list must take a list as an argument!".to_str())
-    };
+    let name = name.get(0);
     
-    let cols = match args.len() {
-        2 => 1,
-        _ => try!(range_getter(try!(arg_to_literal(args.get(2), env))))
-
+    let list = match try!(desymbolize(args.get(1), env)) {
+        List(x) => x,
+        _ => return Err("`table-list' takes a list as its second argument.".to_str())
     };
 
-    if cols <= 0 {
-        return Err("Invalid number of columns".to_str())
+    let mut cols: uint = match args.len() {
+        2 => 1,
+        _ => try!(range_getter(try!(arg_to_literal(args.get(4), env)))) as uint,
+    };
+
+    if cols < 1 {
+        return Err("There must be at least one column".to_str())
     }
+        
+    let fun_str = func.to_symbol(env);
 
     let mut child_env = Environment::new_frame(env);
-    let fun_str = func.to_str();
 
-    let n_len = name.get(0).len();
-    let f_len = fun_str.len();
-    let top_line = (format!("|{}    |{}{}", name.get(0), fun_str,
-                            " ".repeat((60 - (n_len + 4 + f_len)) / cols as uint)))
-                    .repeat(cols as uint).append("|");
+    let (n_len, f_len)  = (name.len(),fun_str.len());
+    let name_blanks_len = if n_len < 10 {
+        10 - n_len 
+    } else {
+        0
+    };
+    let name_blanks = " ".repeat(name_blanks_len - 2);
 
-    println!("{}", "_".repeat(80));
+    /* 2 = two pipes */
+    let total_len: uint = if name_blanks_len + 2 + f_len < 80 {
+        80
+    } else {
+        cols = 1;
+        println!("Using one column.");
+        name_blanks_len + 2 + f_len + 1
+    };
+
+    let blanks = if total_len > name_blanks_len + 2 + f_len {
+        " ".repeat((total_len - name_blanks_len - 2 - f_len + 1) / cols)
+    } else {
+        "".to_str()
+    };
+
+    let top_line = (format!("|{}{}|{}{}", 
+                            name, name_blanks, fun_str, blanks)).repeat(cols).append("|");
+
+    println!("{}", "_".repeat(total_len));
     println!("{}", top_line);
-    println!("{}", "¯".repeat(80));
-
+    println!("{}", "¯".repeat(total_len));
     let mut x = 0;
     while x < list.len() {
-        println!("{}", "_".repeat(80));
-        for y in range(0u, cols as uint) {
+        println!("{}", "_".repeat(total_len));
+        for y in range(0, cols) {
             if x + y >= list.len() {
                 break
             }
             let temp = list.get(x + y);
-            let t_name = temp.to_str();
-            child_env.symbols.insert(name.get(0).clone(), temp.clone());
-            
-            let result = try!(func.eval(&mut child_env));
-            let res_str = format!("|{}{}|{}", t_name, " ".repeat(5 - t_name.len()), 
-                                  result.to_str());
+            let t_name = pretty(temp, env);
+            child_env.symbols.insert(name.clone(), temp.clone());
 
-            print!("{}{}", res_str, " ".repeat((70 - res_str.len()) / cols as uint));
+            let result = pretty_print(&func.eval(&mut child_env), env);
+            let n_blanks = if t_name.len() < name_blanks_len {
+                " ".repeat(name_blanks_len - 2 -t_name.len())
+            } else {
+                "".to_str()
+            };
+            
+            let res_blanks = if result.len() < total_len - (name_blanks_len + 2) {
+                " ".repeat((total_len - name_blanks_len - 2) / cols)
+            } else {
+                "".to_str()
+            };
+
+            let res_str = format!("|{}{}|{}{}", t_name, n_blanks, result, res_blanks);
+            print!("{}", res_str);
         }
         println!("|");
-        println!("{}", "¯".repeat(80));
-        x += cols as uint;
+        println!("{}", "¯".repeat(total_len));
+        x += cols;
     }
-
+    
     Ok(Atom(Void))
 }
 

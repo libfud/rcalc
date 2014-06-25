@@ -4,6 +4,7 @@ use super::{LiteralType, function, operator, CalcResult, Environment};
 use super::tokenize;
 use super::tokenize::Token;
 use super::operator::OperatorType;
+use super::pretty::pretty;
 
 #[deriving(Show, Clone, PartialEq)]
 pub enum ExprType {
@@ -38,6 +39,27 @@ impl Expression {
                 function::eval(fn_name, &self.args, env)
             }
         }
+    }
+    pub fn to_symbol(&self, env: &mut Environment) -> String {
+        let mut symbols = String::new();
+        symbols = symbols.append("(");
+        match self.expr_type {
+            Function(ref f) => {
+                symbols = symbols.append(f.as_slice());
+            }
+            Operator(ref op) => {
+                symbols = symbols.append(super::operator::to_str(op).as_slice());
+            }
+        }
+        for argument in self.args.iter() {
+            let arg = match argument {
+                &Atom(ref x) => pretty(x, env).to_str(),
+                &SExpr(ref x) => x.to_str()
+            };
+            symbols = symbols.append(arg.as_slice());
+        }
+        symbols = symbols.append(")");
+        symbols
     }
 }
 

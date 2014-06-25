@@ -94,7 +94,15 @@ pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult {
             env.symbols.insert(symbol.clone(), x);
         },
         SExpr(x) => {
-            env.symbols.insert(symbol.clone(), Proc(symbol_vec.tail().to_owned(), x));
+            let mut t_env = env.clone();
+            match x.eval(&mut t_env) {
+                Ok(result) => {
+                    env.symbols.insert(symbol.clone(), try!(arg_to_literal(&result, &mut t_env)));
+                },
+                _ => {
+                    env.symbols.insert(symbol.clone(), Proc(symbol_vec.tail().to_owned(), x));
+                }
+            }
         }
     }
     

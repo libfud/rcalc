@@ -58,8 +58,8 @@ pub fn equality(args: &Args, env: &mut Env, equal: bool) -> CalcResult {
         return Err("Equality comparisons require two arguments".to_str())
     }
 
-    let (a, b) = (try!(arg_to_literal(args.get(0), env)), 
-                  try!(arg_to_literal(args.get(1), env)));
+    let (a, b) = (try!(desymbolize(args.get(0), env)), 
+                  try!(desymbolize(args.get(1), env)));
 
     if equal {
         Ok(Atom(Boolean(a == b)))

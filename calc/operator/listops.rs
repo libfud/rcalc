@@ -1,15 +1,17 @@
 //!List operations.
 
 use super::{CalcResult, Environment};
-use super::super::literal::{LiteralType, BigNum, List, Proc, Boolean};
+use super::super::literal::{LiteralType, BigNum, List, Proc, Symbol, Boolean};
 use super::special::{range_getter, create_bigrat};
-use super::{ArgType, Atom, arg_to_literal};
+use super::{ArgType, Atom, arg_to_literal, desymbolize};
 use super::super::expression::Expression;
 
-pub fn proc_getter(args: &Vec<ArgType>) -> CalcResult<(Vec<String>, Expression)> {
-    
+pub fn proc_getter(args: &Vec<ArgType>, 
+                   env: &mut Environment) -> CalcResult<(Vec<String>, Expression)> {
+        
     match args.get(0).clone() {
         Atom(Proc(x, y)) => Ok((x.clone(), y.clone())),
+        Atom(Symbol(x)) => proc_getter(&vec!(Atom(try!(env.lookup(&x)))), env),
         _ =>  Err(format!("Expected function but found {}", args.get(0))),
     }
 }
@@ -20,7 +22,7 @@ pub fn map(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err("`map' takes at least two arguments".to_str())
     }
 
-    let (names, func) = try!(proc_getter(args));
+    let (names, func) = try!(proc_getter(args, env));
 
     if names.len() == 0 || names.len() != args.tail().len() {
         return Err("Wrong number of arguments for lists supplied".to_str())
@@ -63,15 +65,15 @@ pub fn reduce(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err("`reduce' takes at least three arguments".to_str())
     }
 
-    let (names, fun) = try!(proc_getter(args));
+    let (names, fun) = try!(proc_getter(args, env));
 
     if names.len() != 2 {
         return Err("Expected 2 names".to_str())
     }
 
-    let initval = try!(arg_to_literal(args.get(1), env));
+    let initval = try!(desymbolize(args.get(1), env));
 
-    let list = match try!(arg_to_literal(args.get(2), env)) {
+    let list = match try!(desymbolize(args.get(2), env)) {
         List(x) => x.clone(),
         _ => return Err("Invalid type for reduce".to_str())
     };
@@ -106,13 +108,13 @@ pub fn filter(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err("`filter' takes at least three arguments".to_str())
     }
 
-    let (names, func) = try!(proc_getter(args));
+    let (names, func) = try!(proc_getter(args, env));
 
     if names.len() != 1 {
         return Err("Expected 1 name for predicate".to_str())
     }
 
-    let list = match try!(arg_to_literal(args.get(1),env)) {
+    let list = match try!(desymbolize(args.get(1),env)) {
         List(x) => x.clone(),
         _ => return Err("Invalid type for filter".to_str())
     };
