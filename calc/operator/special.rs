@@ -5,6 +5,7 @@ use super::listops::proc_getter;
 use super::{Environment, CalcResult};
 use super::{ArgType, Atom, arg_to_literal, desymbolize};
 use super::super::pretty::{pretty_print, pretty};
+use std::{iter, cmp};
 
 pub fn range_getter(arg: LiteralType) -> CalcResult<int> {
     match arg {
@@ -81,6 +82,7 @@ pub fn insertion_sort<T: PartialOrd + Clone>(array_orig: &Vec<T>) -> Vec<T> {
     array
 }
 
+/*
 pub fn merge<T: PartialOrd + Clone>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
     let mut result: Vec<T> = Vec::new();
     let mut l_index = 0;
@@ -106,6 +108,32 @@ pub fn merge<T: PartialOrd + Clone>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
 
     result
 }
+*/
+
+pub fn merge<T: PartialOrd>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
+    struct OrderedIterator<T, A, B> {
+        a: iter::Peekable<T, A>,
+        b: iter::Peekable<T, B>,
+    }
+    impl<T: PartialOrd, A: Iterator<T>, B: Iterator<T>> Iterator<T> for OrderedIterator<T, A, B> {
+        fn next(&mut self) -> Option<T> {
+            if self.a.peek().is_none() || 
+                self.b.peek().is_none() { self.a.next().or_else(|| self.b.next()) }
+            else if self.a.peek() < self.b.peek() { self.a.next() }
+            else { self.b.next() }
+        }
+
+        fn size_hint(&self) -> (uint, Option<uint>) {
+            let (a_min, a_max) = self.a.size_hint();
+            let (b_min, b_max) = self.b.size_hint();
+            (cmp::max(a_min, b_min), cmp::max(a_max, b_max))
+        }
+    }
+
+    (OrderedIterator{a:left.move_iter().peekable(), 
+                     b: right.move_iter().peekable()}).collect()
+}
+            
 
 pub fn merge_sort<T: PartialOrd + Clone>(array: &Vec<T>, 
                                          min_size: uint) -> CalcResult<Vec<T>> {
