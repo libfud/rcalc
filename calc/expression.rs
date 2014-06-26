@@ -6,7 +6,7 @@ use super::tokenize::Token;
 use super::operator::OperatorType;
 use super::pretty::pretty;
 
-#[deriving(Show, Clone, PartialEq)]
+#[deriving(Show, Clone, PartialEq, PartialOrd)]
 pub enum ExprType {
     Operator(OperatorType),
     Function(String)
@@ -20,7 +20,7 @@ pub fn token_to_expr(token: Token) -> Result<ExprType, String> {
     }
 }
 
-#[deriving(Clone, Show, PartialEq)]
+#[deriving(Clone, Show, PartialEq, PartialOrd)]
 pub struct Expression {
     pub expr_type: ExprType,
     pub args: Vec<ArgType>,
@@ -63,7 +63,7 @@ impl Expression {
     }
 }
 
-#[deriving(Clone, Show, PartialEq)]
+#[deriving(Clone, Show, PartialEq, PartialOrd)]
 pub enum ArgType {
     Atom(LiteralType),
     SExpr(Expression),

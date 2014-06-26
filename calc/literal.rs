@@ -6,7 +6,7 @@ use self::num::rational::BigRational;
 use super::{CalcResult, Environment, Atom};
 use super::expression::{Expression, ArgType, arg_to_literal};
 
-#[deriving(Clone, Show, PartialEq)]
+#[deriving(Clone, Show, PartialEq, PartialOrd)]
 pub enum LiteralType {
     Boolean(bool),
     BigNum(BigRational),

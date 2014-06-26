@@ -2,7 +2,7 @@
 
 use super::super::literal::{BigNum, List, Void, LiteralType};
 use super::listops::proc_getter;
-use super::{BigRational, Environment, CalcResult};
+use super::{Environment, CalcResult};
 use super::{ArgType, Atom, arg_to_literal, desymbolize};
 use super::super::pretty::{pretty_print, pretty};
 
@@ -70,7 +70,7 @@ pub fn insertion_sort<T: PartialOrd + Clone>(array_orig: &Vec<T>) -> Vec<T> {
     while i < array.len() {
         let val = array.get(i).clone();
         let mut j = i - 1;
-        while j + 1 != 0 && *array.get(j) > val {
+        while j + 1 != 0 && array.get(j) > &val {
             array.as_mut_slice()[j + 1] = array.get(j).clone();
             j -= 1;
         }
@@ -142,13 +142,16 @@ pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err("Sort can only sort numbers!".to_str())
     }
 
+/*
     let num_list: Vec<BigRational> = list.move_iter().map(|x| match x {
         BigNum(y) => y,
         _ => fail!("Impossible!".to_str())
     }).collect();
+*/
 
-    let answer = try!(merge_sort(&num_list, 100)).move_iter().map(|x| 
-                                                                  BigNum(x)).collect();
+    let num_list = list;
+
+    let answer = try!(merge_sort(&num_list, 100));
 
     Ok(Atom(List(answer)))
 }
