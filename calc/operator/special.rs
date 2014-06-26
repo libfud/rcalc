@@ -33,22 +33,22 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
     let mut child_env = Environment::new_frame(env);
 
-    let (table, name_len, fn_len) = list.iter().fold(
-        (vec!((name.clone(), fun_str.clone())), name.len(), fun_str.len()),
-        |(mut tab, mut n_len, mut f_len), temp| {
-            let t_name = pretty(temp, env);
-            child_env.symbols.insert(name.clone(), temp.clone());
-            
-            if t_name.len() > n_len {
-                n_len = t_name.len();
-            }
-            let result = pretty_print(&func.eval(&mut child_env), env);
-            if result.len() > f_len {
-                f_len = result.len();
-            }
-            tab.push((t_name, result));
-            (tab, n_len, f_len)
-        });
+    let (mut table, mut name_len, mut fn_len) = (Vec::new(), name.len(), fun_str.len());
+    table.push((name.clone(), fun_str));
+
+    for temp in list.iter() {
+        child_env.symbols.insert(name.clone(), temp.clone());
+        let t_name = pretty(temp, env);
+
+        if t_name.len() > name_len {
+            name_len = t_name.len();
+        }
+        let result = pretty_print(&func.eval(&mut child_env), env);
+        if result.len() > fn_len {
+            fn_len = result.len();
+        }
+        table.push((t_name, result));
+    }
 
     println!("{}", "-".repeat(4 + name_len + fn_len));
     for &(ref x, ref fx) in table.iter() {
