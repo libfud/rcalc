@@ -48,7 +48,7 @@ impl Expression {
                 symbols = symbols.append(f.as_slice());
             }
             Operator(ref op) => {
-                symbols = symbols.append(super::operator::to_str(op).as_slice());
+                symbols = symbols.append(super::operator::to_str(op).append(" ").as_slice());
             }
         }
         for argument in self.args.iter() {
