@@ -61,12 +61,11 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     Ok(Atom(Void))
 }
 
-pub fn insertion_sort<T: PartialOrd + Clone>(array_orig: &Vec<T>) -> Vec<T> {
-    if array_orig.len() <= 1 {
-        return array_orig.to_owned()
+pub fn insertion_sort<T: PartialOrd + Clone>(mut array: Vec<T>) -> Vec<T> {
+    if array.len() <= 1 {
+        return array.to_owned()
     }
 
-    let mut array = array_orig.clone();
     let mut i = 1u;
     while i < array.len() {
         let val = array.get(i).clone();
@@ -135,7 +134,7 @@ pub fn merge<T: PartialOrd>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
 }
             
 
-pub fn merge_sort<T: PartialOrd + Clone>(array: &Vec<T>, 
+pub fn merge_sort<T: PartialOrd + Clone>(array: Vec<T>, 
                                          min_size: uint) -> CalcResult<Vec<T>> {
     if min_size < 1 {
         return Err("0 is an invalid minimum size!".to_str())
@@ -150,8 +149,8 @@ pub fn merge_sort<T: PartialOrd + Clone>(array: &Vec<T>,
     let mut left = Vec::from_slice(array.slice(0, middle));
     let mut right = Vec::from_slice(array.slice(middle, length));
 
-    left = try!(merge_sort(&left, min_size));
-    right = try!(merge_sort(&right, min_size));
+    left = try!(merge_sort(left, min_size));
+    right = try!(merge_sort(right, min_size));
 
     Ok(merge(left, right))
 }
@@ -170,16 +169,7 @@ pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err("Sort can only sort numbers!".to_str())
     }
 
-/*
-    let num_list: Vec<BigRational> = list.move_iter().map(|x| match x {
-        BigNum(y) => y,
-        _ => fail!("Impossible!".to_str())
-    }).collect();
-*/
-
-    let num_list = list;
-
-    let answer = try!(merge_sort(&num_list, 100));
+    let answer = try!(merge_sort(list, 100));
 
     Ok(Atom(List(answer)))
 }
