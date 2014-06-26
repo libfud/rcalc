@@ -34,14 +34,21 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     let mut child_env = Environment::new_frame(env);
 
     println!("{} \t:\t {}", name, fun_str);
-    for temp in list.iter() {
+    let table: Vec<(String, String)> = list.iter().map(|temp| {
         let t_name = pretty(temp, env);
         child_env.symbols.insert(name.clone(), temp.clone());
+        (t_name, pretty_print(&func.eval(&mut child_env), env))
+    }).collect();
 
-        let result = pretty_print(&func.eval(&mut child_env), env);
-
-        println!("{} \t:\t {}", t_name, result);
-    }
+    let (name_len, fn_len) = table.iter().fold((0, 0), |(mut n_len, mut f_len), &(ref x, ref fx)| {
+        if x.len() > n_len {
+            n_len = x.len();
+        }
+        if fx.len() > f_len {
+            f_len = fx.len();
+        }
+        (n_len, f_len)
+    });
     
     Ok(Atom(Void))
 }
