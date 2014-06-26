@@ -5,6 +5,7 @@ use super::listops::proc_getter;
 use super::{Environment, CalcResult};
 use super::{ArgType, Atom, arg_to_literal, desymbolize};
 use super::super::pretty::{pretty_print, pretty};
+use super::super::expression::Expression;
 use std::{iter, cmp};
 
 pub fn range_getter(arg: LiteralType) -> CalcResult<int> {
@@ -14,21 +15,8 @@ pub fn range_getter(arg: LiteralType) -> CalcResult<int> {
     }
 }
 
-pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {    
-    if args.len() != 2 {
-        return Err("`table' takes a function and a list".to_str())
-    }
-
-    let (name, func) = try!(proc_getter(args, env));
-    if name.len() != 1 {
-        return Err("Only single variables are supported currently".to_str())
-    }
-    let name = name.get(0);
-    
-    let list = match try!(desymbolize(args.get(1), env)) {
-        List(x) => x,
-        _ => return Err("`table' takes a list as its second argument.".to_str())
-    };
+pub fn make_table(list: Vec<LiteralType>, name: &String, func: Expression,
+                  env: &mut Environment) -> (Vec<(String, String)>, uint, uint) {
 
     let fun_str = func.to_symbol(env);
 
@@ -51,15 +39,40 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         table.push((t_name, result));
     }
 
+    (table, name_len, fn_len)
+}   
+
+pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {    
+    if args.len() != 2 {
+        return Err("`table' takes a function and a list".to_str())
+    }
+
+    let (name, func) = try!(proc_getter(args, env));
+    if name.len() != 1 {
+        return Err("Only single variables are supported currently".to_str())
+    }
+    let name = name.get(0);
+    
+    let list = match try!(desymbolize(args.get(1), env)) {
+        List(x) => x,
+        _ => return Err("`table' takes a list as its second argument.".to_str())
+    };
+
+    let (table, name_len, fn_len) = make_table(list, name, func, env);
+
+    table_writer(table, name_len, fn_len);
+    
+    Ok(Atom(Void))
+}
+
+fn table_writer(table: Vec<(String, String)>, name_len: uint, fn_len: uint) {
     println!("{}", "-".repeat(4 + name_len + fn_len));
     for &(ref x, ref fx) in table.iter() {
         println!("|{a}{b}|{c}{d}|", a = x, b = " ".repeat(name_len - x.len()),
                  d = fx, c = " ".repeat(fn_len - fx.len() + 1));
         println!("{}", "-".repeat(4 + name_len + fn_len));
     }
-    
-    Ok(Atom(Void))
-}
+}    
 
 pub fn insertion_sort<T: PartialOrd + Clone>(mut array: Vec<T>) -> Vec<T> {
     if array.len() <= 1 {
