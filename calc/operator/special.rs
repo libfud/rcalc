@@ -81,34 +81,6 @@ pub fn insertion_sort<T: PartialOrd + Clone>(mut array: Vec<T>) -> Vec<T> {
     array
 }
 
-/*
-pub fn merge<T: PartialOrd + Clone>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
-    let mut result: Vec<T> = Vec::new();
-    let mut l_index = 0;
-    let mut r_index = 0;
-    
-    while left.len() - l_index > 0 || right.len() - r_index > 0 {
-        if left.len() - l_index > 0 && right.len() - r_index > 0 {
-            if left.get(l_index) < right.get(r_index) {
-                result.push(left.get(l_index).clone());
-                l_index += 1;
-            } else {
-                result.push(right.get(r_index).clone());
-                r_index += 1;
-            }
-        } else if left.len() - l_index > 0 {
-            result.push(left.get(l_index).clone());
-            l_index += 1;
-        } else {
-            result.push(right.get(r_index).clone());
-            r_index += 1;
-        }
-    }
-
-    result
-}
-*/
-
 pub fn merge<T: PartialOrd>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
     struct OrderedIterator<T, A, B> {
         a: iter::Peekable<T, A>,
