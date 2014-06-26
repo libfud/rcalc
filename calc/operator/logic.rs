@@ -1,11 +1,8 @@
 //!Logic and odering.
 
-extern crate num;
-
-use self::num::rational::BigRational;
 use super::super::{CalcResult, Environment};
 use super::super::literal::{Boolean, Symbol, BigNum};
-use super::{ArgType, Atom, arg_to_literal, desymbolize};
+use super::{ArgType, Atom, BigRational, arg_to_literal, desymbolize};
 
 type Args<T = Vec<ArgType>> = T;
 type Env<T = Environment> = T;

@@ -54,7 +54,7 @@ impl Expression {
         for argument in self.args.iter() {
             let arg = match argument {
                 &Atom(ref x) => pretty(x, env).to_str(),
-                &SExpr(ref x) => x.to_str()
+                &SExpr(ref x) => x.to_symbol(env),
             };
             symbols = symbols.append(arg.as_slice());
         }

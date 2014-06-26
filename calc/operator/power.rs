@@ -1,12 +1,9 @@
 //! Methods of raising an index to a given power.
 
-extern crate num;
-
-use self::num::rational::BigRational;
 use std::num;
 use super::super::{CalcResult, Environment};
 use super::super::literal::BigNum;
-use super::{ArgType, Atom, arg_to_literal};
+use super::{BigRational, ArgType, Atom, arg_to_literal};
 
 pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     let mut args_vec: Vec<BigRational> = Vec::new();

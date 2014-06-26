@@ -2,6 +2,8 @@
 
 extern crate num;
 
+pub use self::num::rational::{BigRational, Ratio};
+pub use self::num::bigint;
 pub use self::expression::{arg_to_literal, Atom, SExpr, ArgType};
 pub use self::literal::LiteralType;
 pub use self::tokenize::{TokenStream, Token};

@@ -1,8 +1,9 @@
 //!List operations.
 
-use super::{CalcResult, Environment};
+use super::{CalcResult, Environment, BigRational, Ratio};
+use super::bigint::*;
 use super::super::literal::{LiteralType, BigNum, List, Proc, Symbol, Boolean};
-use super::special::{range_getter, create_bigrat};
+use super::special::range_getter;
 use super::{ArgType, Atom, arg_to_literal, desymbolize};
 use super::super::expression::Expression;
 
@@ -15,7 +16,10 @@ pub fn proc_getter(args: &Vec<ArgType>,
         _ =>  Err(format!("Expected function but found {}", args.get(0))),
     }
 }
-    
+
+pub fn create_bigrat(x: int) -> BigRational {
+    Ratio::from_integer(x.to_bigint().unwrap())
+}
 
 pub fn map(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 2 {

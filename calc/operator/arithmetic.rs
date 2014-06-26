@@ -1,12 +1,9 @@
 //!Basic arithemtic functions. 
 
-extern crate num;
-
 use std::num;
 use super::super::{CalcResult, Environment};
 use super::super::literal::{Symbol, BigNum, Void};
-use super::{ArgType, Atom, arg_to_literal};
-use self::num::rational::BigRational;
+use super::{BigRational, ArgType, Atom, arg_to_literal};
 
 type Args<T = ArgType> = Vec<T>;
 type BigR = BigRational;

@@ -1,8 +1,8 @@
 //! Operators
 
 use std::num;
-pub use super::{CalcResult, Environment, ArgType, Atom, SExpr, desymbolize, 
-                arg_to_literal};
+pub use super::{BigRational, Ratio, bigint};
+pub use super::{CalcResult, Environment, ArgType, Atom, SExpr, desymbolize, arg_to_literal};
 pub use super::literal::{LiteralType, Symbol, cons, car, cdr, list};
 
 pub mod special;
@@ -26,7 +26,7 @@ pub enum OperatorType {
 
     Define, Lambda,
 
-    Help, Table, TableList, RangeList, Sort,
+    Help, Table, RangeList, Sort,
 }
 
 pub fn from_str(s: &str) -> Option<OperatorType> {
@@ -47,7 +47,7 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "car" => Some(Car), "cdr" => Some(Cdr), "map" => Some(Map),
         "reduce" => Some(Reduce), "filter" => Some(Filter),
 
-        "help"  => Some(Help), "table" => Some(Table), "table-list" => Some(TableList),
+        "help"  => Some(Help), "table" => Some(Table),
         "range-list" => Some(RangeList), "sort" => Some(Sort),
 
         _       => None
@@ -69,7 +69,7 @@ pub fn to_str(op: &OperatorType) -> String {
         Quote => "quote", List => "list", Cons => "cons", Car => "car", 
         Cdr => "cdr", Map => "map", Reduce => "reduce", Filter => "filter",
 
-        Help  => "help", Table => "table", TableList => "table-list", 
+        Help  => "help", Table => "table", 
         RangeList => "range-list", Sort => "sort",
     };
 
@@ -141,8 +141,6 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         Help => super::common::help(args),
 
         Table => special::table(args, env),
-
-        TableList => special::table_list(args, env),
 
         RangeList => listops::rangelist(args, env),
         
