@@ -2,21 +2,17 @@
 
 use std::num;
 use super::literal::*;
-use super::{Atom, SExpr, Environment, CalcResult, arg_to_literal};
+use super::{Atom, SExpr, Environment, CalcResult};
 
 pub fn pretty_print(result: &CalcResult, env: &Environment) -> String {
     let res = match result {
         &Ok(ref v) => v.clone(),
-        &Err(ref m) => {
-            return m.clone()
-        }
+        &Err(ref m) => return m.clone().to_symbol()
     };
 
-    let success = match arg_to_literal(&res, &mut env.clone()) {
+    let success = match res.arg_to_literal(&mut env.clone()) {
         Ok(v) => v.clone(),
-        Err(m) => {
-            return m
-        }
+        Err(m) => return m.to_symbol()
     };
 
     if success == Void {

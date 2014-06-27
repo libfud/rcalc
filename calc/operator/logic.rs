@@ -1,88 +1,62 @@
 //!Logic and odering.
 
-use super::super::{CalcResult, Environment};
-use super::super::literal::{Boolean, Symbol, BigNum};
-use super::{ArgType, Atom, BigRational, arg_to_literal, desymbolize};
+use super::super::{CalcResult, Environment, NonBoolean, BadNumberOfArgs, BadArgType};
+use super::super::literal::{Boolean, BigNum};
+use super::{ArgType, Atom, BigRational};
 
 type Args<T = Vec<ArgType>> = T;
 type Env<T = Environment> = T;
 
 pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
     if args.len() != 3 {
-        return Err("`if` requires three arguments".to_str())
+        return Err(BadNumberOfArgs("`if` requires three arguments".to_str()))
     }
 
-    let condition = match try!(arg_to_literal(args.get(0), env)) {
+    let condition = match try!(args.get(0).desymbolize(env)) {
         Boolean(x)  => x,
-        Symbol(x)   => {
-            match try!(env.lookup(&x)) {
-                Boolean(y)  => y,
-                _   => return Err("Only boolean expressions can be a condtion!"
-                                  .to_str())
-            }
-        },
-        _   => return Err("Only boolean expressions can be a condition!".to_str())
+        _ => return Err(NonBoolean)
     };
 
     if condition {
-        Ok(Atom(try!(desymbolize(args.get(1), env))))
+        Ok(Atom(try!(args.get(1).desymbolize(env))))
     } else {
-        Ok(Atom(try!(desymbolize(args.get(2), env))))
+        Ok(Atom(try!(args.get(2).desymbolize(env))))
     }
 }
 
 type BR = BigRational;
 
-/*
-pub fn to_num(arg: LiteralType, env: &mut Environment) -> LiteralType 
-*/
 pub fn ordering(args: &Args, env: &mut Env, comp: |&BR,&BR| -> bool) -> CalcResult {
-
     if args.len() != 2 {
-        return Err("Ordering requires two arguments".to_str())
+        return Err(BadNumberOfArgs("Ordering requires two arguments".to_str()))
     }
-    let (a, b) = (try!(desymbolize(args.get(0), env)),
-                  try!(desymbolize(args.get(1), env)));
+    let (a, b) = (try!(args.get(0).desymbolize(env)),
+                  try!(args.get(1).desymbolize(env)));
     match (&a, &b) {
         (&BigNum(ref x), &BigNum(ref y)) => Ok(Atom(Boolean(comp(x, y)))),
-        _ =>  Err(format!("Ordering only takes numbers! {} {}",
-                          a, b))
+        _ =>  Err(BadArgType(format!("Ordering only takes numbers! {} {}",
+                          a, b)))
     }
 }
-
-pub fn equality(args: &Args, env: &mut Env, equal: bool) -> CalcResult {
-    if args.len() != 2 {
-        return Err("Equality comparisons require two arguments".to_str())
-    }
-
-    let (a, b) = (try!(desymbolize(args.get(0), env)), 
-                  try!(desymbolize(args.get(1), env)));
-
-    if equal {
-        Ok(Atom(Boolean(a == b)))
-    } else {
-        Ok(Atom(Boolean(a != b)))
-    }
-}       
 
 pub fn and_or(args: &Args, env: &mut Env, short: bool) -> CalcResult {
 
     if short == true {
         for val in args.iter() {
-            match try!(arg_to_literal(val, env)) {
-                Boolean(true)   => return Ok(Atom(Boolean(short))),
+            match try!(val.desymbolize(env)) {
+                Boolean(true)   => return Ok(Atom(Boolean(short))), 
                 Boolean(false)  => { },
-                _   => return Err("Non boolean conditon!".to_str())
+                _   => return Err(NonBoolean)
             }
         }
         
         Ok(Atom(Boolean(false)))
     } else {
         for val in args.iter() {
-            match try!(arg_to_literal(val,env)) {
+            match try!(val.desymbolize(env)) {
                 Boolean(true)   => { },
                 Boolean(false)  => return Ok(Atom(Boolean(short))),
-                _   => return Err("Non boolean condition!".to_str())
+                _   => return Err(NonBoolean)
             }
         }
 
@@ -90,14 +64,34 @@ pub fn and_or(args: &Args, env: &mut Env, short: bool) -> CalcResult {
     }
 }
 
-pub fn not(args: &Args, env: &mut Env) -> CalcResult {
-    if args.len() != 1 {
-        return Err("Not only takes one argument".to_str())
+pub fn xor(args: &Args, env: &mut Env) -> CalcResult {
+    if args.len() < 2 {
+        return Err(BadNumberOfArgs("`xor' requires at least two arguments".to_str()))
     }
 
-    let val = match try!(arg_to_literal(args.get(0), env)) {
+    let mut result = match try!(args.get(0).desymbolize(env)) {
+        Boolean(x) => x,
+        _ => return Err(NonBoolean)
+    };
+
+    for val in args.tail().iter() {
+        result = match try!(val.desymbolize(env)) {
+            Boolean(x) => result ^ x,
+            _ => return Err(NonBoolean)
+        };
+    }
+
+    Ok(Atom(Boolean(result)))
+}
+
+pub fn not(args: &Args, env: &mut Env) -> CalcResult {
+    if args.len() != 1 {
+        return Err(BadNumberOfArgs("Not only takes one argument".to_str()))
+    }
+
+    let val = match try!(args.get(0).desymbolize(env)) {
         Boolean(x)  => x,
-        _   => return Err("Non boolean condition!".to_str())
+        _   => return Err(NonBoolean)
     };
 
     Ok(Atom(Boolean(!val)))

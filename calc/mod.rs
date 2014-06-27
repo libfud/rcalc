@@ -4,7 +4,7 @@ extern crate num;
 
 pub use self::num::rational::{BigRational, Ratio};
 pub use self::num::bigint;
-pub use self::expression::{arg_to_literal, Atom, SExpr, ArgType};
+pub use self::expression::{Atom, SExpr, ArgType};
 pub use self::literal::LiteralType;
 pub use self::tokenize::{TokenStream, Token};
 pub use self::translate::translate;
@@ -21,7 +21,34 @@ pub mod common;
 pub mod pretty;
 
 /// A shortcut for the result type that is used everywhere
-pub type CalcResult<T = ArgType> = Result<T, String>;
+pub type CalcResult<T = ArgType> = Result<T, ErrorKind>;
+
+#[deriving(Clone, Show)]
+pub enum ErrorKind {
+    BadExpr,
+    BadToken(String),
+    BadPowerRange,
+    BadNumberOfArgs(String),
+    BadArgType(String),
+    DivByZero,
+    NonBoolean,
+    UnboundArg(String),
+}
+
+impl ErrorKind {
+    pub fn to_symbol(self) -> String {
+        match self {
+            BadArgType(x) => x.clone(),
+            BadExpr => "Malformed expression".to_str(),
+            BadToken(x) => x.clone(),
+            BadPowerRange => "Exponent too large for builtin `pow'!".to_str(),
+            BadNumberOfArgs(x) => x.clone(),
+            DivByZero => "Attempted division by zero!".to_str(),
+            NonBoolean => "Non boolean condition".to_str(),
+            UnboundArg(x) => format!("Error: Unbound variable `{}'", x),
+        }
+    }
+}
 
 /// A structure to allow persistence of variables and functions
 #[deriving(Clone)]
@@ -46,17 +73,10 @@ impl Environment {
                 if self.parent.is_some() {
                     self.parent.clone().unwrap().lookup(var)
                 } else {
-                    Err(format!("Unbound variable {}", var))
+                    Err(UnboundArg(var.clone()))
                 }
             }
         }
-    }
-}
-
-pub fn desymbolize(arg: &ArgType, env: &mut Environment) -> CalcResult<LiteralType> {
-    match try!(arg_to_literal(arg, env)) {
-        literal::Symbol(x) => env.lookup(&x),
-        otherwise => Ok(otherwise)
     }
 }
 

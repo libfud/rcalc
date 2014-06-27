@@ -2,7 +2,7 @@
 
 use std::num;
 pub use super::{BigRational, Ratio, bigint};
-pub use super::{CalcResult, Environment, ArgType, Atom, SExpr, desymbolize, arg_to_literal};
+pub use super::{CalcResult, Environment, ArgType, Atom, SExpr};
 pub use super::literal::{LiteralType, Symbol, cons, car, cdr, list};
 
 pub mod special;
@@ -20,13 +20,15 @@ pub enum OperatorType {
 
     Eq, NEq, Lt, LtEq, Gt, GtEq,
 
-    If, And, Or, Not,
+    If, And, Or, Not, Xor,
 
-    Quote, List, Cons, Car, Cdr, Map, Reduce, Filter,
+    Quote, List, Cons, Car, Cdr,  Cadr, Cddr, Caddr, Cdddr,
+    
+    Map, Reduce, Filter,
 
     Define, Lambda,
 
-    Help, Table, RangeList, Sort,
+    Help, Table, RangeList, RangeActionList, Sort,
 }
 
 pub fn from_str(s: &str) -> Option<OperatorType> {
@@ -40,15 +42,20 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         ">=" => Some(GtEq), ">" => Some(Gt),
 
         "if" => Some(If), "and" => Some(And), "or" => Some(Or), "not" => Some(Not),
+        "xor" => Some(Xor),
 
         "define" => Some(Define), "lambda" => Some(Lambda),
 
         "quote" | "'"  => Some(Quote), "list" => Some(List),  "cons" => Some(Cons),
-        "car" => Some(Car), "cdr" => Some(Cdr), "map" => Some(Map),
-        "reduce" => Some(Reduce), "filter" => Some(Filter),
+        "car" => Some(Car), "cdr" => Some(Cdr), "cadr" => Some(Cadr),
+        "cddr" => Some(Cddr), "caddr" => Some(Caddr), "cdddr" => Some(Cdddr),
+
+
+        "map" => Some(Map), "reduce" => Some(Reduce), "filter" => Some(Filter),
 
         "help"  => Some(Help), "table" => Some(Table),
-        "range-list" => Some(RangeList), "sort" => Some(Sort),
+        "range-list" => Some(RangeList), "range-action-list" => Some(RangeActionList),
+        "sort" => Some(Sort),
 
         _       => None
     }
@@ -62,15 +69,18 @@ pub fn to_str(op: &OperatorType) -> String {
 
         Lt => "<", LtEq => "<=", Eq => "=", NEq => "!", GtEq => ">=", Gt => ">",
 
-        If => "if", And => "and", Or => "or", Not => "not", 
+        If => "if", And => "and", Or => "or", Not => "not", Xor => "xor",
 
         Define => "define", Lambda => "lambda",
 
         Quote => "quote", List => "list", Cons => "cons", Car => "car", 
-        Cdr => "cdr", Map => "map", Reduce => "reduce", Filter => "filter",
+        Cdr => "cdr",  Cadr => "cadr", Cddr => "cddr", Caddr => "caddr",
+        Cdddr => "cdddr",
 
-        Help  => "help", Table => "table", 
-        RangeList => "range-list", Sort => "sort",
+        Map => "map", Reduce => "reduce", Filter => "filter",
+
+        Help  => "help", Table => "table", RangeList => "range-list", 
+        RangeActionList => "range-action-list", Sort => "sort",
     };
 
     answer.to_str()
@@ -92,6 +102,14 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         Car => car(args, env),
 
         Cdr => cdr(args, env),
+
+        Cadr => car(&vec!(try!(cdr(args, env))), env),
+
+        Cddr => cdr(&vec!(try!(cdr(args, env))), env),
+
+        Caddr => car(&vec!(try!(cdr(&vec!(try!(cdr(args, env))), env))), env),
+
+        Cdddr => cdr(&vec!(try!(cdr(&vec!(try!(cdr(args, env))), env))), env),
 
         Map => listops::map(args, env),
 
@@ -126,13 +144,15 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
 
         Not  => logic::not(args, env),
 
+        Xor  => logic::xor(args, env),
+
         Lt   => logic::ordering(args, env, |a, b| a < b),
 
         LtEq => logic::ordering(args, env, |a, b| a <= b),
 
-        Eq   => logic::equality(args, env, true),
+        Eq   => logic::ordering(args, env, |a, b| a == b),
 
-        NEq  => logic::equality(args, env, false),
+        NEq  => logic::ordering(args, env, |a, b| a != b),
 
         GtEq => logic::ordering(args, env, |a, b| a >= b),
         
@@ -143,6 +163,8 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         Table => special::table(args, env),
 
         RangeList => listops::rangelist(args, env),
+
+        RangeActionList => listops::range_action_list(args, env),
         
         Sort => special::sort(args, env),
     }

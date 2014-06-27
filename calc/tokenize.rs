@@ -5,8 +5,7 @@
 extern crate num;
 
 use super::literal::{LiteralType, Boolean, BigNum};
-use super::common::str_to_rational;
-use super::{CalcResult, operator};
+use super::{CalcResult, BadToken, BigRational, BadArgType, Ratio, operator};
 use super::operator::{OperatorType};
 
 ///Enumeration of valid tokens. Valid tokens are Operators, Literals, LParens,
@@ -43,8 +42,7 @@ impl Iterator<CalcResult<Token>> for TokenStream {
                 self.index += 1;
                 self.next()
             } else {
-                let (token, len) = analyze(
-                    self.expr.as_slice().slice_from(self.index));
+                let (token, len) = analyze(self.expr.as_slice().slice_from(self.index));
                 self.index += len;
                 token
             }
@@ -112,6 +110,59 @@ pub fn is_number(expr: &str) -> MaybeToken {
     } 
 }
 
+/// Enumeration of ways to write numbers.
+pub enum NumEncoding {
+    Fraction,
+    NonFraction,
+    Invalid
+}
+
+
+
+/// Converts a string into a bigrational.
+pub fn str_to_rational(word: &str) -> CalcResult<BigRational> {
+
+    let number_type = get_num_encoding(word);
+    match number_type {
+        Fraction    => match from_str::<BigRational>(word) {
+            Some(x) => Ok(x),
+            None => Err(BadArgType("Bad numeric encoding".to_str()))
+        },
+
+        NonFraction => {
+            let floated =  match from_str::<f64>(word) {
+                Some(x) => x,
+                None => return Err(BadArgType("Bad numeric encoding".to_str()))
+            };
+            Ok(Ratio::from_float(floated).unwrap())
+        },
+
+        Invalid     => Err(BadArgType("Bad numeric encoding".to_str()))
+    }
+}
+
+/// Determines if a number is represented as a fraction or not.
+pub fn get_num_encoding(num_str: &str) -> NumEncoding {
+    if num_str.slice_to(1) == "/" || num_str.slice_to(num_str.len() -1) == "/" { 
+            return Invalid
+    }
+
+    let (divisors, radices) = num_str.chars().fold((0, 0), |(mut x, mut y), c| {
+        if c == '/' {
+            x += 1
+        } else if c == '.' {
+            y += 1
+        }
+        (x, y)
+    });
+
+    match (divisors, radices) {
+        (0, 0) | (0, 1) => NonFraction,
+        (1, 0)          => Fraction,
+        _   => Invalid
+    }
+}
+
 pub fn analyze(expr: &str) -> MaybeToken {
     let funs = [is_paren, is_op, is_bool, is_var, is_number];
 
@@ -123,5 +174,5 @@ pub fn analyze(expr: &str) -> MaybeToken {
     }
 
     let word = make_word(expr);
-    (Some(Err("Unrecognized token: ".to_str().append(word.as_slice()))), 0)
+    (Some(Err(BadToken(format!("Unrecognized token: {}", word)))), 0)
 }

@@ -1,6 +1,6 @@
 //! Expressions
 
-use super::{LiteralType, function, operator, CalcResult, Environment};
+use super::{LiteralType, function, operator, CalcResult, Environment, BadToken};
 use super::tokenize;
 use super::tokenize::Token;
 use super::operator::OperatorType;
@@ -12,11 +12,12 @@ pub enum ExprType {
     Function(String)
 }
 
-pub fn token_to_expr(token: Token) -> Result<ExprType, String> {
+pub fn token_to_expr(token: Token) -> CalcResult<ExprType> {
     match token {
         tokenize::Variable(x) => Ok(Function(x)),
         tokenize::Operator(op_ty) => Ok(Operator(op_ty)),
-        _ => Err("Not a valid token!".to_str())
+        _ => Err(BadToken(format!(
+            "Expected operator or function but found {}", token)))
     }
 }
 
@@ -69,11 +70,18 @@ pub enum ArgType {
     SExpr(Expression),
 }
 
-pub fn arg_to_literal(arg: &ArgType, env: &mut Environment) -> CalcResult<LiteralType> {
-    match arg {
-        &SExpr(ref x) => arg_to_literal(&try!(x.eval(env)), env),
-        &Atom(ref x) => Ok(x.clone())
+impl ArgType {
+    pub fn arg_to_literal(&self, env: &mut Environment) -> CalcResult<LiteralType> {
+        match self {
+            &SExpr(ref x) => try!(x.eval(env)).arg_to_literal(env),
+            &Atom(ref x) => Ok(x.clone())
+        }
+    }
+
+    pub fn desymbolize(&self, env: &mut Environment) -> CalcResult<LiteralType> {
+        match try!(self.arg_to_literal(env)) {
+            super::literal::Symbol(x) => env.lookup(&x),
+            otherwise => Ok(otherwise)
+        }
     }
 }
-
- 

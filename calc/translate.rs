@@ -1,6 +1,6 @@
 //! something
 
-use super::{CalcResult, arg_to_literal, Environment};
+use super::{CalcResult, Environment, BadExpr, BadToken, BadNumberOfArgs};
 use super::tokenize::{Literal, LParen, RParen, Operator, Variable, TokenStream};
 use super::expression;
 use super::expression::{Expression, ExprType, ArgType, Atom, SExpr};
@@ -11,42 +11,40 @@ use super::operator::{Define, Lambda, Quote, Help, OperatorType};
 type Env<T = Environment> = T;
 type Expr<T = ArgType> = CalcResult<T>;
 
-pub fn begin_expr(tokens: &mut TokenStream) -> Result<(), String> {
+pub fn begin_expr(tokens: &mut TokenStream) -> CalcResult<()> {
     match tokens.next() {
         Some(Ok(LParen)) => Ok(()),
-        Some(Ok(_)) => {
-            return Err("Incorrectly formatted expression!".to_str());
-        },
-        Some(Err(msg))      => return Err(msg),
-        None                => fail!("Empty expression!")
+        Some(Ok(_)) => return Err(BadExpr),
+        Some(Err(msg)) => return Err(msg),
+        None => fail!("Empty expression!")
     }
 }
 
-pub fn get_top_expr(tokens: &mut TokenStream) -> Result<ExprType, String> {
+pub fn get_top_expr(tokens: &mut TokenStream) -> CalcResult<ExprType> {
     try!(begin_expr(tokens)); //This screws up a lot of things apparently 
 
     match tokens.next() {
         Some(x) => super::expression::token_to_expr(try!(x)),
-        None  => fail!("Empty expression!")
+        None  => Err(BadExpr)
     }
 }
 
-pub fn strip<T>(t: Option<Result<T, String>>) -> Result<T, String> {
+pub fn strip<T>(t: Option<CalcResult<T>>) -> CalcResult<T> {
     match t {
         Some(x) => x,
-	None => Err("No names found!".to_str())
+	None => Err(BadExpr)
     }
 }
 
-pub fn get_symbols(tokens: &mut TokenStream) -> Result<Vec<String>, String> {
-    fn multi(tokens: &mut TokenStream) -> Result<Vec<String>, String> {
+pub fn get_symbols(tokens: &mut TokenStream) -> CalcResult<Vec<String>> {
+    fn multi(tokens: &mut TokenStream) -> CalcResult<Vec<String>> {
         let mut symbols: Vec<String> = Vec::new();
         loop {
             let nt = try!(strip(tokens.next()));
             match nt {
                 Variable(x) => symbols.push(x),
                 RParen => break,
-                _ => return Err("Unexpected token found in parameters!".to_str()),
+                _ => return Err(BadToken(format!("Unexpected token {}", nt)))
             }
         }
         Ok(symbols)
@@ -55,7 +53,7 @@ pub fn get_symbols(tokens: &mut TokenStream) -> Result<Vec<String>, String> {
     match try!(strip(tokens.next())) {
         LParen => multi(tokens),
         Variable(x) => Ok(vec!(x)),
-        _ => return Err("Malformed expression!".to_str()),
+        x => Err(BadToken(format!("Unexpected token {}", x)))
     }
 }                
 
@@ -70,13 +68,13 @@ pub fn lambda(tokens: &mut TokenStream,
         },
         Variable(x) => Atom(Symbol(x)),
         Literal(x) => Atom(x),
-        Operator(_) => return Err("Invalid body for lambda!".to_str()),
-        RParen => return Err("unexpected rparen!".to_str())
+        Operator(_) => return Err(BadToken("Invalid body for lambda!".to_str())),
+        RParen => return Err(BadToken("unexpected rparen!".to_str()))
     };
 
     match try!(strip(tokens.next())) {
         RParen => { },
-        _ => return Err("No closing paren found!".to_str())
+        _ => return Err(BadExpr)
     }
 
     Ok((symbols, body))
@@ -85,7 +83,7 @@ pub fn lambda(tokens: &mut TokenStream,
 pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult {
     let (symbol_vec, body) = try!(lambda(tokens, env));
     if symbol_vec.len() == 0 {
-        return Err("That should be impossible, but I'm not sure yet.".to_str())
+        return Err(BadNumberOfArgs("That should be impossible, but I'm not sure yet.".to_str()))
     }
     let symbol = symbol_vec.get(0);
         
@@ -97,7 +95,7 @@ pub fn define(tokens: &mut TokenStream, env: &mut Environment) -> CalcResult {
             let mut t_env = env.clone();
             match x.eval(&mut t_env) {
                 Ok(result) => {
-                    env.symbols.insert(symbol.clone(), try!(arg_to_literal(&result, &mut t_env)));
+                    env.symbols.insert(symbol.clone(), try!(result.arg_to_literal(&mut t_env)));
                 },
                 _ => {
                     env.symbols.insert(symbol.clone(), Proc(symbol_vec.tail().to_owned(), x));
@@ -122,7 +120,7 @@ pub fn handle_operator(tokens: &mut TokenStream, env: &mut Environment,
                 Ok(Atom(List(list)))
             },
             
-            _ => return Err(format!("Operator in wrong place: {}", op))
+            _ => return Err(BadToken(format!("Operator in wrong place: {}", op)))
         }
     }
 }
@@ -154,7 +152,7 @@ pub fn un_special(etype: ExprType, tokens: &mut TokenStream,
         }
     }
 
-    Err("No closing paren found!".to_str())
+    Err(BadExpr)
 }
 
 pub fn list_it(tokens: &mut TokenStream, env: &mut Env) -> 
@@ -169,7 +167,7 @@ pub fn list_it(tokens: &mut TokenStream, env: &mut Env) ->
             LParen => {
                 tokens.index -= 1;
                 let val = try!(translate(tokens, env));
-                lit_vec.push(try!(arg_to_literal(&val, env)));
+                lit_vec.push(try!(val.arg_to_literal(env)));
             },
             Literal(lit_ty) => lit_vec.push(lit_ty),
             Variable(x) => lit_vec.push(try!(env.lookup(&x))),
@@ -178,7 +176,7 @@ pub fn list_it(tokens: &mut TokenStream, env: &mut Env) ->
                 let sub_list = try!(list_it(tokens, env));
                 lit_vec.push(List(sub_list));
             },
-            _ => return Err(format!("Invalid token for list {}", token)),
+            _ => return Err(BadToken(format!("Invalid token for list {}", token))),
         }
     }
 

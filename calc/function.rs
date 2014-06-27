@@ -1,6 +1,6 @@
 //! Evaluate functions defined by the user
 
-use super::{CalcResult, Environment, ArgType, Atom, arg_to_literal};
+use super::{CalcResult, Environment, ArgType, Atom, BadNumberOfArgs};
 use super::literal::{Proc, Symbol};
 
 ///Returns the value of the function for the arguments given
@@ -17,12 +17,12 @@ pub fn eval(fn_name: &String, args: &Vec<ArgType>,
     if args.len() != args_to_fulfill.len() {
         let msg = format!("fn {} takes {} arguments but {} arguments were given!",
                           fn_name, args_to_fulfill.len(), args.len());
-        return Err(msg);
+        return Err(BadNumberOfArgs(msg))
     }
 
     let mut child_env = Environment::new_frame(env);
     for (key, value) in args_to_fulfill.iter().zip(args.iter()) {
-        let val = match try!(arg_to_literal(value, env)) {
+        let val = match try!(value.arg_to_literal(env)) {
             Symbol(x) => try!(env.lookup(&x)),
             otherwise => otherwise,
         };

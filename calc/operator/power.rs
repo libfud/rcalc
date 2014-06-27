@@ -1,16 +1,16 @@
 //! Methods of raising an index to a given power.
 
 use std::num;
-use super::super::{CalcResult, Environment};
+use super::super::{CalcResult, Environment, BadArgType, BadPowerRange};
 use super::super::literal::BigNum;
-use super::{BigRational, ArgType, Atom, arg_to_literal};
+use super::{BigRational, ArgType, Atom};
 
 pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     let mut args_vec: Vec<BigRational> = Vec::new();
     for arg in args.iter() {
-        match try!(arg_to_literal(arg,env)) {
+        match try!(arg.arg_to_literal(env)) {
             BigNum(x)   => args_vec.push(x),
-            _ => return Err("Only numbers can be raised to a power".to_str())
+            _ => return Err(BadArgType("Only numbers can be raised to a power".to_str()))
         }
     }
 
@@ -23,7 +23,7 @@ pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 /// actually evaluate to 0, and (pow 0 0 0 0) will evaluate to one again. This
 /// behavior is periodic. Towers are evaluated recursively. If only one number
 /// is passed, the number is returned, unless it is zero, which returns zero.
-pub fn pow(args: &[BigRational]) -> Result<BigRational, String> {
+pub fn pow(args: &[BigRational]) -> CalcResult<BigRational> {
     if args.len() == 0 {
         return Ok(num::one())
     } else  if args.len() == 1 && args[0] != num::zero() {
@@ -56,7 +56,7 @@ pub fn pow(args: &[BigRational]) -> Result<BigRational, String> {
 
     let power = match exponent.floor().to_integer().to_u64() {
         Some(x) => x,
-        None    => return Err("Exponent too large!".to_str())
+        None    => return Err(BadPowerRange)
     };
     let index = exponent - exponent.floor();
 
@@ -88,7 +88,7 @@ pub fn exp_by_sq(base: BigRational, power: u64) -> BigRational {
 /// Root finds a number which when raised to a power equal to the index is
 /// equal to the radicand. It requires two arguments: the index and a
 /// radicand. 
-pub fn root_wrapper(radicand: BigRational, index: BigRational) -> Result<BigRational, String> {
+pub fn root_wrapper(radicand: BigRational, index: BigRational) -> CalcResult<BigRational> {
     let zero: BigRational = num::zero();
     let one: BigRational = num::one();
     let two = one + one;
@@ -101,22 +101,22 @@ pub fn root_wrapper(radicand: BigRational, index: BigRational) -> Result<BigRati
     }
 
     if index % two == zero && radicand < zero {
-        return Err("I can't handle this complexity!".to_str())
+        return Err(BadArgType("I can't handle this complexity!".to_str()))
     }
 
     let mut guess: BigRational = num::one();
     if *index.denom() == num::one() && *radicand.denom() == num::one() {
         match dumb_root(radicand.clone(), index.clone()){
-            Ok(good_val)    => { return Ok(good_val) }
-            Err(good_guess) => { guess = good_guess }
+            Ok(good_val)    => return Ok(good_val),
+            Err(good_guess) => guess = good_guess,
         }
     }
 
     let mut denominator = zero.clone();
     if index.floor() < index {
         match index.recip() <= half {
-            true    => { denominator = index.sub(&index.floor()) },
-            false   => { denominator = index.recip().sub(&half) }
+            true    => denominator = index.sub(&index.floor()),
+            false   => denominator = index.recip().sub(&half),
         }
     }
 
@@ -124,7 +124,7 @@ pub fn root_wrapper(radicand: BigRational, index: BigRational) -> Result<BigRati
     match dummycheck <= half {
         true    => { },
         false   => {
-            return Err("me too dum".to_str())
+            return Err(BadArgType("me too dum".to_str()))
         }
     }
 
@@ -150,7 +150,7 @@ pub fn root_wrapper(radicand: BigRational, index: BigRational) -> Result<BigRati
 /// power and the radicand to a tolerance. If it's within tolerance, that
 /// number is returned. Otherwise, it uses the average
 pub fn root(guess: BigRational, radicand: BigRational, index: BigRational) 
-    -> Result<BigRational, String> {
+    -> CalcResult<BigRational> {
 
     let one: BigRational = num::one();
     let two = one + one;

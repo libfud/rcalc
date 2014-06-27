@@ -1,15 +1,9 @@
 //! Functions and variables which are used in more than one module.
 
-extern crate num;
-
-use super::{CalcResult};
+use super::CalcResult;
 use super::literal::{Symbol, Void};
 use super::expression::{ArgType, Atom};
-use self::num::rational::{BigRational, Ratio};
-use std::num;
 use std::collections::hashmap::HashMap;
-
-static PI: &'static str = "3126535/995207";
 
 pub fn help(args: &Vec<ArgType>) -> CalcResult {
     let help_help =
@@ -240,76 +234,4 @@ function.
     }
 
     Ok(Atom(Void))
-}
-
-/// Enumeration of ways to write numbers.
-pub enum NumEncoding {
-    Fraction,
-    NonFraction,
-    Invalid
-}
-
-/// Converts a string into a bigrational.
-pub fn str_to_rational(word: &str) -> Result<BigRational, String> {
-
-    let number_type = get_num_encoding(word);
-    match number_type {
-        Fraction    => Ok(from_str::<BigRational>(word).unwrap()),
-
-        NonFraction => {
-            let floated =  from_str::<f64>(word).unwrap();
-            Ok(Ratio::from_float(floated).unwrap())
-        },
-
-        Invalid     => Err("Unexpected return type!".to_str())
-    }
-}
-
-/// Determines if a number is represented as a fraction or not.
-pub fn get_num_encoding(num_str: &str) -> NumEncoding {
-    if num_str.slice_to(1) == "/" || num_str.slice_to(num_str.len() -1) == "/" { 
-            return Invalid
-    }
-
-    let (divisors, radices) = num_str.chars().fold((0, 0), |(mut x, mut y), c| {
-        if c == '/' {
-            x += 1
-        } else if c == '.' {
-            y += 1
-        }
-        (x, y)
-    });
-
-    match (divisors, radices) {
-        (0, 0) | (0, 1) => NonFraction,
-        (1, 0)          => Fraction,
-        _   => Invalid
-    }
-}
-
-/// Reduces a rational to a value in f64s range of accuracy, then converts it to an f64
-/// and then returns that value for use in trigonometric functions.
-pub fn rational_to_f64_trig(bigrational_orig: &BigRational) -> f64 {
-    let mut bigrational = bigrational_orig.clone();
-
-    let two: BigRational = num::one::<BigRational>() + num::one();
-    let twopi = from_str::<BigRational>(PI).unwrap().mul(&two);
-    let jump = from_str::<BigRational>("100000000000/1").unwrap() * twopi;
-    let upper = from_str::<BigRational>("9007199254740992/1").unwrap(); //2^53
-    let lower = from_str::<BigRational>("-9007199254740992/1").unwrap();
-
-    if bigrational > upper {
-        while bigrational > upper {
-            bigrational = bigrational - jump;
-        }
-    } else if bigrational < lower {
-        while bigrational < lower {
-            bigrational = bigrational + jump;
-        }
-    }
-
-    let numer = bigrational.numer().to_f64().unwrap();
-    let denom = bigrational.denom().to_f64().unwrap();
-
-    numer / denom
 }
