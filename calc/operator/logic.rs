@@ -40,28 +40,13 @@ pub fn ordering(args: &Args, env: &mut Env, comp: |&BR,&BR| -> bool) -> CalcResu
 }
 
 pub fn and_or(args: &Args, env: &mut Env, short: bool) -> CalcResult {
-
-    if short == true {
-        for val in args.iter() {
-            match try!(val.desymbolize(env)) {
-                Boolean(true)   => return Ok(Atom(Boolean(short))), 
-                Boolean(false)  => { },
-                _   => return Err(NonBoolean)
-            }
+    for val in args.iter() {
+        if try!(val.desymbolize(env)) == Boolean(short) {
+            return Ok(Atom(Boolean(short)))
         }
-        
-        Ok(Atom(Boolean(false)))
-    } else {
-        for val in args.iter() {
-            match try!(val.desymbolize(env)) {
-                Boolean(true)   => { },
-                Boolean(false)  => return Ok(Atom(Boolean(short))),
-                _   => return Err(NonBoolean)
-            }
-        }
-
-        Ok(Atom(Boolean(true)))
     }
+
+    Ok(Atom(Boolean(true)))
 }
 
 pub fn xor(args: &Args, env: &mut Env) -> CalcResult {
