@@ -150,10 +150,6 @@ pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         _ => return Err(BadArgType("Cannot sort items which aren't in a list!".to_str()))
     };
 
-    if list.iter().any(|x| match *x { BigNum(_) => false, _ => true }) {
-        return Err(BadArgType("Sort can only sort numbers!".to_str()))
-    }
-
     let answer = try!(merge_sort(list, 100));
 
     Ok(Atom(List(answer)))
