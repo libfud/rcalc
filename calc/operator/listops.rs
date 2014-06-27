@@ -6,7 +6,6 @@ use super::super::literal::{LiteralType, BigNum, List, Proc, Symbol, Boolean};
 use super::special::range_getter;
 use super::super::{BadArgType, BadNumberOfArgs};
 use super::super::expression::Expression;
-use std::iter::range_step;
 
 pub fn proc_getter(args: &Vec<ArgType>, 
                    env: &mut Environment) -> CalcResult<(Vec<String>, Expression)> {
@@ -99,25 +98,12 @@ pub fn reduce_helper(x: String, y: String, initval: &LitTy, list: &[LitTy],
     }
     
     let mut child_env = Environment::new_frame(env);
-/*
-    child_env.symbols.insert(names[0].clone(), initval.clone());
-    child_env.symbols.insert(names[1].clone(), list[0].clone());
-    
-    let result = try!(try!(fun.eval(&mut child_env)).arg_to_literal(env));
 
-    if list.len() == 1 {
-        Ok(result)
-    } else {
-        reduce_helper(names, &result, list.tail(), env, fun)
-    }
-*/
     child_env.symbols.insert(x.clone(), initval.clone());
     child_env.symbols.insert(y.clone(), list[0].clone());
-    let mut initval;
     let mut result = try!(try!(fun.eval(&mut child_env)).arg_to_literal(env));
     for val in list.tail().iter() {
-        initval = result.clone();
-        child_env.symbols.insert(x.clone(), initval.clone());
+        child_env.symbols.insert(x.clone(), result.clone());
         child_env.symbols.insert(y.clone(), val.clone());
         result = try!(try!(fun.eval(&mut child_env)).arg_to_literal(env));
     }
@@ -172,38 +158,4 @@ pub fn rangelist(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     }
 
     Ok(Atom(List(range(a, b).map(|x| BigNum(create_bigrat(x))).collect())))
-}
-
-pub fn range_action_list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
-    if args.len() != 4 {
-        return Err(BadNumberOfArgs(
-            "`range-action-list requires a procedure, range and step".to_str()))
-    }
-
-    let (names, func) = try!(proc_getter(args, env));
-    let name = if names.len() == 1 {
-        names.get(0).clone()
-    } else {
-        return Err(BadArgType(
-            "Expected only one variable for range-action-list!".to_str()))
-    };
-
-    let (a, b, step) = (try!(range_getter(try!(args.get(1).desymbolize(env)))),
-                        try!(range_getter(try!(args.get(2).desymbolize(env)))),
-                        try!(range_getter(try!(args.get(3).desymbolize(env)))));
-
-    if a > b {
-        return Err(BadArgType("Bad range: a > b".to_str()))
-    }
-
-    let mut list = Vec::new();
-    let mut child_env =  Environment::new_frame(env);
-
-    for x in range_step(a, b, step) {
-        let temp = create_bigrat(x);
-        child_env.symbols.insert(name.clone(), BigNum(temp));
-        list.push(try!(try!(func.eval(&mut child_env)).arg_to_literal(env)));
-    }
-
-    Ok(Atom(List(list)))
 }

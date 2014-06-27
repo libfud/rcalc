@@ -28,7 +28,7 @@ pub enum OperatorType {
 
     Define, Lambda,
 
-    Help, Table, RangeList, RangeActionList, Sort,
+    Help, Table, RangeList, Sort,
 }
 
 pub fn from_str(s: &str) -> Option<OperatorType> {
@@ -54,7 +54,7 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "map" => Some(Map), "reduce" => Some(Reduce), "filter" => Some(Filter),
 
         "help"  => Some(Help), "table" => Some(Table),
-        "range-list" => Some(RangeList), "range-action-list" => Some(RangeActionList),
+        "range-list" => Some(RangeList), 
         "sort" => Some(Sort),
 
         _       => None
@@ -80,7 +80,7 @@ pub fn to_str(op: &OperatorType) -> String {
         Map => "map", Reduce => "reduce", Filter => "filter",
 
         Help  => "help", Table => "table", RangeList => "range-list", 
-        RangeActionList => "range-action-list", Sort => "sort",
+        Sort => "sort",
     };
 
     answer.to_str()
@@ -164,8 +164,6 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
 
         RangeList => listops::rangelist(args, env),
 
-        RangeActionList => listops::range_action_list(args, env),
-        
         Sort => special::sort(args, env),
     }
 }
