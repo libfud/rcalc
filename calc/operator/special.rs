@@ -1,6 +1,6 @@
 //! Special functions like table and plot points.
 
-use super::super::literal::{BigNum, List, Void, LiteralType};
+use super::super::literal::{BigNum, List, Symbol, Void, LiteralType};
 use super::listops::proc_getter;
 use super::super::{BadArgType, BadNumberOfArgs};
 use super::{Environment, CalcResult, ArgType, Atom};
@@ -15,10 +15,8 @@ pub fn range_getter(arg: LiteralType) -> CalcResult<int> {
     }
 }
 
-pub fn make_table(list: Vec<LiteralType>, name: &String, func: Expression,
+pub fn make_table(list: Vec<LiteralType>, name: &String, func: Expression, fun_str: String,
                   env: &mut Environment) -> (Vec<(String, String)>, uint, uint) {
-
-    let fun_str = func.to_symbol(env);
 
     let mut child_env = Environment::new_frame(env);
 
@@ -52,13 +50,18 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadArgType("Only single variables are supported currently".to_str()))
     }
     let name = name.get(0);
+
+    let fun_str = match args.get(0) {
+        &Atom(Symbol(ref x)) => x.clone(),
+        _ => func.to_symbol(env)
+    };
     
     let list = match try!(args.get(1).desymbolize(env)) {
         List(x) => x,
         _ => return Err(BadArgType("`table' takes a list as its second argument.".to_str()))
     };
 
-    let (table, name_len, fn_len) = make_table(list, name, func, env);
+    let (table, name_len, fn_len) = make_table(list, name, func, fun_str, env);
 
     table_writer(table, name_len, fn_len);
     

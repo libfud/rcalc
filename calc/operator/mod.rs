@@ -24,11 +24,11 @@ pub enum OperatorType {
 
     Quote, List, Cons, Car, Cdr,  Cadr, Cddr, Caddr, Cdddr,
     
-    Map, Reduce, Filter,
+    Map, Reduce, Filter, ListLen,
 
     Define, Lambda,
 
-    Help, Table, RangeList, Sort,
+    Help, Table, RangeList, Sort, 
 }
 
 pub fn from_str(s: &str) -> Option<OperatorType> {
@@ -52,10 +52,10 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
 
 
         "map" => Some(Map), "reduce" => Some(Reduce), "filter" => Some(Filter),
+        "list-len" => Some(ListLen),
 
         "help"  => Some(Help), "table" => Some(Table),
-        "range-list" => Some(RangeList), 
-        "sort" => Some(Sort),
+        "range-list" => Some(RangeList), "sort" => Some(Sort),
 
         _       => None
     }
@@ -77,7 +77,7 @@ pub fn to_str(op: &OperatorType) -> String {
         Cdr => "cdr",  Cadr => "cadr", Cddr => "cddr", Caddr => "caddr",
         Cdddr => "cdddr",
 
-        Map => "map", Reduce => "reduce", Filter => "filter",
+        Map => "map", Reduce => "reduce", Filter => "filter", ListLen => "list-len",
 
         Help  => "help", Table => "table", RangeList => "range-list", 
         Sort => "sort",
@@ -116,6 +116,8 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         Reduce => listops::reduce(args, env),
 
         Filter => listops::filter(args, env),
+
+        ListLen => listops::listlen(args, env),
 
         Add => arithmetic::do_op(args, env, 0, |a, b| a + *b, num::zero),
 

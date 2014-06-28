@@ -8,8 +8,8 @@ use super::literal::{LiteralType, Symbol, Proc, List, Void};
 use super::operator;
 use super::operator::{Define, Lambda, Quote, Help, OperatorType};
 
-type Env<T = Environment> = T;
-type Expr<T = ArgType> = CalcResult<T>;
+pub type Env<T = Environment> = T;
+pub type Expr<T = ArgType> = CalcResult<T>;
 
 pub fn begin_expr(tokens: &mut TokenStream) -> CalcResult<()> {
     match tokens.next() {

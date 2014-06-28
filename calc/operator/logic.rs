@@ -2,29 +2,46 @@
 
 use super::super::{CalcResult, Environment, NonBoolean, BadNumberOfArgs, BadArgType};
 use super::super::literal::{Boolean, BigNum};
-use super::{ArgType, Atom, BigRational};
+use super::{ArgType, Atom, SExpr, BigRational, If};
 
-type Args<T = Vec<ArgType>> = T;
-type Env<T = Environment> = T;
+pub type Args<T = Vec<ArgType>> = T;
+pub type Env<T = Environment> = T;
 
+/// Loop through nested conditional statements until a non-conditional expression
+/// is reached.
 pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
-    if args.len() != 3 {
-        return Err(BadNumberOfArgs("`if` requires three arguments".to_str()))
-    }
+    let mut arguments = args.clone();
 
-    let condition = match try!(args.get(0).desymbolize(env)) {
-        Boolean(x)  => x,
-        _ => return Err(NonBoolean)
-    };
+    loop {
+        if args.len() != 3 {
+            return Err(BadNumberOfArgs("`if` requires three arguments".to_str()))
+        }
 
-    if condition {
-        Ok(Atom(try!(args.get(1).desymbolize(env))))
-    } else {
-        Ok(Atom(try!(args.get(2).desymbolize(env))))
+        let condition = match try!(args.get(0).desymbolize(env)) {
+            Boolean(x)  => x,
+            _ => return Err(NonBoolean)
+        };
+
+        let result = if condition {
+            arguments.get(1).clone()
+        } else {
+            arguments.get(2).clone()
+        };
+
+        match result {
+            Atom(_) => return Ok(result),
+            SExpr(ref x) => {
+                if x.expr_type == super::super::expression::Operator(If) {
+                    arguments = x.args.clone();
+                } else {
+                    return x.eval(env)
+                }
+            }
+        }
     }
 }
 
-type BR = BigRational;
+pub type BR = BigRational;
 
 pub fn ordering(args: &Args, env: &mut Env, comp: |&BR,&BR| -> bool) -> CalcResult {
     if args.len() != 2 {

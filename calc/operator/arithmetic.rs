@@ -5,9 +5,9 @@ use super::super::{CalcResult, Environment, BadArgType, BadNumberOfArgs, DivByZe
 use super::super::literal::{BigNum};
 use super::{BigRational, ArgType, Atom};
 
-type Args<T = ArgType> = Vec<T>;
-type BigR = BigRational;
-type Env = Environment;
+pub type Args<T = ArgType> = Vec<T>;
+pub type BigR = BigRational;
+pub type Env = Environment;
 
 ///Performs addition, subtraction, and multiplication on BigNums.
 pub fn do_op(args: &Args, env: &mut Env, min_len: uint, op: |BigR, &BigR| -> BigR,
