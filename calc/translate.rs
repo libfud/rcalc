@@ -1,4 +1,4 @@
-//! something
+//! Translate tokens into expressions and atoms.
 
 use super::{CalcResult, Environment, BadExpr, BadToken, BadNumberOfArgs};
 use super::tokenize::{Literal, LParen, RParen, Operator, Variable, TokenStream};

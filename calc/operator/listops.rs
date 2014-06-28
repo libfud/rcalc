@@ -21,6 +21,8 @@ pub fn create_bigrat(x: int) -> BigRational {
     Ratio::from_integer(x.to_bigint().unwrap())
 }
 
+
+/// Map can handle mapping a function to each element of one or more lists.
 pub fn map(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 2 {
         return Err(BadNumberOfArgs("`map' takes at least two arguments".to_str()))

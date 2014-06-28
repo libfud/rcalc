@@ -1,4 +1,4 @@
-//!Logic and odering.
+//! Logic and odering.
 
 use super::super::{CalcResult, Environment, NonBoolean, BadNumberOfArgs, BadArgType};
 use super::super::literal::{Boolean, BigNum};
