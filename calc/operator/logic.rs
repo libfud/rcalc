@@ -17,7 +17,7 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
             return Err(BadNumberOfArgs("`if` requires three arguments".to_str()))
         }
 
-        let condition = match try!(args.get(0).desymbolize(env)) {
+        let condition = match try!(arguments.get(0).desymbolize(env)) {
             Boolean(x)  => x,
             _ => return Err(NonBoolean)
         };

@@ -6,6 +6,7 @@ use super::super::literal::{LiteralType, BigNum, List, Proc, Symbol, Boolean};
 use super::special::range_getter;
 use super::super::{BadArgType, BadNumberOfArgs};
 use super::super::expression::Expression;
+use std::iter::range_step;
 
 pub fn proc_getter(args: &Vec<ArgType>, 
                    env: &mut Environment) -> CalcResult<(Vec<String>, Expression)> {
@@ -101,12 +102,13 @@ pub fn reduce_helper(x: String, y: String, initval: &LitTy, list: &[LitTy],
     
     let mut child_env = Environment::new_frame(env);
 
-    child_env.symbols.insert(x.clone(), initval.clone());
-    child_env.symbols.insert(y.clone(), list[0].clone());
+    child_env.symbols.insert(x.clone(), list[0].clone());
+    child_env.symbols.insert(y.clone(), initval.clone());
     let mut result = try!(try!(fun.eval(&mut child_env)).arg_to_literal(env));
     for val in list.tail().iter() {
-        child_env.symbols.insert(x.clone(), result.clone());
-        child_env.symbols.insert(y.clone(), val.clone());
+        child_env.symbols.insert(x.clone(), val.clone());
+        child_env.symbols.insert(y.clone(), result.clone());
+
         result = try!(try!(fun.eval(&mut child_env)).arg_to_literal(env));
     }
 
@@ -148,18 +150,26 @@ pub fn filter(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 }
 
 pub fn rangelist(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
-    if args.len() != 2 {
-        return Err(BadNumberOfArgs("`rangelist' requires a beginning and end.".to_str()))
+    if args.len() < 2 || args.len() > 3 {
+        return Err(BadNumberOfArgs(
+            "`rangelist' requires a beginning and end, and optionally takes step."
+                .to_str()))
     }
 
     let (a, b) = (try!(range_getter(try!(args.get(0).desymbolize(env)))),
                   try!(range_getter(try!(args.get(1).desymbolize(env)))));
 
+    let step = if args.len() == 3 {
+        try!(range_getter(try!(args.get(2).desymbolize(env))))
+    } else {
+        1
+    };
+/*
     if a > b {
         return Err(BadArgType("Bad range: a > b".to_str()))
     }
-
-    Ok(Atom(List(range(a, b).map(|x| BigNum(create_bigrat(x))).collect())))
+*/
+    Ok(Atom(List(range_step(a, b, step).map(|x| BigNum(create_bigrat(x))).collect())))
 }
 
 pub fn listlen(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
