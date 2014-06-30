@@ -32,7 +32,7 @@ rcalc will not be considered complete until it has the following:
 
 * proper rational exponentiation (currently only works for powers which are
  either an integer or a multiple of 1/2)
-* arcsine, arccosine, arctangent
+* ~~arcsine, arccosine, arctangent~~
 * hyperbolic sin, cos and tan
 * logarithms and exp
 * limits
