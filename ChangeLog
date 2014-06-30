@@ -1,0 +1,228 @@
+[33mb72ea2f[m[33m ([1;36mHEAD[m[33m, [1;33mtag: v0.13.0[m[33m, [1;31morigin/master[m[33m, [1;32mmaster[m[33m)[m updated Version
+[33m2c10e6c[m updated readme
+[33m261163e[m updated readme
+[33m3644afa[m updated readme
+[33m9ece906[m updating readme
+[33m29f0ef0[m updated readme
+[33m9694ce0[m cleaned up operator a bit
+[33md640ce6[m cleaned up a bit
+[33mfaccc1f[m fixed equality so that non numeric entities could be compared
+[33m2a6ea97[m added log, exp, ln, more trigonometric functions
+[33m9f42e20[m fixed rounding
+[33m0c2cddc[m fixed even/odd
+[33m0f5e5fd[m fixed or', added rounding, floor, ceiling, zero?, even? and odd?
+[33mb32cbcb[m cleanup
+[33mdeaaac9[m[33m ([1;31morigin/redefine-define[m[33m)[m fixed define
+[33m8fbbeb3[m fixed range-list
+[33mcf0c2b5[m working on trying to add useful tools like listlen
+[33m68c9529[m updating documentation
+[33ma4978a7[m simplified and_or
+[33m125fde7[m removed qualifier for numbers only being sortable
+[33mdf0b10a[m removed range-action-list as it's redundant and unecessary
+[33m21b904b[m trying to make folding a loop instead of recursive
+[33ma591dfc[m Errors are an enumeration now. arg_to_literal() and desymbolize() are methods for ArgTypes
+[33m7bacc4d[m broke table down into smaller logical functions
+[33mea5c4a8[m well, ok
+[33mf7a3609[m huh?
+[33m517c655[m less cloning
+[33m880aa3f[m removed a step from sort
+[33mef51400[m more clear code
+[33m43d33ab[m fixed tables
+[33mcceab37[m working on prettiness
+[33m2017c42[m working on prettifying this
+[33mb0c12a0[m simplified tables
+[33m6c5ac4a[m final update for a while
+[33m54bee31[m[33m ([1;33mtag: v0.12.0[m[33m)[m updated version
+[33mbe195a3[m fixed lambdas
+[33m8539626[m Fixed things now, the problem was with conditonals
+[33mee0f739[m trying to fix stuff
+[33mb7fb9dd[m[33m ([1;31morigin/expr-redefine[m[33m)[m expressions: REDEFINED.
+[33ma09641a[m making a big push to add all this
+[33mbfb9157[m woot! everything should be ready to roll
+[33mf02846d[m more testing
+[33m39cdcb7[m passed more tests
+[33m400e86f[m moar testing
+[33m8c781f1[m first test passed
+[33m17e9c65[m testing
+[33m067c838[m testing
+[33mc067099[m testing
+[33m45a8522[m testing
+[33m286d1e6[m testing something out
+[33m96aed9e[m fixed some bugs due to the rust update
+[33mc7d9e66[m switching to another branch...
+[33m91c2b95[m adding bin dir
+[33m96f97e6[m adding makefile
+[33m2de5c65[m fixed readme
+[33m0300214[m fixed readme
+[33m6b273df[m[33m ([1;33mtag: v0.11.0[m[33m)[m v0.11.0
+[33m6f25826[m unbox_it removed
+[33m7cc56e2[m removing unbox it
+[33m537152c[m removing references to unbox_it
+[33m956e8d2[m added sort, removing unbox_it
+[33mf74af16[m more list stuff
+[33mf370417[m more list stuff
+[33md7012c8[m[33m ([1;33mtag: v0.10.0[m[33m)[m updated version
+[33md81f8e4[m map, filter, reduce, cons, car, cdr, list, quote
+[33m0dc1622[m more work on lists
+[33mc248f2f[m more work on lists
+[33mf502ca6[m working on lists
+[33m254dd5a[m got lists now
+[33m7e601c9[m changed types to private since they're not used outside of this module
+[33m251b097[m a little bit of tidying up
+[33m2b3a90e[m cleaning up and using the format macro
+[33ma9c7d7f[m added lambdas
+[33mc3cafc9[m refactored define
+[33m625690f[m code cleanup
+[33m74194b2[m removed dead static string
+[33m51237bc[m[33m ([1;33mtag: v0.9.0[m[33m)[m windows fixes
+[33mddf19ca[m windows fixes
+[33mc3bf152[m fixed for windows
+[33macb654b[m should be compilable on windows now
+[33m29ea266[m updating version...
+[33m418f1bc[m fixed some stuff
+[33m09df1cb[m fixed some stuff
+[33m7e3741b[m[33m ([1;31morigin/merge-defun[m[33m)[m Higher order functions\!
+[33m0afee8a[m really big headache
+[33meb68e37[m what a headache
+[33mba1fe70[m functions work
+[33mc9c7cee[m lots of work here
+[33mde83e27[m Summation is now a feature
+[33mabdc861[m documentation
+[33mbab87d8[m updated readme
+[33m05703f4[m updated readme
+[33m1ee7b86[m modified gitignore
+[33m3cf1e6b[m[33m ([1;33mtag: v0.8.0[m[33m)[m readying version 0.8.0
+[33mf9b8338[m recursive functions work
+[33m001f4e8[m readded rem
+[33m35622d0[m removing redundant checking
+[33m3b32949[m strange days, stranger
+[33m88d04a4[m working on trig
+[33m89b82be[m logic: ordering, equality, And, Or, and Not
+[33m29d2ea6[m more logic
+[33mf5682d3[m more logic
+[33m58d2af8[m moving logic
+[33m1e4aabf[m moving logic out of operator/mod.rs
+[33m70d28d9[m cleaning up
+[33m817844a[m deleted whitespace
+[33m3ab4214[m Main: Changed to linenoise. Operator/mod.rs: moved defun to function.rs
+[33md28f37e[m cleaning up lots of stuff
+[33m68dcbc3[m cleaning up function
+[33m7a9947a[m puzzled over why this works without explicit typing
+[33m5516922[m wut
+[33m4c7e54a[m trying to clean up
+[33m79d002d[m :(
+[33mb6c421f[m trying to implement .iter
+[33m3246da6[m trying to implement .iter()
+[33med729b8[m added some constants
+[33m982aefb[m cleaning up common
+[33mbdc97ea[m cleaning up code
+[33m68683b0[m trimming tokenize
+[33m2bc8f9e[m trying to separate some logic
+[33m7537f84[m internal compiler error
+[33m44272ee[m cleaning up
+[33m0fcba7e[m removed matrices.
+[33mdc8ed96[m trying to clean stuff up
+[33m113ce0d[m added some comments for arithmetic
+[33m4cdfe14[m Divison checks for zeros now
+[33m5ed340e[m trying to stop repeating myself
+[33m55e323e[m trying something new
+[33m0ad0520[m trying something new
+[33m278fda1[m fixing roots
+[33m0a1609e[m trying to clean up pow
+[33mfce514f[m fixing power
+[33m8031b21[m power: fixing stuff
+[33m0f5059c[m just a test
+[33me8b0f4a[m arithmetic: added a macro to save repeating myself
+[33m6dd6253[m made some stuff more reusable
+[33m3fdfe2b[m arithmetic: I love functions as arguments
+[33mb5f85ec[m arithmetic: I love functions as arguments
+[33mdee43ce[m trying to reduce code
+[33mf7c0263[m moved arithmetic operations, and simplified them
+[33m6f43c05[m used move_iter in arithmetic.rs to consume literals vec for stripped_literals
+[33mc6826cb[m removed clone method for arithmetic's return statement for matrices
+[33m5f070a7[m arithmetic: cleaned up some variable's names
+[33m30ef0f8[m Cleaning up. Arithmetic functions are going into their own file.
+[33m04725c8[m Cleaning and documentation
+[33m891b712[m cleaning up and documenting
+[33m239def5[m Cleaning up and documenting.
+[33m420582b[m Added variables and functions
+[33m5b5d2a8[m fixed breaking changes
+[33m40e164c[m[33m ([1;33mtag: v0.7.0[m[33m, [1;31morigin/literaltype[m[33m)[m trig fns
+[33mdb72bd3[m cleaning up
+[33m59c623e[m added power
+[33m812b12f[m the basic operators are done, pow and sinusoidal functions remain
+[33m9f8ccbe[m fixed bracket issue
+[33m0f867e3[m subtraction is a go
+[33mab5af81[m relocated some functions for increased usability
+[33m3118665[m almost done, need to rewrite other functions and fix number] bug
+[33mb673345[m Just a couple more steps until it's ready
+[33m535cd94[m working on matrices and booleans
+[33me8ef360[m fixed README
+[33mc29485e[m fixed README
+[33mb8ceb13[m fixed README
+[33m519f360[m cleaning up
+[33maf2a81e[m fixed readme and added VERSION
+[33m8c27ec5[m readline integration
+[33m235f6fd[m some staged preparation
+[33mb14a350[m[33m ([1;33mtag: v0.6.0[m[33m)[m updated readme
+[33md35107b[m updated readme
+[33m9bdbf0b[m updated readme
+[33m27c401d[m[33m ([1;31morigin/read_RIGHT[m[33m)[m removing arithmetic
+[33md5bbc25[m Updating things. This will soon be ready to be merged back into the master
+[33mbc510ea[m experimental branch
+[33mac1d158[m preparing for changes in tokenizing
+[33m56f1429[m logic changed minorly
+[33m0b46a6c[m logic.rs
+[33mfbdc96d[m updated some help and switched back to 64 bit for floats
+[33m185fff0[m[33m ([1;33mtag: v0.5.0-32bit[m[33m, [1;33mtag: v0.5.0[m[33m)[m updated readme
+[33m9fc59ef[m[33m ([1;31morigin/read[m[33m)[m moar help
+[33ma92936f[m fixed trig's cosine error
+[33m093339c[m added mroe help messages
+[33meda6a4d[m deleted some whitespace
+[33md8b029e[m fixed a semantic error
+[33me65a3cb[m eval: changed to work with help
+[33mb7bedb2[m starting to work on help messages
+[33md99d2b5[m calculator.rs: Added a line in preparation for the help function
+[33md39789e[m corrected README
+[33m9e3d5cc[m Restructured conditional statements in eval
+[33m0e58a61[m changed the structure of eval; the operator is found in eval, and then the tokens are found in tokenizer, and then the appropriate operation is performed
+[33m716d433[m minor changes
+[33m16d7935[m eval: significantly reduced complexity of tokenizer
+[33mb203eb3[m read
+[33m2aa08f4[m[33m ([1;33mtag: v0.4.0[m[33m)[m Changed return type of str_to_rational to Result<BigRational, &str> vs (BigRational, &str)
+[33m7124984[m Prime number generation not so good for finding roots after all. Very costly compared to just failing and passing to newton's method
+[33m38da5c7[m some minor changes, things need more tweaking til they work right
+[33md29e69a[m working up to another method of evaluating roots
+[33m1fdf9bf[m[33m ([1;33mtag: v0.3.0[m[33m)[m updated readme
+[33m6e630de[m[33m ([1;31morigin/rational[m[33m)[m bigrational conversion complete
+[33m6e6bdf9[m working on trig
+[33m59a5dd1[m tweaks to arithmetic... power operations aren't right again.
+[33mb8d823f[m partway through arithmetic
+[33me2202c8[m partway into changing over to rationals
+[33mdf903e1[m finally got str_to_rational working
+[33m793b2e7[m minor change to eval
+[33m17d6beb[m Updated README to reflect changes
+[33m100f89a[m[33m ([1;33mtag: v0.2.0[m[33m)[m added a conditional operator
+[33mcad3952[m[33m ([1;31morigin/oh_no[m[33m)[m fixed
+[33mde5cad8[m Fixed the issue
+[33m0d4327b[m rerewrote condit's return
+[33md68fb64[m made return unambiguous and explicit
+[33m932d302[m fixed OTHER typo for eval
+[33ma88b370[m fixed typo for condition
+[33m1db49c4[m oh no I broke everything
+[33md9957e5[m[33m ([1;33mtag: v0.1.0[m[33m)[m minor update
+[33m67c694d[m updated readme
+[33m538b285[m Almost everything is passed as strings currently for simplification of error handling and parsing.
+[33m48b808d[m Removed the validator function as it was completely pointless and only added complexity.
+[33m18086f1[m fixed fractional powers greater than 1/2
+[33m39172d2[m Power operations and root operations work properly now. Finding the nth root of a number is actually somewhat possible, although I haven't tested for irrational numbers.
+[33ma0b2055[m updating git ignore
+[33m77deff8[m more modules
+[33m2a81df4[m Split arithmetic functions into a separate module
+[33madc8933[m updating calculator... this is an unstable state right now
+[33m0284fb2[m Added a pretty important check to validate: ensuring that there's at least one set of parentheses.
+[33mc8f3c9f[m Changed DESPAIR to something shorter
+[33mf5b9355[m fresh from rust-algorithms
+[33m2a94bd2[m Updated README
+[33m228c09e[m LICENSE added. Going GPLv3 for now, may relicense to MIT in the future
+[33m50f9e0c[m Initializing rcalc
