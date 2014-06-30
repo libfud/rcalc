@@ -155,15 +155,13 @@ pub fn num_op(args: &Args, env: &mut Env, op: NumOps) -> CalcResult {
         Ceiling => Ok(Atom(BigNum(num.ceil()))),
         Zero => Ok(Atom(Boolean(num == num::zero()))),
         _ => {
-            let even_flag = if op == Even {
-                true
-            } else {
-                false
-            };
-            
             let one: BR = num::one();
             let two: BR = one + num::one();    
-            Ok(Atom(Boolean(num % two == num::zero() && even_flag)))
+            if op == Even {
+                Ok(Atom(Boolean(num % two == num::zero())))
+            } else {
+                Ok(Atom(Boolean(num % two != num::zero())))
+            }
         }
     }
 }
