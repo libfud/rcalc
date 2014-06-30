@@ -16,8 +16,7 @@ pub mod trig;
 pub enum OperatorType {
     Add, Sub, Mul, Div, Rem, Pow,
 
-    Log, Ln, Exp, Sin, Cos, Tan, ASin, ACos, ATan, SinH, CosH, TanH,
-    ASinH, ACosH, ATanH, 
+    Log, Ln, Exp, Sin, Cos, Tan, ASin, ACos, ATan, SinH, CosH, TanH, ASinH, ACosH, ATanH, 
 
     Eq, NEq, Lt, LtEq, Gt, GtEq,
 
@@ -78,12 +77,14 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "+" => Some(Add),  "-" => Some(Sub), "*" => Some(Mul), "/"  => Some(Div),
         "%" => Some(Rem),  "pow" => Some(Pow),
 
-        "sin" => Some(Sin), "cos" => Some(Cos), "tan" => Some(Tan), "asin" => Some(ASin),
-        "acos" => Some(ACos), "atan" => Some(ATan), "sinh" => Some(SinH), "cosh" => Some(CosH),
-        "tanh" => Some(TanH), "asinh" => Some(ASinH), "acosh" => Some(ACosH),
-        "atanh" => Some(ATanH), "log" => Some(Log), "ln" => Some(Ln), "exp" => Some(Exp),
+        "sin" => Some(Sin), "cos" => Some(Cos), "tan" => Some(Tan),
+        "asin" => Some(ASin), "acos" => Some(ACos), "atan" => Some(ATan),
+        "sinh" => Some(SinH), "cosh" => Some(CosH), "tanh" => Some(TanH), 
+        "asinh" => Some(ASinH), "acosh" => Some(ACosH), "atanh" => Some(ATanH),
+        "log" => Some(Log), "ln" => Some(Ln), "exp" => Some(Exp),
 
-        "<" => Some(Lt), "<=" => Some(LtEq), "=" => Some(Eq), "!=" => Some(NEq),
+        "<" => Some(Lt), "<=" => Some(LtEq),
+        "=" => Some(Eq), "!=" => Some(NEq),
         ">=" => Some(GtEq), ">" => Some(Gt),
 
         "if" => Some(If), "and" => Some(And), "or" => Some(Or), "not" => Some(Not),
@@ -94,10 +95,10 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
 
         "define" => Some(Define), "lambda" => Some(Lambda),
 
-        "quote" | "'"  => Some(Quote), "list" => Some(List),  "cons" => Some(Cons),
-        "car" => Some(Car), "cdr" => Some(Cdr), "cadr" => Some(Cadr),
-        "cddr" => Some(Cddr), "caddr" => Some(Caddr), "cdddr" => Some(Cdddr),
-
+        "quote" | "'"  => Some(Quote), "list" => Some(List),
+        "cons" => Some(Cons), "car" => Some(Car), "cdr" => Some(Cdr), 
+        "cadr" => Some(Cadr), "cddr" => Some(Cddr), 
+        "caddr" => Some(Caddr), "cdddr" => Some(Cdddr),
 
         "map" => Some(Map), "reduce" => Some(Reduce), "filter" => Some(Filter),
         "list-len" => Some(ListLen),

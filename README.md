@@ -33,12 +33,12 @@ rcalc will not be considered complete until it has the following:
 * proper rational exponentiation (currently only works for powers which are
  either an integer or a multiple of 1/2)
 * ~~arcsine, arccosine, arctangent~~
-* hyperbolic sin, cos and tan
-* logarithms and exp
+* ~~hyperbolic sin, cos and tan~~
+* ~~logarithms and exp~~
 * limits
 * ~~lists,~~ matrices and trees
 * help message for every feature
-* sorting, filtering and mapping
+* ~~sorting, filtering and mapping~~
 * graphing
 
 ## Features 
@@ -46,8 +46,7 @@ rcalc will not be considered complete until it has the following:
 (List not necessarily complete)
 
 * Arbitrary precision numbers
-* Sine, Cosine and Tangent functions
-* Some constants (pi, c, e currently)
+* Trigonometric functions
 * Boolean values, conditional statements and short circuiting operators
 * Comparisons for ordering and equality
 * Lists, constructing and destructuring, map, reduce, filter and sort
