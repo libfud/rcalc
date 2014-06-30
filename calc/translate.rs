@@ -20,16 +20,6 @@ pub fn begin_expr(tokens: &mut TokenStream) -> CalcResult<()> {
     }
 }
 
-pub fn get_top_expr(tokens: &mut TokenStream) -> CalcResult<ExprType> {
-    match tokens.peek() {
-        Some(x) => {
-            tokens.next();
-            super::expression::token_to_expr(try!(x))
-        },
-        None  => Err(BadToken("Expected a token but found nothing!".to_str()))
-    }
-}
-
 pub fn strip<T>(t: Option<CalcResult<T>>) -> CalcResult<T> {
     match t {
         Some(x) => x,
@@ -37,22 +27,19 @@ pub fn strip<T>(t: Option<CalcResult<T>>) -> CalcResult<T> {
     }
 }
 
-pub fn get_symbols(tokens: &mut TokenStream) -> CalcResult<Vec<String>> {
-    fn multi(tokens: &mut TokenStream) -> CalcResult<Vec<String>> {
-        let mut symbols: Vec<String> = Vec::new();
-        loop {
-            let nt = try!(strip(tokens.next()));
-            match nt {
-                Variable(x) => symbols.push(x),
-                RParen => break,
-                _ => return Err(BadToken(format!("Unexpected token {}", nt)))
-            }
-        }
-        Ok(symbols)
-    }
-    
+pub fn get_symbols(tokens: &mut TokenStream) -> CalcResult<Vec<String>> {    
     match try!(strip(tokens.next())) {
-        LParen => multi(tokens),
+        LParen => {
+            let mut symbols: Vec<String> = Vec::new();
+            loop {
+                match try!(strip(tokens.next())) {
+                    Variable(x) => symbols.push(x),
+                    RParen => break,
+                    x => return Err(BadToken(format!("Unexpected token {}", x)))
+                }
+            }
+            Ok(symbols)
+        }
         Variable(x) => Ok(vec!(x)),
         x => Err(BadToken(format!("Unexpected token {}", x)))
     }
@@ -230,6 +217,6 @@ pub fn top_translate(tokens: &mut TokenStream, env: &mut Env) -> Expr {
  
 pub fn translate(tokens: &mut TokenStream, env: &mut Env) -> Expr {
     try!(begin_expr(tokens));
-    let top_expr = try!(get_top_expr(tokens));
+    let top_expr = try!(super::expression::token_to_expr(try!(strip(tokens))));
     make_expr(top_expr, tokens, env)
 }
