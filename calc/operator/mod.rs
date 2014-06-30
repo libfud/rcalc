@@ -16,11 +16,12 @@ pub mod trig;
 pub enum OperatorType {
     Add, Sub, Mul, Div, Rem, Pow,
 
-    Sin, Cos, Tan,
+    Log, Ln, Exp, Sin, Cos, Tan, ASin, ACos, ATan, SinH, CosH, TanH,
+    ASinH, ACosH, ATanH, 
 
     Eq, NEq, Lt, LtEq, Gt, GtEq,
 
-    Round, Zero, Odd, Even,
+    Round, Floor, Ceiling, Zero, Odd, Even,
 
     If, And, Or, Not, Xor,
 
@@ -33,12 +34,29 @@ pub enum OperatorType {
     Help, Table, RangeList, Sort, 
 }
 
+impl OperatorType {
+    pub fn to_numops(self) -> logic::NumOps {
+        match self {
+            Round => logic::Round,
+            Floor => logic::Floor,
+            Ceiling => logic::Ceiling,
+            Zero => logic::Zero,
+            Odd => logic::Odd,
+            Even => logic::Even,
+            _ => fail!("Mismatched operator types!")
+        }
+    }
+}
+
 pub fn from_str(s: &str) -> Option<OperatorType> {
     match s {
         "+" => Some(Add),  "-" => Some(Sub), "*" => Some(Mul), "/"  => Some(Div),
         "%" => Some(Rem),  "pow" => Some(Pow),
 
-        "sin" => Some(Sin), "cos" => Some(Cos), "tan" => Some(Tan),
+        "sin" => Some(Sin), "cos" => Some(Cos), "tan" => Some(Tan), "asin" => Some(ASin),
+        "acos" => Some(ACos), "atan" => Some(ATan), "sinh" => Some(SinH), "cosh" => Some(CosH),
+        "tanh" => Some(TanH), "asinh" => Some(ASinH), "acosh" => Some(ACosH),
+        "atanh" => Some(ATanH), "log" => Some(Log), "ln" => Some(Ln), "exp" => Some(Exp),
 
         "<" => Some(Lt), "<=" => Some(LtEq), "=" => Some(Eq), "!=" => Some(NEq),
         ">=" => Some(GtEq), ">" => Some(Gt),
@@ -46,7 +64,8 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "if" => Some(If), "and" => Some(And), "or" => Some(Or), "not" => Some(Not),
         "xor" => Some(Xor),
 
-        "round" => Some(Round), "zero?" => Some(Zero), "odd?" => Some(Odd), "even?" => Some(Even),
+        "round" => Some(Round), "ceiling" => Some(Ceiling), "floor" => Some(Floor),
+        "zero?" => Some(Zero), "odd?" => Some(Odd), "even?" => Some(Even),
 
         "define" => Some(Define), "lambda" => Some(Lambda),
 
@@ -69,13 +88,16 @@ pub fn to_str(op: &OperatorType) -> String {
     let answer = match *op {
         Add => "+", Sub => "-", Mul => "*", Div => "/", Rem => "%", Pow => "pow",
 
-        Sin => "sin", Cos => "cos", Tan => "tan",
+        Sin => "sin", Cos => "cos", Tan => "tan", ASin => "asin", ACos => "acos",
+        ATan => "atan", SinH => "sinh", CosH => "cosh", TanH => "tanh", ASinH => "asinh",
+        ACosH => "acosh", ATanH => "atanh", Log => "log", Ln => "ln", Exp => "exp",
 
         Lt => "<", LtEq => "<=", Eq => "=", NEq => "!", GtEq => ">=", Gt => ">",
 
         If => "if", And => "and", Or => "or", Not => "not", Xor => "xor",
 
-        Round => "round", Zero => "zero?", Even => "even?", Odd => "odd?",
+        Round => "round", Ceiling => "ceiling", Floor => "floor",
+        Zero => "zero?", Even => "even?", Odd => "odd?",
 
         Define => "define", Lambda => "lambda",
 
@@ -138,11 +160,9 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
 
         Pow => power::pow_wrapper(args, env),
 
-        Sin => trig::trig(args, env, |x| x.sin()),
-
-        Cos => trig::trig(args, env, |x| x.cos()),
-
-        Tan => trig::trig(args, env, |x| x.tan()),
+        Sin | Cos | Tan | ASin | ACos | 
+        ATan | SinH | CosH | TanH | ASinH |
+        ACosH | ATanH | Log | Ln | Exp => trig::float_ops(args, env, op_type),
 
         If   => logic::cond(args, env),
 
@@ -166,13 +186,8 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         
         Gt   => logic::ordering(args, env, |a, b| a > b),
 
-        Round => logic::num_op(args, env, logic::Round),
-
-        Zero => logic::num_op(args, env, logic::Zero),
-
-        Even => logic::num_op(args, env, logic::Even),
-
-        Odd => logic::num_op(args, env, logic::Odd),
+        Round | Ceiling | Floor | 
+        Zero | Even | Odd => logic::num_op(args, env, op_type.to_numops()),
 
         Help => super::common::help(args),
 

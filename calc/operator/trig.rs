@@ -1,53 +1,55 @@
 //! Trigonometry
 
-use std::num;
+use super::*;
 use super::super::literal::BigNum;
 use super::super::{CalcResult, Environment, Atom, ArgType, BadNumberOfArgs, 
-                   BigRational, BadArgType};
+                   BigRational, BadArgType, BadFloatRange};
 use super::super::tokenize::str_to_rational;
 
-static PI: &'static str = "3126535/995207";
-
-pub fn trig(args: &Vec<ArgType>, env: &mut Environment,
-            op: |f64| -> f64 ) -> CalcResult {
+pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: OperatorType) -> CalcResult {
     if args.len() > 1 {
-        return Err(BadNumberOfArgs("'sin' takes one argument".to_str()))
+        return Err(BadNumberOfArgs(format!("{} takes one argument", fop)))
     }
 
-    let evaluated = match try!(args.get(0).arg_to_literal(env)) {
-        BigNum(ref x)   => x.clone(),
+    let floated = match try!(args.get(0).desymbolize(env)) {
+        BigNum(ref x)   => try!(rational_to_f64(x)),
         _  => return Err(BadArgType("Only numbers can use trigonometric functions".to_str()))
     };
+
+    let answer = match fop {
+        Sin => floated.sin(),
+        Cos => floated.cos(),
+        Tan => floated.tan(),
+        ASin => floated.asin(),
+        ACos =>  floated.acos(),
+        ATan => floated.atan(),
+        SinH => floated.sinh(),
+        CosH => floated.cosh(),
+        TanH => floated.tanh(),
+        ASinH => floated.asinh(),
+        ACosH => floated.acosh(),
+        ATanH => floated.atanh(),
+        Log => floated.log10(),
+        Ln => floated.ln(),
+        Exp => floated.exp(),
+        _ => fail!("That shouldn't happen")
+    };
         
-    let answer = try!(str_to_rational(op(rational_to_f64_trig(
-        &evaluated)).to_str().as_slice()));
+    let result = try!(str_to_rational(answer.to_str().as_slice()));
         
-    Ok(Atom(BigNum(answer)))
+    Ok(Atom(BigNum(result)))
 }
 
-/// Reduces a rational to a value in f64s range of accuracy, then converts it to an f64
-/// and then returns that value for use in trigonometric functions.
-pub fn rational_to_f64_trig(bigrational_orig: &BigRational) -> f64 {
-    let mut bigrational = bigrational_orig.clone();
+pub fn rational_to_f64(big: &BigRational) -> CalcResult<f64> {
+    let numer = match big.numer().to_f64() {
+        Some(x) => x,
+        None => return Err(BadFloatRange)
+    };
 
-    let two: BigRational = num::one::<BigRational>() + num::one();
-    let twopi = from_str::<BigRational>(PI).unwrap().mul(&two);
-    let jump = from_str::<BigRational>("100000000000/1").unwrap() * twopi;
-    let upper = from_str::<BigRational>("9007199254740992/1").unwrap(); //2^53
-    let lower = from_str::<BigRational>("-9007199254740992/1").unwrap();
+    let denom = match big.denom().to_f64() {
+        Some(x) => x,
+        None => return Err(BadFloatRange)
+    };
 
-    if bigrational > upper {
-        while bigrational > upper {
-            bigrational = bigrational - jump;
-        }
-    } else if bigrational < lower {
-        while bigrational < lower {
-            bigrational = bigrational + jump;
-        }
-    }
-
-    let numer = bigrational.numer().to_f64().unwrap();
-    let denom = bigrational.denom().to_f64().unwrap();
-
-    numer / denom
+    Ok(numer / denom)
 }

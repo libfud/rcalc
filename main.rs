@@ -26,8 +26,8 @@ pub mod r_readline {
     #[link(name = "readline")]
 
     extern {
-        fn readline(p: *c_char) -> *c_char;
-        fn add_history(l: *c_char);
+        fn readline(p: *const c_char) -> *const c_char;
+        fn add_history(l: *const c_char);
     }
 
     ///Takes a reference to a string for use as a prompt, and returns an option.

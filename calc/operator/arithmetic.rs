@@ -30,7 +30,7 @@ pub fn do_op(args: &Args, env: &mut Env, min_len: uint, op: |BigR, &BigR| -> Big
         }
     };
 
-    if args.len() == 0 {
+    if stripped_literals.len() == 0 {
         Ok(Atom(BigNum(ident)))
     } else if args.len() == 1 {
         //(+ 1) -> 1, (+ -2) -> -2, (- 3) -> -3, (- -4) -> 4
@@ -42,7 +42,6 @@ pub fn do_op(args: &Args, env: &mut Env, min_len: uint, op: |BigR, &BigR| -> Big
         Ok(Atom(BigNum(tail.iter().fold(first, op))))
     }
 }
-
 
 ///Divides a vector of bignums. Takes a reference to boxed values for arguments,
 ///and a reference to the environment, and returns a result which is either

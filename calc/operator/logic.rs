@@ -156,7 +156,7 @@ pub fn num_op(args: &Args, env: &mut Env, op: NumOps) -> CalcResult {
 
     match op { 
         //round() doesn't work right for BigRationals.
-        Round => Ok(Atom(BigNum(if num - num.floor() > half { num.ceil() } else { num.floor() }))),
+        Round => Ok(Atom(BigNum(if num - num.floor() >= half { num.ceil() } else { num.floor() }))),
         Floor => Ok(Atom(BigNum(num.floor()))),
         Ceiling => Ok(Atom(BigNum(num.ceil()))),
         Zero => Ok(Atom(Boolean(num == num::zero()))),
