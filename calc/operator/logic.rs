@@ -139,6 +139,11 @@ impl NumOps {
 
 pub fn num_op(args: &Args, env: &mut Env, op: NumOps) -> CalcResult {
     use std::num;
+    use super::super::num::Integer;
+
+    let one: BigRational = num::one();
+    let two = one + one;
+    let half = one / two;
 
     if args.len() != 1 {
         return Err(BadNumberOfArgs(format!("{} only takes one argument", op.name())))
@@ -150,18 +155,11 @@ pub fn num_op(args: &Args, env: &mut Env, op: NumOps) -> CalcResult {
     };
 
     match op { 
-        Round => Ok(Atom(BigNum(num.round()))),
+        //round() doesn't work right for BigRationals.
+        Round => Ok(Atom(BigNum(if num - num.floor() > half { num.ceil() } else { num.floor() }))),
         Floor => Ok(Atom(BigNum(num.floor()))),
         Ceiling => Ok(Atom(BigNum(num.ceil()))),
         Zero => Ok(Atom(Boolean(num == num::zero()))),
-        _ => {
-            let one: BR = num::one();
-            let two: BR = one + num::one();    
-            if op == Even {
-                Ok(Atom(Boolean(num % two == num::zero())))
-            } else {
-                Ok(Atom(Boolean(num % two != num::zero())))
-            }
-        }
+        _ => Ok(Atom(Boolean((op != Even) ^ (num.numer().is_even() && *num.denom() == num::one()))))
     }
 }
