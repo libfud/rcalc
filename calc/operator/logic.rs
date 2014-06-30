@@ -53,14 +53,6 @@ pub fn ordering(args: &Vec<ArgType>, env: &mut Env, comp: |LitTy, LitTy| -> bool
 
     Ok(Atom(Boolean(comp(try!(args.get(0).desymbolize(env)),
                          try!(args.get(1).desymbolize(env))))))
-    /*
-    let (a, b) = (try!(args.get(0).desymbolize(env)),
-                  try!(args.get(1).desymbolize(env)));
-    match (&a, &b) {
-        (&BigNum(ref x), &BigNum(ref y)) => Ok(Atom(Boolean(comp(x, y)))),
-        _ =>  Err(BadArgType(format!("Ordering only takes numbers! {} {}",
-                          a, b)))
-    }*/
 }
 
 pub fn and_or(args: &Args, env: &mut Env, short: bool) -> CalcResult {
