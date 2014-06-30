@@ -1,7 +1,7 @@
 //! Logic and odering.
 
 use super::super::{CalcResult, Environment, NonBoolean, BadNumberOfArgs, BadArgType};
-use super::super::literal::{Boolean, BigNum};
+use super::super::literal::{Boolean, BigNum, LiteralType};
 use super::{ArgType, Atom, SExpr, BigRational, If};
 
 pub type Args<T = Vec<ArgType>> = T;
@@ -43,21 +43,28 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
 }
 
 pub type BR = BigRational;
+pub type LitTy = LiteralType;
 
-pub fn ordering(args: &Args, env: &mut Env, comp: |&BR,&BR| -> bool) -> CalcResult {
+pub fn ordering(args: &Vec<ArgType>, env: &mut Env, comp: |LitTy, LitTy| -> bool) -> CalcResult {
     if args.len() != 2 {
         return Err(BadNumberOfArgs("Ordering requires two arguments".to_str()))
     }
+
+
+    Ok(Atom(Boolean(comp(try!(args.get(0).desymbolize(env)),
+                         try!(args.get(1).desymbolize(env))))))
+    /*
     let (a, b) = (try!(args.get(0).desymbolize(env)),
                   try!(args.get(1).desymbolize(env)));
     match (&a, &b) {
         (&BigNum(ref x), &BigNum(ref y)) => Ok(Atom(Boolean(comp(x, y)))),
         _ =>  Err(BadArgType(format!("Ordering only takes numbers! {} {}",
                           a, b)))
-    }
+    }*/
 }
 
 pub fn and_or(args: &Args, env: &mut Env, short: bool) -> CalcResult {
+    
     for val in args.iter() {
         if try!(val.desymbolize(env)) == Boolean(short) {
             return Ok(Atom(Boolean(short)))

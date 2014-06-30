@@ -37,13 +37,19 @@ pub enum OperatorType {
 impl OperatorType {
     pub fn to_numops(self) -> logic::NumOps {
         match self {
-            Round => logic::Round,
-            Floor => logic::Floor,
-            Ceiling => logic::Ceiling,
-            Zero => logic::Zero,
-            Odd => logic::Odd,
-            Even => logic::Even,
+            Round => logic::Round, Floor => logic::Floor,
+            Ceiling => logic::Ceiling, Zero => logic::Zero,
+            Odd => logic::Odd, Even => logic::Even,
             _ => fail!("Mismatched operator types!")
+        }
+    }
+
+    pub fn to_ord<T: PartialOrd + PartialEq>(self) -> |T, T| -> bool {
+        match self {
+            Lt => |a: T, b: T| a < b, LtEq => |a: T, b: T| a <= b,
+            Eq => |a: T, b: T| a == b, NEq => |a: T, b: T| a != b,
+            GtEq => |a: T, b: T| a >= b, Gt => |a: T, b: T| a > b,
+            _ => fail!("Mismatched operator types (don't use ord with nonord)")
         }
     }
 }
@@ -118,34 +124,19 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
             env: &mut Environment) -> CalcResult {
     match op_type {
         Define  => super::define(args, env),
-
         Lambda => Ok(Atom(super::literal::Void)),
 
         List => list(args, env),
-
         Quote => Ok(Atom(super::literal::Void)),
 
-        Cons => cons(args, env),
-
-        Car => car(args, env),
-
-        Cdr => cdr(args, env),
-
+        Cons => cons(args, env), Car => car(args, env), Cdr => cdr(args, env),
         Cadr => car(&vec!(try!(cdr(args, env))), env),
-
         Cddr => cdr(&vec!(try!(cdr(args, env))), env),
-
         Caddr => car(&vec!(try!(cdr(&vec!(try!(cdr(args, env))), env))), env),
-
         Cdddr => cdr(&vec!(try!(cdr(&vec!(try!(cdr(args, env))), env))), env),
 
-        Map => listops::map(args, env),
-
-        Reduce => listops::reduce(args, env),
-
+        Map => listops::map(args, env), Reduce => listops::reduce(args, env),
         Filter => listops::filter(args, env),
-
-        ListLen => listops::listlen(args, env),
 
         Add => arithmetic::do_op(args, env, 0, |a, b| a + *b, num::zero),
 
@@ -174,17 +165,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
 
         Xor  => logic::xor(args, env),
 
-        Lt   => logic::ordering(args, env, |a, b| a < b),
-
-        LtEq => logic::ordering(args, env, |a, b| a <= b),
-
-        Eq   => logic::ordering(args, env, |a, b| a == b),
-
-        NEq  => logic::ordering(args, env, |a, b| a != b),
-
-        GtEq => logic::ordering(args, env, |a, b| a >= b),
-        
-        Gt   => logic::ordering(args, env, |a, b| a > b),
+        Lt | LtEq | Eq | NEq | GtEq | Gt => logic::ordering(args, env, op_type.to_ord()),
 
         Round | Ceiling | Floor | 
         Zero | Even | Odd => logic::num_op(args, env, op_type.to_numops()),
@@ -193,8 +174,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
 
         Table => special::table(args, env),
 
-        RangeList => listops::rangelist(args, env),
-
-        Sort => special::sort(args, env),
+        RangeList => listops::rangelist(args, env), Sort => special::sort(args, env), 
+        ListLen => listops::listlen(args, env),
     }
 }
