@@ -37,7 +37,8 @@ rcalc will not be considered complete until it has the following:
 * ~~logarithms and exp~~
 * limits
 * ~~lists,~~ matrices and trees
-* help message for every feature
+* help message for every feature, builtin function, and an interface for 
+documenting user defined functions
 * ~~sorting, filtering and mapping~~
 * graphing
 
