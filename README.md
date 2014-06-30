@@ -53,3 +53,11 @@ rcalc will not be considered complete until it has the following:
 * User define variables and functions
 * Functions are first class, and recursion is possible.
 * Anonymous functions can be used as arguments in lieu of named functions
+* There is a table function which will print the result of a function applied
+to each element in a list. See link below for screenshots of it in action.
+
+## Images of rcalc in action
+
+http://www.librehumanitas.org/images/fib.png
+http://www.librehumanitas.org/images/phi.png
+http://www.librehumanitas.org/images/truthtables.png
