@@ -97,7 +97,13 @@ pub fn define(tokens: &mut TokenStream, env: &mut Env) -> CalcResult {
         },
         Variable(x) => vec!(Atom(Symbol(x))),
         Literal(x) => vec!(Atom(x)),
-        Operator(_) => return Err(BadToken("Invalid body for lambda!".to_str())),
+        Operator(x) => match x {
+            Quote => {
+                let list = try!(list_it(tokens, env));
+                vec!(Atom(List(list)))
+            },    
+            _ => return Err(BadToken("Invalid body for define!".to_str())),
+        },
         RParen => return Err(BadToken("unexpected rparen!".to_str()))
     };
 
@@ -134,11 +140,7 @@ pub fn arg_accumulator(etype: &ExprType, tokens: &mut TokenStream,
     let mut args: Vec<ArgType> = Vec::new();
 
     loop {
-        let token = match tokens.next() {
-            Some(Ok(x)) => x,
-            Some(Err(m)) => return Err(m),
-            None => return Err(BadExpr)
-        };
+        let token = try!(strip(tokens.next()));
 
         match token {
             Variable(var) => args.push(Atom(Symbol(var))),
@@ -217,6 +219,6 @@ pub fn top_translate(tokens: &mut TokenStream, env: &mut Env) -> Expr {
  
 pub fn translate(tokens: &mut TokenStream, env: &mut Env) -> Expr {
     try!(begin_expr(tokens));
-    let top_expr = try!(super::expression::token_to_expr(try!(strip(tokens))));
+    let top_expr = try!(super::expression::token_to_expr(try!(strip(tokens.next()))));
     make_expr(top_expr, tokens, env)
 }

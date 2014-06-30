@@ -64,7 +64,7 @@ pub fn and_or(args: &Args, env: &mut Env, short: bool) -> CalcResult {
         }
     }
 
-    Ok(Atom(Boolean(true)))
+    Ok(Atom(Boolean(!short)))
 }
 
 pub fn xor(args: &Args, env: &mut Env) -> CalcResult {
@@ -98,4 +98,72 @@ pub fn not(args: &Args, env: &mut Env) -> CalcResult {
     };
 
     Ok(Atom(Boolean(!val)))
+}
+
+#[deriving(PartialEq)]
+pub enum NumOps {
+    Round,
+    Floor,
+    Ceiling,
+    Even,
+    Odd,
+    Zero,
+}
+
+impl NumOps {
+    pub fn name(self) -> String {
+        let s = match self {
+            Round => "`round'",
+            Floor => "`floor'",
+            Ceiling => "`ceiling'",
+            Even => "`even?'",
+            Odd => "`odd?'",
+            Zero => "`zero?",
+        };
+        s.to_str()
+    }
+
+    pub fn idea(self) -> String {
+        let s = match self {
+            Round => "be rounded",
+            Floor => "have their floor returned",
+            Ceiling => "have their ceiling returned",
+            Even => "be even",
+            Odd => "be odd",
+            Zero => "be zero",
+        };
+
+        s.to_str()
+    }
+}
+
+pub fn num_op(args: &Args, env: &mut Env, op: NumOps) -> CalcResult {
+    use std::num;
+
+    if args.len() != 1 {
+        return Err(BadNumberOfArgs(format!("{} only takes one argument", op.name())))
+    }
+
+    let num = match try!(args.get(0).desymbolize(env)) {
+        BigNum(x) => x,
+        _ => return Err(BadArgType(format!("Only numbers can {}", op.idea())))
+    };
+
+    match op { 
+        Round => Ok(Atom(BigNum(num.round()))),
+        Floor => Ok(Atom(BigNum(num.floor()))),
+        Ceiling => Ok(Atom(BigNum(num.ceil()))),
+        Zero => Ok(Atom(Boolean(num == num::zero()))),
+        _ => {
+            let even_flag = if op == Even {
+                true
+            } else {
+                false
+            };
+            
+            let one: BR = num::one();
+            let two: BR = one + num::one();    
+            Ok(Atom(Boolean(num % two == num::zero() && even_flag)))
+        }
+    }
 }

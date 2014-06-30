@@ -20,6 +20,8 @@ pub enum OperatorType {
 
     Eq, NEq, Lt, LtEq, Gt, GtEq,
 
+    Round, Zero, Odd, Even,
+
     If, And, Or, Not, Xor,
 
     Quote, List, Cons, Car, Cdr,  Cadr, Cddr, Caddr, Cdddr,
@@ -43,6 +45,8 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
 
         "if" => Some(If), "and" => Some(And), "or" => Some(Or), "not" => Some(Not),
         "xor" => Some(Xor),
+
+        "round" => Some(Round), "zero?" => Some(Zero), "odd?" => Some(Odd), "even?" => Some(Even),
 
         "define" => Some(Define), "lambda" => Some(Lambda),
 
@@ -70,6 +74,8 @@ pub fn to_str(op: &OperatorType) -> String {
         Lt => "<", LtEq => "<=", Eq => "=", NEq => "!", GtEq => ">=", Gt => ">",
 
         If => "if", And => "and", Or => "or", Not => "not", Xor => "xor",
+
+        Round => "round", Zero => "zero?", Even => "even?", Odd => "odd?",
 
         Define => "define", Lambda => "lambda",
 
@@ -159,6 +165,14 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         GtEq => logic::ordering(args, env, |a, b| a >= b),
         
         Gt   => logic::ordering(args, env, |a, b| a > b),
+
+        Round => logic::num_op(args, env, logic::Round),
+
+        Zero => logic::num_op(args, env, logic::Zero),
+
+        Even => logic::num_op(args, env, logic::Even),
+
+        Odd => logic::num_op(args, env, logic::Odd),
 
         Help => super::common::help(args),
 

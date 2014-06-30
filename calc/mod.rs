@@ -135,12 +135,21 @@ pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
                 return Ok(Atom(Void))
             }
             &SExpr(ref x) => {
-                env.symbols.insert(name, Proc(vars, x.clone()));
+                match x.eval(env) {
+                    Ok(res) => { 
+                        env.symbols.insert(name, match res {
+                            Atom(y) => y,
+                            _ => fail!("Impossible!")
+                        });
+                    }
+                    Err(_) => { env.symbols.insert(name, Proc(vars, x.clone())); }
+                }
                 return Ok(Atom(Void))
             }
         }
     }
 
+    //there's multiple expressions involved, so we just pack them all that way
     match args.last().unwrap() {
         &Atom(ref x) => {
             env.symbols.insert(name, x.clone());
