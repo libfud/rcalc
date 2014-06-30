@@ -2,7 +2,7 @@
 
 use std::num;
 use super::super::{CalcResult, Environment, BadArgType, BadNumberOfArgs, DivByZero};
-use super::super::literal::{BigNum};
+use super::super::literal::{BigNum, Void};
 use super::{BigRational, ArgType, Atom};
 
 pub type Args<T = ArgType> = Vec<T>;
@@ -24,7 +24,9 @@ pub fn do_op(args: &Args, env: &mut Env, min_len: uint, op: |BigR, &BigR| -> Big
     for arg in args.iter() {
         match try!(arg.desymbolize(env)) {
             BigNum(x) => stripped_literals.push(x),
-            _ => return Err(BadArgType("Arithmetic only works for numbers!".to_str()))
+            Void => { },
+            x => return Err(
+                BadArgType(format!("Got {} ; arithmetic only works for numbers", x)))
         }
     };
 
@@ -56,6 +58,7 @@ pub fn divrem(args: &Args, env: &mut Env, op:|BigR, &BigR| -> BigR) -> CalcResul
     for arg in args.iter() {
         match try!(arg.desymbolize(env)) {
             BigNum(x) => stripped_literals.push(x),
+            Void => { },
             _ => return Err(BadArgType("Arithmetic only works for numbers!".to_str()))
         }
     };

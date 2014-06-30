@@ -89,7 +89,7 @@ pub fn to_str(op: &OperatorType) -> String {
 pub fn eval(op_type: OperatorType, args: &Vec<ArgType>, 
             env: &mut Environment) -> CalcResult {
     match op_type {
-        Define  => Ok(Atom(super::literal::Void)),
+        Define  => super::define(args, env),
 
         Lambda => Ok(Atom(super::literal::Void)),
 

@@ -14,7 +14,8 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
 
     loop {
         if args.len() != 3 {
-            return Err(BadNumberOfArgs("`if` requires three arguments".to_str()))
+            return Err(BadNumberOfArgs(format!(
+                "`if` requires three arguments, {} provided", args.len())))
         }
 
         let condition = match try!(arguments.get(0).desymbolize(env)) {

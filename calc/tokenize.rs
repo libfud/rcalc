@@ -28,6 +28,23 @@ impl TokenStream {
     pub fn new(e: String) -> TokenStream {
         TokenStream { expr: e, index: 0 }
     }
+
+    pub fn peek(&self) -> Option<CalcResult<Token>> {
+        self.peek_helper(0)
+    }
+
+    fn peek_helper(&self, j: uint) -> Option<CalcResult<Token>> {
+        if self.index + j == self.expr.len() {
+            return None
+        } else {
+            if self.expr.as_slice().slice_from(self.index).chars().next().unwrap().is_whitespace() {
+                self.peek_helper(j + 1)
+            } else {
+                let (token, _) = analyze(self.expr.as_slice().slice_from(self.index + j));
+                token
+            }
+        }
+    }
 }
 
 pub type MaybeToken<T = Option<CalcResult<Token>>> = (T, uint);
@@ -37,8 +54,7 @@ impl Iterator<CalcResult<Token>> for TokenStream {
         if self.index == self.expr.len() {
             return None
         } else {
-            if self.expr.as_slice().slice_from(self.index).chars()
-                .next().unwrap().is_whitespace() {
+            if self.expr.as_slice().slice_from(self.index).chars().next().unwrap().is_whitespace() {
                 self.index += 1;
                 self.next()
             } else {
