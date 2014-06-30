@@ -60,6 +60,8 @@ to each element in a list. See link below for screenshots of it in action.
 
 http://www.librehumanitas.org/images/fib.png
 
+
 http://www.librehumanitas.org/images/phi.png
+
 
 http://www.librehumanitas.org/images/truthtables.png
