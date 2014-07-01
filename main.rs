@@ -37,7 +37,7 @@ pub mod r_readline {
             return None
         }
 
-        let c_buf = prompt.to_c_str().as_ptr();
+        let c_buf = prompt.as_ptr() as *const i8;
 
         unsafe {
             let ret_str = CString::new(readline(c_buf), true);
