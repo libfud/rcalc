@@ -4,7 +4,6 @@ use std::num;
 use super::super::{CalcResult, Environment, BadArgType, BadNumberOfArgs, BadPowerRange};
 use super::super::literal::BigNum;
 use super::{Mpq, ArgType, Atom};
-use super::logic::floor;
 
 pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     let mut args_vec: Vec<Mpq> = Vec::new();
@@ -23,7 +22,7 @@ pub fn pow(args: Vec<Mpq>) -> CalcResult<Mpq> {
         return Err(BadNumberOfArgs("Pow takes a base and an exponent.".to_str()))
     }
 
-    let pow_string = floor(args.get(1)).get_num().to_str();
+    let pow_string = args.get(1).floor().to_str();
     let power = match from_str::<u64>(pow_string.as_slice()) {
         Some(x) => x,
         None => {

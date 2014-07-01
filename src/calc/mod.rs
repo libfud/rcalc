@@ -2,7 +2,7 @@
 
 extern crate gmp;
 
-pub use self::gmp::{Mpz, Mpq};
+pub use self::gmp::Mpf;
 pub use self::expression::{Atom, SExpr, ArgType};
 pub use self::literal::LiteralType;
 pub use self::tokenize::{TokenStream, Token};

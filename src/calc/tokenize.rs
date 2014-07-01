@@ -7,7 +7,7 @@ extern crate num;
 use std::num::from_i64;
 use self::num::rational::Ratio;
 use super::literal::{LiteralType, Boolean, BigNum};
-use super::{CalcResult, BadToken, BadArgType, Mpq, operator};
+use super::{CalcResult, BadToken, BadArgType, Mpf, operator};
 use super::operator::{OperatorType};
 
 ///Enumeration of valid tokens. Valid tokens are Operators, Literals, LParens,
@@ -174,6 +174,7 @@ pub fn str_to_rational(word: &str) -> CalcResult<Mpq> {
         Invalid     => Err(BadArgType("Bad numeric encoding".to_str()))
     }
 }
+
 
 /// Determines if a number is represented as a fraction or not.
 pub fn get_num_encoding(num_str: &str) -> NumEncoding {

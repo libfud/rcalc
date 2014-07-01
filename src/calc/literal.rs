@@ -1,12 +1,12 @@
 //! An enumeration of valid literaltypes
 
-use super::{Mpq, CalcResult, Environment, Atom, BadArgType, BadNumberOfArgs};
+use super::{Mpf, CalcResult, Environment, Atom, BadArgType, BadNumberOfArgs};
 use super::expression::{Expression, ArgType};
 
 #[deriving(Clone, Show, PartialEq, PartialOrd)]
 pub enum LiteralType {
     Boolean(bool),
-    BigNum(Mpq),
+    BigNum(Mpf),
     Symbol(String),
     Proc(Vec<String>, Expression),
     List(Vec<LiteralType>),
