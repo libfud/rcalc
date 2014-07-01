@@ -7,7 +7,7 @@ extern crate num;
 use std::num::from_i64;
 use self::num::rational::Ratio;
 use super::literal::{LiteralType, Boolean, BigNum};
-use super::{CalcResult, BadToken, BadArgType, Mpq, Mpz, operator};
+use super::{CalcResult, BadToken, BadArgType, Mpq, operator};
 use super::operator::{OperatorType};
 
 ///Enumeration of valid tokens. Valid tokens are Operators, Literals, LParens,
@@ -161,10 +161,12 @@ pub fn str_to_rational(word: &str) -> CalcResult<Mpq> {
                 Some(x) => x,
                 None => return Err(BadArgType("Bad numeric encoding".to_str()))
             };
-            let ratio: Ratio<i64> = Ratio::from_float(floated).unwrap();
+            let ratio= Ratio::from_float(floated).unwrap();
+            let numerator = (*ratio.numer()).to_i64().unwrap();
+            let denominator = (*ratio.denom()).to_i64().unwrap();
 
-            let numer = from_i64::<Mpq>(ratio.numer()).unwrap();
-            let denom = from_i64::<Mpq>(ratio.denom()).unwrap();
+            let numer = from_i64::<Mpq>(numerator).unwrap();
+            let denom = from_i64::<Mpq>(denominator).unwrap();
 
             Ok(numer / denom)
         },
@@ -193,7 +195,7 @@ pub fn get_num_encoding(num_str: &str) -> NumEncoding {
 
     match (divisors, radices) {
         (0, 0) | (0, 1) => NonFraction,
-        (1, 0)          => Fraction,
+        (1, 0)          => Fraction(div_index),
         _   => Invalid
     }
 }
