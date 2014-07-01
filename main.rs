@@ -37,8 +37,18 @@ pub mod r_readline {
             return None
         }
 
-        let c_prompt = prompt.to_c_str();
+        let c_buf = prompt.to_c_str().as_ptr();
 
+        unsafe {
+            let ret_str = CString::new(readline(c_buf), true);
+            if ret_str.is_not_null() {
+                ret_str.as_str().map(|ret_str| ret_str.to_str())
+            } else {
+                None
+            }
+        }
+    }
+/*
         c_prompt.with_ref(|c_buf| {
             unsafe {
                 let ret_str = CString::new(readline(c_buf), true);
@@ -50,6 +60,7 @@ pub mod r_readline {
             }
         })
     }
+*/
 
     ///Adds a string to a history buffer for use by readline. Does not
     ///take zero length strings.
