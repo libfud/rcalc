@@ -2,7 +2,7 @@
 
 extern crate gmp;
 
-use self::gmp::Mpq;
+use self::gmp::{Mpq, Mpz};
 use std::fmt;
 use super::{CalcResult, Environment, Atom, BadArgType, BadNumberOfArgs};
 use super::expression::{Expression, ArgType};
@@ -17,9 +17,9 @@ pub enum LiteralType {
     Void
 }
 
-impl<T: fmt::Show> fmt::Show for Mpq {
+impl fmt::Show for Mpq {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}/{}", self.numer, self.denom)
+        write!(f, "{}/{}", self.get_num(), self.get_den())
     }
 }
 
