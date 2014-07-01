@@ -163,7 +163,7 @@ pub fn get_num_encoding(num_str: &str) -> NumEncoding {
             return Invalid
     }
 
-    let (divisors, radices) = num_str.chars().fold((0, 0), |(mut x, mut y), c| {
+    let (divisors, radices) = num_str.chars().fold((0u, 0u), |(mut x, mut y), c| {
         if c == '/' {
             x += 1
         } else if c == '.' {
