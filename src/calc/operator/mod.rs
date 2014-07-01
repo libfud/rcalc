@@ -1,7 +1,5 @@
 //! Operators
 
-extern crate gmp;
-
 use std::num;
 pub use super::{BigRational, Ratio, bigint};
 pub use super::{CalcResult, Environment, ArgType, Atom, SExpr};
