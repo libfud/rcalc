@@ -37,10 +37,10 @@ pub mod r_readline {
             return None
         }
 
-        let c_buf = prompt.as_ptr() as *const i8;
+        let c_buf = prompt.to_c_str();
 
         unsafe {
-            let ret_str = CString::new(readline(c_buf), true);
+            let ret_str = CString::new(readline(c_buf.as_ptr()), true);
             if ret_str.is_not_null() {
                 ret_str.as_str().map(|ret_str| ret_str.to_str())
             } else {
@@ -48,19 +48,6 @@ pub mod r_readline {
             }
         }
     }
-/*
-        c_prompt.with_ref(|c_buf| {
-            unsafe {
-                let ret_str = CString::new(readline(c_buf), true);
-                if ret_str.is_not_null() {
-                    ret_str.as_str().map(|ret_str| ret_str.to_str())
-                } else {
-                    None
-                }
-            }
-        })
-    }
-*/
 
     ///Adds a string to a history buffer for use by readline. Does not
     ///take zero length strings.
@@ -70,11 +57,9 @@ pub mod r_readline {
         }
 
         let c_line = line.to_c_str();
-        c_line.with_ref(|c_line| {
-            unsafe {
-                add_history(c_line);
-            }
-        });
+        unsafe {
+            add_history(c_line.as_ptr());
+        }
     }
 }
 
