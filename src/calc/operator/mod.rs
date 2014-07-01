@@ -10,14 +10,14 @@ pub mod power;
 pub mod arithmetic;
 pub mod logic;
 pub mod listops;
-pub mod trig;
+//pub mod trig;
 
 #[deriving(Show, Clone, PartialOrd, PartialEq)] 
 pub enum OperatorType {
     Add, Sub, Mul, Div, Rem, Pow,
-
+/*
     Log, Ln, Exp, Sin, Cos, Tan, ASin, ACos, ATan, SinH, CosH, TanH, ASinH, ACosH, ATanH, 
-
+*/
     Eq, NEq, Lt, LtEq, Gt, GtEq,
 
     Round, Floor, Ceiling, Zero, Odd, Even,
@@ -31,6 +31,15 @@ pub enum OperatorType {
     Define, Lambda,
 
     Help, Table, RangeList, Sort, 
+}
+
+pub fn rem(x: Mpq, y: &Mpq) -> Mpq {
+    
+    let mut temp = Mpq::new();
+    let placeholder = (x.get_num() * y.get_den() % x.get_den() * y.get_num()) / 
+        (x.get_den() * y.get_num());
+    temp.set_z(&placeholder);
+    temp
 }
 
 impl OperatorType {
@@ -56,7 +65,7 @@ impl OperatorType {
         match self {
             &Add => |a: Mpq, b: &Mpq| a + *b, &Sub => |a: Mpq, b: &Mpq| a - *b,
             &Mul => |a: Mpq, b: &Mpq| a * *b, &Div => |a: Mpq, b: &Mpq| a / *b,
-            &Rem => |a: Mpq, b: &Mpq| a % *b,
+            &Rem => |a: Mpq, b: &Mpq| rem(a, b),
             _ => fail!("Mismatched operator types (don't use arith with non-arithmetic")
         }
     }
@@ -75,13 +84,13 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
     match s {
         "+" => Some(Add),  "-" => Some(Sub), "*" => Some(Mul), "/"  => Some(Div),
         "%" => Some(Rem),  "pow" => Some(Pow),
-
+/*
         "sin" => Some(Sin), "cos" => Some(Cos), "tan" => Some(Tan),
         "asin" => Some(ASin), "acos" => Some(ACos), "atan" => Some(ATan),
         "sinh" => Some(SinH), "cosh" => Some(CosH), "tanh" => Some(TanH), 
         "asinh" => Some(ASinH), "acosh" => Some(ACosH), "atanh" => Some(ATanH),
         "log" => Some(Log), "ln" => Some(Ln), "exp" => Some(Exp),
-
+*/
         "<" => Some(Lt), "<=" => Some(LtEq),
         "=" => Some(Eq), "!=" => Some(NEq),
         ">=" => Some(GtEq), ">" => Some(Gt),
@@ -112,11 +121,11 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
 pub fn to_str(op: &OperatorType) -> String {
     let answer = match *op {
         Add => "+", Sub => "-", Mul => "*", Div => "/", Rem => "%", Pow => "pow",
-
+/*
         Sin => "sin", Cos => "cos", Tan => "tan", ASin => "asin", ACos => "acos",
         ATan => "atan", SinH => "sinh", CosH => "cosh", TanH => "tanh", ASinH => "asinh",
         ACosH => "acosh", ATanH => "atanh", Log => "log", Ln => "ln", Exp => "exp",
-
+*/
         Lt => "<", LtEq => "<=", Eq => "=", NEq => "!", GtEq => ">=", Gt => ">",
 
         If => "if", And => "and", Or => "or", Not => "not", Xor => "xor",
@@ -145,7 +154,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
     use self::arithmetic::{do_op, divrem};
     use self::listops::{map, filter, reduce, rangelist, listlen};
     use self::special::{table, sort};
-    use self::trig::float_ops;
+//    use self::trig::float_ops;
 
     match op_type {
         Define  => super::define(args, env),
@@ -169,11 +178,11 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         },
         Div | Rem  => divrem(args, env, op_type.to_arith()),
         Pow => power::pow_wrapper(args, env),
-
+/*
         Sin | Cos | Tan | ASin |
         ACos | ATan | SinH | CosH | TanH | 
         ASinH | ACosH | ATanH | Log | Ln | Exp => float_ops(args, env, op_type),
-
+*/
         If   => logic::cond(args, env),
         And  => and_or(args, env, false), Or => and_or(args, env, true),
         Not  => not(args, env), Xor  => xor(args, env),

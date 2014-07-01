@@ -24,8 +24,8 @@ pub fn pretty_print(result: &CalcResult, env: &Environment) -> String {
 
 pub fn pretty(arg: &LiteralType, env: &Environment) -> String {
     let s = match arg {
-        &BigNum(ref x) => if x.denom() == &num::one() {
-            x.numer().to_str()
+        &BigNum(ref x) => if x.get_den() == num::one() {
+            x.get_num().to_str()
         } else {
             x.to_str()
         },

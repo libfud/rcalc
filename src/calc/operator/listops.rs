@@ -1,6 +1,6 @@
 //!List operations.
 
-use super::{ArgType, Atom, CalcResult, Environment, Mpq, Mpz};
+use super::{ArgType, Atom, CalcResult, Environment, Mpq};
 use super::super::literal::{LiteralType, BigNum, List, Proc, Symbol, Boolean};
 use super::special::range_getter;
 use super::super::{BadArgType, BadNumberOfArgs};

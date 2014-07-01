@@ -40,16 +40,3 @@ pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: OperatorType) 
     Ok(Atom(BigNum(result)))
 }
 
-pub fn rational_to_f64(big: &Mpq) -> CalcResult<f64> {
-    let numer = match big.numer().to_f64() {
-        Some(x) => x,
-        None => return Err(BadFloatRange)
-    };
-
-    let denom = match big.denom().to_f64() {
-        Some(x) => x,
-        None => return Err(BadFloatRange)
-    };
-
-    Ok(numer / denom)
-}

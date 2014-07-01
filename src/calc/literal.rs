@@ -1,10 +1,6 @@
 //! An enumeration of valid literaltypes
 
-extern crate gmp;
-
-use self::gmp::{Mpq, Mpz};
-use std::fmt;
-use super::{CalcResult, Environment, Atom, BadArgType, BadNumberOfArgs};
+use super::{Mpq, CalcResult, Environment, Atom, BadArgType, BadNumberOfArgs};
 use super::expression::{Expression, ArgType};
 
 #[deriving(Clone, Show, PartialEq, PartialOrd)]

@@ -7,10 +7,15 @@ use super::{Environment, CalcResult, ArgType, Atom};
 use super::super::pretty::{pretty_print, pretty};
 use super::super::expression::Expression;
 use std::{iter, cmp};
+use std::num;
 
 pub fn range_getter(arg: LiteralType) -> CalcResult<int> {
     match arg {
-        BigNum(x) => Ok(x.to_integer().to_int().unwrap()),
+        BigNum(x) => match from_str::<int>(((x.get_num() - x.get_den()
+                                             + num::one()) / x.get_den()).to_str().as_slice()) {
+            Some(x) => Ok(x),
+            None => return Err(BadArgType("Invalid range".to_str()))
+        },
         _ => Err(BadArgType("Range and step must be integers!".to_str()))
     }
 }

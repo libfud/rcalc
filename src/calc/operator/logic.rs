@@ -2,7 +2,8 @@
 
 use super::super::{CalcResult, Environment, NonBoolean, BadNumberOfArgs, BadArgType};
 use super::super::literal::{Boolean, BigNum, LiteralType};
-use super::{ArgType, Atom, SExpr, Mpq, Mpz, If};
+use super::{ArgType, Atom, SExpr, Mpq, If};
+use std::num;
 
 pub type Args<T = Vec<ArgType>> = T;
 pub type Env<T = Environment> = T;
@@ -135,12 +136,31 @@ impl NumOps {
     }
 }
 
-pub fn num_op(args: &Args, env: &mut Env, op: NumOps) -> CalcResult {
-    use std::num;
+pub fn floor(num: &Mpq) -> Mpq {
+    let mut temp = Mpq::new();
+    let placeholder = if *num < num::zero() {
+        (num.get_num() - num.get_den() + num::one()) / num.get_den()
+    } else {
+        num.get_num() / num.get_den()
+    };
+    temp.set_z(&placeholder);
+    temp
+}
 
+pub fn ceil(num: &Mpq) -> Mpq {
+    let mut temp =  Mpq::new();
+    let placeholder = if *num < num::zero() {
+        num.get_num() / num.get_den()
+    } else {
+        (num.get_num() - num.get_den() + num::one()) / num.get_den()
+    };
+    temp.set_z(&placeholder);
+    temp
+}
+
+pub fn num_op(args: &Args, env: &mut Env, op: NumOps) -> CalcResult {
     let one: Mpq = num::one();
     let two = one + one;
-    let half = one / two;
 
     if args.len() != 1 {
         return Err(BadNumberOfArgs(format!("{} only takes one argument", op.name())))
@@ -158,12 +178,12 @@ pub fn num_op(args: &Args, env: &mut Env, op: NumOps) -> CalcResult {
             num.ceil() 
         } else { num.floor()
         }))),
-        Floor => Ok(Atom(BigNum(num.floor()))),
-        Ceiling => Ok(Atom(BigNum(num.ceil()))),
 */
-        Floor | Ceiling | Round => Ok(Atom(BigNum(num))), //sorry 
-        Zero => Ok(Atom(Boolean(num.is_zero()))),
-        _ => Ok(Atom(Boolean((op != Even) ^ (num.get_num() % two == num::zero()
-                                             && *num.get_den() == num::one()))))
+        Floor => Ok(Atom(BigNum(floor(&num)))),
+        Ceiling => Ok(Atom(BigNum(ceil(&num)))),
+        Round => Ok(Atom(BigNum(num))), //sorry 
+        Zero => Ok(Atom(Boolean(num == num::zero()))),
+        _ => Ok(Atom(Boolean((op != Even) ^ (num.get_num() % two.get_num() == num::zero()
+                                             && num.get_den() == num::one()))))
     }
 }
