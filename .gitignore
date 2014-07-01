@@ -1,4 +1,5 @@
 rcalc
+*.rlib
 test
 doc
 Base_converter

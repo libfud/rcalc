@@ -1,19 +1,26 @@
 //! An enumeration of valid literaltypes
 
-extern crate num;
+extern crate gmp;
 
-use self::num::rational::BigRational;
+use self::gmp::Mpq;
+use std::fmt;
 use super::{CalcResult, Environment, Atom, BadArgType, BadNumberOfArgs};
 use super::expression::{Expression, ArgType};
 
 #[deriving(Clone, Show, PartialEq, PartialOrd)]
 pub enum LiteralType {
     Boolean(bool),
-    BigNum(BigRational),
+    BigNum(Mpq),
     Symbol(String),
     Proc(Vec<String>, Expression),
     List(Vec<LiteralType>),
     Void
+}
+
+impl<T: fmt::Show> fmt::Show for Mpq {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}/{}", self.numer, self.denom)
+    }
 }
 
 pub fn list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
