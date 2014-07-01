@@ -1,9 +1,7 @@
 //! Operators
 
-extern crate gmp;
-
 use std::num;
-pub use super::{BigRational, Ratio, bigint};
+pub use super::{Mpq, Mpz};
 pub use super::{CalcResult, Environment, ArgType, Atom, SExpr};
 pub use super::literal::{LiteralType, Symbol, cons, car, cdr, list};
 
@@ -35,7 +33,6 @@ pub enum OperatorType {
     Help, Table, RangeList, Sort, 
 }
 
-type BR<T = BigRational> = T;
 impl OperatorType {
     pub fn to_numops(self) -> logic::NumOps {
         match self {
@@ -55,16 +52,16 @@ impl OperatorType {
         }
     }
 
-    pub fn to_arith(&self) -> |BR, &BR| -> BR {
+    pub fn to_arith(&self) -> |Mpq, &Mpq| -> Mpq {
         match self {
-            &Add => |a: BR, b: &BR| a + *b, &Sub => |a: BR, b: &BR| a - *b,
-            &Mul => |a: BR, b: &BR| a * *b, &Div => |a: BR, b: &BR| a / *b,
-            &Rem => |a: BR, b: &BR| a % *b,
+            &Add => |a: Mpq, b: &Mpq| a + *b, &Sub => |a: Mpq, b: &Mpq| a - *b,
+            &Mul => |a: Mpq, b: &Mpq| a * *b, &Div => |a: Mpq, b: &Mpq| a / *b,
+            &Rem => |a: Mpq, b: &Mpq| a % *b,
             _ => fail!("Mismatched operator types (don't use arith with non-arithmetic")
         }
     }
 
-    pub fn to_arith_args(&self) -> (uint, |BR, &BR| -> BR, || -> BR) {
+    pub fn to_arith_args(&self) -> (uint, |Mpq, &Mpq| -> Mpq, || -> Mpq) {
         match self {
             &Add => (0, self.to_arith(), || num::zero()),
             &Sub => (1, self.to_arith(), || num::zero()),

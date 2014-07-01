@@ -17,12 +17,6 @@ pub enum LiteralType {
     Void
 }
 
-impl fmt::Show for Mpq {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}/{}", self.get_num(), self.get_den())
-    }
-}
-
 pub fn list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     let mut list: Vec<LiteralType> = Vec::new();
     for arg in args.iter() {

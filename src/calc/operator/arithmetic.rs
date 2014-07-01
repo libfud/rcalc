@@ -3,24 +3,23 @@
 use std::num;
 use super::super::{CalcResult, Environment, BadArgType, BadNumberOfArgs, DivByZero};
 use super::super::literal::{BigNum, Void};
-use super::{BigRational, ArgType, Atom};
+use super::{Mpq, ArgType, Atom};
 
 pub type Args<T = ArgType> = Vec<T>;
-pub type BigR = BigRational;
 pub type Env = Environment;
 
 ///Performs addition, subtraction, and multiplication on BigNums.
-pub fn do_op(args: &Args, env: &mut Env, min_len: uint, op: |BigR, &BigR| -> BigR,
-             ident_fn: || -> BigR) -> CalcResult {
+pub fn do_op(args: &Args, env: &mut Env, min_len: uint, op: |Mpq, &Mpq| -> Mpq,
+             ident_fn: || -> Mpq) -> CalcResult {
     if args.len() < min_len {
         return Err(BadNumberOfArgs(format!(
             " Specified operation requires at least {} arguments", min_len)))
     }
 
-    let ident: BigR = ident_fn();
+    let ident: Mpq = ident_fn();
 
     //Find out the contents of the vector.
-    let mut stripped_literals: Vec<BigR> = Vec::new();
+    let mut stripped_literals: Vec<Mpq> = Vec::new();
     for arg in args.iter() {
         match try!(arg.desymbolize(env)) {
             BigNum(x) => stripped_literals.push(x),
@@ -46,14 +45,14 @@ pub fn do_op(args: &Args, env: &mut Env, min_len: uint, op: |BigR, &BigR| -> Big
 ///Divides a vector of bignums. Takes a reference to boxed values for arguments,
 ///and a reference to the environment, and returns a result which is either
 ///Ok(LiteralType) or Err(String).
-pub fn divrem(args: &Args, env: &mut Env, op:|BigR, &BigR| -> BigR) -> CalcResult {
+pub fn divrem(args: &Args, env: &mut Env, op:|Mpq, &Mpq| -> Mpq) -> CalcResult {
     if args.len() < 1 {
         return Err(BadNumberOfArgs("Division requires at least one argument!".to_str()))
     }
 
-    let one: BigR = num::one();
+    let one: Mpq = num::one();
 
-    let mut stripped_literals: Vec<BigR> = Vec::new();
+    let mut stripped_literals: Vec<Mpq> = Vec::new();
     for arg in args.iter() {
         match try!(arg.desymbolize(env)) {
             BigNum(x) => stripped_literals.push(x),

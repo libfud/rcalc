@@ -1,12 +1,12 @@
 //!List operations.
 
-use super::{ArgType, Atom, CalcResult, Environment, BigRational, Ratio};
-use super::bigint::*;
+use super::{ArgType, Atom, CalcResult, Environment, Mpq, Mpz};
 use super::super::literal::{LiteralType, BigNum, List, Proc, Symbol, Boolean};
 use super::special::range_getter;
 use super::super::{BadArgType, BadNumberOfArgs};
 use super::super::expression::Expression;
 use std::iter::range_step;
+use std::num;
 
 pub fn proc_getter(args: &Vec<ArgType>, 
                    env: &mut Environment) -> CalcResult<(Vec<String>, Expression)> {
@@ -18,8 +18,8 @@ pub fn proc_getter(args: &Vec<ArgType>,
     }
 }
 
-pub fn create_bigrat(x: int) -> BigRational {
-    Ratio::from_integer(x.to_bigint().unwrap())
+pub fn create_bigrat(x: int) -> Mpq {
+    num::from_i64::<Mpq>(x as i64).unwrap()
 }
 
 

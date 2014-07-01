@@ -3,10 +3,10 @@
 use std::num;
 use super::super::{CalcResult, Environment, BadArgType, BadPowerRange};
 use super::super::literal::BigNum;
-use super::{BigRational, ArgType, Atom};
+use super::{Mpq, ArgType, Atom};
 
 pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
-    let mut args_vec: Vec<BigRational> = Vec::new();
+    let mut args_vec: Vec<Mpq> = Vec::new();
     for arg in args.iter() {
         match try!(arg.arg_to_literal(env)) {
             BigNum(x)   => args_vec.push(x),
@@ -23,7 +23,7 @@ pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 /// actually evaluate to 0, and (pow 0 0 0 0) will evaluate to one again. This
 /// behavior is periodic. Towers are evaluated recursively. If only one number
 /// is passed, the number is returned, unless it is zero, which returns zero.
-pub fn pow(args: &[BigRational]) -> CalcResult<BigRational> {
+pub fn pow(args: &[Mpq]) -> CalcResult<Mpq> {
     if args.len() == 0 {
         return Ok(num::one())
     } else  if args.len() == 1 && args[0] != num::zero() {
@@ -44,9 +44,9 @@ pub fn pow(args: &[BigRational]) -> CalcResult<BigRational> {
         return Ok(num::zero())
     }
 
-    //BigRationals need to be cloned due to shallow copying
-    let mut rootx: BigRational = num::one();
-    let zero: BigRational = num::zero();
+    //Mpqs need to be cloned due to shallow copying
+    let mut rootx: Mpq = num::one();
+    let zero: Mpq = num::zero();
     let mut recip_flag = false;
 
     if exponent < zero { 
@@ -54,26 +54,30 @@ pub fn pow(args: &[BigRational]) -> CalcResult<BigRational> {
         recip_flag = true;
     }
 
+/*
     let power = match exponent.floor().to_integer().to_u64() {
         Some(x) => x,
         None    => return Err(BadPowerRange)
     };
+*/
+
+    let power = 
     let index = exponent - exponent.floor();
 
     if index > zero {
-        rootx = try!(root_wrapper(base.clone(), index.recip()));
+        rootx = try!(root_wrapper(base.clone(), index.invert()));
     }
 
     let product = exp_by_sq(base, power);
 
     if recip_flag == true {
-        Ok((product * rootx).recip())
+        Ok((product * rootx).invert())
     } else { 
         Ok(product * rootx)
     }
 }
 
-pub fn exp_by_sq(base: BigRational, power: u64) -> BigRational {
+pub fn exp_by_sq(base: Mpq, power: u64) -> Mpq {
     if power == 0 {
         num::one()
     } else if power == 1 {
@@ -88,9 +92,9 @@ pub fn exp_by_sq(base: BigRational, power: u64) -> BigRational {
 /// Root finds a number which when raised to a power equal to the index is
 /// equal to the radicand. It requires two arguments: the index and a
 /// radicand. 
-pub fn root_wrapper(radicand: BigRational, index: BigRational) -> CalcResult<BigRational> {
-    let zero: BigRational = num::zero();
-    let one: BigRational = num::one();
+pub fn root_wrapper(radicand: Mpq, index: Mpq) -> CalcResult<Mpq> {
+    let zero: Mpq = num::zero();
+    let one: Mpq = num::one();
     let two = one + one;
     let half = one / two;
 
@@ -104,7 +108,7 @@ pub fn root_wrapper(radicand: BigRational, index: BigRational) -> CalcResult<Big
         return Err(BadArgType("I can't handle this complexity!".to_str()))
     }
 
-    let mut guess: BigRational = num::one();
+    let mut guess: Mpq = num::one();
     if *index.denom() == num::one() && *radicand.denom() == num::one() {
         match dumb_root(radicand.clone(), index.clone()){
             Ok(good_val)    => return Ok(good_val),
@@ -113,14 +117,14 @@ pub fn root_wrapper(radicand: BigRational, index: BigRational) -> CalcResult<Big
     }
 
     let mut denominator = zero.clone();
-    if index.floor() < index {
-        match index.recip() <= half {
-            true    => denominator = index.sub(&index.floor()),
-            false   => denominator = index.recip().sub(&half),
+    if index.get_den() != num::one() {
+        match index.invert() <= half {
+            true    => denominator = index - (index.get_num() - index.get_den() + num::one())
+            false   => denominator = index.invert() - half,
         }
     }
 
-    let dummycheck = index.recip();
+    let dummycheck = index.invert();
     match dummycheck <= half {
         true    => { },
         false   => {
@@ -128,7 +132,7 @@ pub fn root_wrapper(radicand: BigRational, index: BigRational) -> CalcResult<Big
         }
     }
 
-    let factor: BigRational;
+    let factor: Mpq;
     match denominator == zero {
         true    => { factor = num::one() }
         false   => {
@@ -149,12 +153,12 @@ pub fn root_wrapper(radicand: BigRational, index: BigRational) -> CalcResult<Big
 /// Compares the absolute value of the difference of the guess raised to the
 /// power and the radicand to a tolerance. If it's within tolerance, that
 /// number is returned. Otherwise, it uses the average
-pub fn root(guess: BigRational, radicand: BigRational, index: BigRational) 
-    -> CalcResult<BigRational> {
+pub fn root(guess: Mpq, radicand: Mpq, index: Mpq) 
+    -> CalcResult<Mpq> {
 
-    let one: BigRational = num::one();
+    let one: Mpq = num::one();
     let two = one + one;
-    let tolerance = from_str::<BigRational>("1/10000").unwrap() * radicand;
+    let tolerance = from_str::<Mpq>("1/10000").unwrap() * radicand;
     let guess_to_pow = try!(pow(&[guess.clone(), index.clone()]));
 
     let good_enough = match guess_to_pow >= radicand {
@@ -165,12 +169,12 @@ pub fn root(guess: BigRational, radicand: BigRational, index: BigRational)
         return Ok(guess)
     }
 
-    let mut new_guess: BigRational;
+    let mut new_guess: Mpq;
     match index == two {
         true    => new_guess = (guess + radicand / guess) / two,
         false   => { 
             let i_dont_know = try!(pow(&[guess.clone(), (index.clone() - one)]));
-            let delta = index.recip() * (( radicand /(i_dont_know - guess)));
+            let delta = index.invert() * (( radicand /(i_dont_know - guess)));
             new_guess = guess + delta
         }
     }
@@ -179,11 +183,11 @@ pub fn root(guess: BigRational, radicand: BigRational, index: BigRational)
 }
 
 /// dumb root method, just like you did in elementary school
-pub fn dumb_root(radicand: BigRational, index: BigRational) ->
-    Result<BigRational, BigRational> {
+pub fn dumb_root(radicand: Mpq, index: Mpq) ->
+    Result<Mpq, Mpq> {
 
-    let one: BigRational = num::one();
-    let mut guess: BigRational = num::one();
+    let one: Mpq = num::one();
+    let mut guess: Mpq = num::one();
 
     loop {
         let mut guess_to_pow;

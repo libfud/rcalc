@@ -1,9 +1,8 @@
 //! The parent module to every other module in calc.
 
-extern crate num;
+extern crate gmp;
 
-pub use self::num::rational::{BigRational, Ratio};
-pub use self::num::bigint;
+pub use self::gmp::{Mpz, Mpq};
 pub use self::expression::{Atom, SExpr, ArgType};
 pub use self::literal::LiteralType;
 pub use self::tokenize::{TokenStream, Token};

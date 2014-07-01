@@ -4,8 +4,10 @@
 
 extern crate num;
 
+use std::num::from_i64;
+use self::num::rational::Ratio;
 use super::literal::{LiteralType, Boolean, BigNum};
-use super::{CalcResult, BadToken, BigRational, BadArgType, Ratio, operator};
+use super::{CalcResult, BadToken, BadArgType, Mpq, Mpz, operator};
 use super::operator::{OperatorType};
 
 ///Enumeration of valid tokens. Valid tokens are Operators, Literals, LParens,
@@ -128,21 +130,30 @@ pub fn is_number(expr: &str) -> MaybeToken {
 
 /// Enumeration of ways to write numbers.
 pub enum NumEncoding {
-    Fraction,
+    Fraction(uint),
     NonFraction,
     Invalid
 }
 
-
-
 /// Converts a string into a bigrational.
-pub fn str_to_rational(word: &str) -> CalcResult<BigRational> {
+pub fn str_to_rational(word: &str) -> CalcResult<Mpq> {
 
     let number_type = get_num_encoding(word);
     match number_type {
-        Fraction    => match from_str::<BigRational>(word) {
-            Some(x) => Ok(x),
-            None => Err(BadArgType("Bad numeric encoding".to_str()))
+        Fraction(div_index) => {
+            let numer = match from_str::<i64>(word.slice_to(div_index)) {
+                Some(x) => x,
+                None => return Err(BadArgType("Bad numeric encoding".to_str()))
+            };
+            let numer_mpq = from_i64::<Mpq>(numer).unwrap();
+
+            let denom = match from_str::<i64>(word.slice_from(div_index + 1)) {
+                Some(x) => x,
+                None => return Err(BadArgType("Bad numeric encoding".to_str()))
+            };
+            let denom_mpq = from_i64::<Mpq>(denom).unwrap();
+
+            Ok(numer_mpq / denom_mpq)
         },
 
         NonFraction => {
@@ -150,7 +161,12 @@ pub fn str_to_rational(word: &str) -> CalcResult<BigRational> {
                 Some(x) => x,
                 None => return Err(BadArgType("Bad numeric encoding".to_str()))
             };
-            Ok(Ratio::from_float(floated).unwrap())
+            let ratio: Ratio<i64> = Ratio::from_float(floated).unwrap();
+
+            let numer = from_i64::<Mpq>(ratio.numer()).unwrap();
+            let denom = from_i64::<Mpq>(ratio.denom()).unwrap();
+
+            Ok(numer / denom)
         },
 
         Invalid     => Err(BadArgType("Bad numeric encoding".to_str()))
@@ -163,14 +179,17 @@ pub fn get_num_encoding(num_str: &str) -> NumEncoding {
             return Invalid
     }
 
-    let (divisors, radices) = num_str.chars().fold((0u, 0u), |(mut x, mut y), c| {
+    let (mut div_index, mut divisors, mut radices) = (0u, 0u, 0u);
+    let mut counter = 0;
+    for c in num_str.chars() {
         if c == '/' {
-            x += 1
+            div_index = counter;
+            divisors += 1;
         } else if c == '.' {
-            y += 1
+            radices += 1;
         }
-        (x, y)
-    });
+        counter += 1;
+    }
 
     match (divisors, radices) {
         (0, 0) | (0, 1) => NonFraction,

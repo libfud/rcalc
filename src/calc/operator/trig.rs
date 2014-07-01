@@ -3,7 +3,7 @@
 use super::*;
 use super::super::literal::BigNum;
 use super::super::{CalcResult, Environment, Atom, ArgType, BadNumberOfArgs, 
-                   BigRational, BadArgType, BadFloatRange};
+                   BadArgType, BadFloatRange};
 use super::super::tokenize::str_to_rational;
 
 pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: OperatorType) -> CalcResult {
@@ -40,7 +40,7 @@ pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: OperatorType) 
     Ok(Atom(BigNum(result)))
 }
 
-pub fn rational_to_f64(big: &BigRational) -> CalcResult<f64> {
+pub fn rational_to_f64(big: &Mpq) -> CalcResult<f64> {
     let numer = match big.numer().to_f64() {
         Some(x) => x,
         None => return Err(BadFloatRange)

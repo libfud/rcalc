@@ -2,7 +2,7 @@
 
 use super::super::{CalcResult, Environment, NonBoolean, BadNumberOfArgs, BadArgType};
 use super::super::literal::{Boolean, BigNum, LiteralType};
-use super::{ArgType, Atom, SExpr, BigRational, If};
+use super::{ArgType, Atom, SExpr, Mpq, Mpz, If};
 
 pub type Args<T = Vec<ArgType>> = T;
 pub type Env<T = Environment> = T;
@@ -42,7 +42,6 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
     }
 }
 
-pub type BR = BigRational;
 pub type LitTy = LiteralType;
 
 pub fn ordering(args: &Vec<ArgType>, env: &mut Env, comp: |LitTy, LitTy| -> bool) -> CalcResult {
@@ -138,9 +137,8 @@ impl NumOps {
 
 pub fn num_op(args: &Args, env: &mut Env, op: NumOps) -> CalcResult {
     use std::num;
-    use super::super::num::Integer;
 
-    let one: BigRational = num::one();
+    let one: Mpq = num::one();
     let two = one + one;
     let half = one / two;
 
@@ -155,10 +153,17 @@ pub fn num_op(args: &Args, env: &mut Env, op: NumOps) -> CalcResult {
 
     match op { 
         //round() doesn't work right for BigRationals.
-        Round => Ok(Atom(BigNum(if num - num.floor() >= half { num.ceil() } else { num.floor() }))),
+/*
+        Round => Ok(Atom(BigNum(if num - num.floor() >= half { 
+            num.ceil() 
+        } else { num.floor()
+        }))),
         Floor => Ok(Atom(BigNum(num.floor()))),
         Ceiling => Ok(Atom(BigNum(num.ceil()))),
-        Zero => Ok(Atom(Boolean(num == num::zero()))),
-        _ => Ok(Atom(Boolean((op != Even) ^ (num.numer().is_even() && *num.denom() == num::one()))))
+*/
+        Floor | Ceiling | Round => Ok(Atom(BigNum(num))), //sorry 
+        Zero => Ok(Atom(Boolean(num.is_zero()))),
+        _ => Ok(Atom(Boolean((op != Even) ^ (num.get_num() % two == num::zero()
+                                             && *num.get_den() == num::one()))))
     }
 }
