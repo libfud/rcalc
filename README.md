@@ -13,9 +13,15 @@ older version, you may not be able to compile it.
 ## Compiling
 
 In order to build it, ensure that you have downloaded or built the latest nightly
-version of rust, the development headers for readline if you use linux, and simply
- run 
-`rustc main.rs`
+version of rust, the development headers for readline if you use linux, make sure
+you have the development headers for readline. Then run
+
+`make`
+
+To run rcalc, just use
+
+`bin/rcalc`
+
 
 This will compile a binary file called rcalc.
 
