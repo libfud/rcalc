@@ -105,6 +105,7 @@ pub fn reduce_helper(x: String, y: String, initval: &LitTy, list: &[LitTy],
     child_env.symbols.insert(x.clone(), list[0].clone());
     child_env.symbols.insert(y.clone(), initval.clone());
     let mut result = try!(try!(fun.eval(&mut child_env)).arg_to_literal(env));
+
     for val in list.tail().iter() {
         child_env.symbols.insert(x.clone(), val.clone());
         child_env.symbols.insert(y.clone(), result.clone());

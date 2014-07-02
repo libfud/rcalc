@@ -6,7 +6,6 @@ use super::super::literal::BigNum;
 use super::{BigRational, ArgType, Atom};
 use super::trig::float_ops;
 use super::{Ln, Exp};
-use super::arithmetic::do_op;
 
 pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 2 {
@@ -34,10 +33,12 @@ pub fn pow(base: &BigRational, exponent: &BigRational,
     let root  = if maybe_radix == num::zero() {
         num::one()
     } else {
-        let root_log = try!(float_ops(&vec!(Atom(BigNum(base.clone()))), env, Ln));
-        let r_log_mul = try!(do_op(&vec!(Atom(BigNum(maybe_radix)), root_log), env, 0, 
-                                   |a, b| a * *b, num::one));
-        match try!(float_ops(&vec!(r_log_mul), env, Exp)) {
+        let root_log = match try!(float_ops(&vec!(Atom(BigNum(base.clone()))), env, Ln)) {
+            Atom(BigNum(x)) => x,
+            _ => fail!("impossible")
+        };
+        let r_log_mul = root_log * maybe_radix;
+        match try!(float_ops(&vec!(Atom(BigNum(r_log_mul))), env, Exp)) {
             Atom(BigNum(x)) => x,
             _ => fail!("Impossible")
         }
