@@ -1,10 +1,8 @@
 //! An enumeration of valid literaltypes
 
-extern crate num;
-
-use self::num::rational::BigRational;
-use super::{CalcResult, Environment, Atom, BadArgType, BadNumberOfArgs};
+use super::{BigRational, CalcResult, Environment, Atom, BadArgType, DivByZero, BadNumberOfArgs};
 use super::expression::{Expression, ArgType};
+use std::num;
 
 #[deriving(Clone, Show, PartialEq, PartialOrd)]
 pub enum LiteralType {
@@ -18,6 +16,7 @@ pub enum LiteralType {
 
 pub type Lit<T = LiteralType> = T;
 pub type LitRes<T = CalcResult<LiteralType>> = T;
+
 impl Add<Lit, LitRes> for Lit {
     fn add(&self, rhs: &LiteralType) -> LitRes {
         match (self, rhs) {
@@ -47,12 +46,8 @@ impl Mul<Lit, LitRes> for Lit {
 
 impl Div<Lit, LitRes> for Lit {
     fn div(&self, rhs: &Lit) -> LitRes {
-        use std::num;
-        use super::DivByZero;
-
         match (self, rhs) {
-            (&BigNum(ref x), &BigNum(ref y
-)) => if y == &num::zero() {
+            (&BigNum(ref x), &BigNum(ref y)) => if y == &num::zero() {
                 Err(DivByZero)
             } else {
                 Ok(BigNum(*x / *y))
@@ -64,9 +59,6 @@ impl Div<Lit, LitRes> for Lit {
 
 impl Rem<Lit, LitRes> for Lit {
     fn rem(&self, rhs: &Lit) -> LitRes {
-        use std::num;
-        use super::DivByZero;
-
         match (self, rhs) {
             (&BigNum(ref x), &BigNum(ref y)) => if y == &num::zero() {
                 Err(DivByZero)
