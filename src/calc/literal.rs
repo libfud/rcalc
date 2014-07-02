@@ -16,6 +16,68 @@ pub enum LiteralType {
     Void
 }
 
+pub type Lit<T = LiteralType> = T;
+pub type LitRes<T = CalcResult<LiteralType>> = T;
+impl Add<Lit, LitRes> for Lit {
+    fn add(&self, rhs: &LiteralType) -> LitRes {
+        match (self, rhs) {
+            (&BigNum(ref x), &BigNum(ref y)) => Ok(BigNum(*x + *y)),
+            _ => Err(BadArgType("Addition is only defined for numbers".to_str()))
+        }
+    }
+}
+
+impl Sub<Lit, LitRes> for Lit {
+    fn sub(&self, rhs: &Lit) -> LitRes {
+        match (self, rhs) {
+            (&BigNum(ref x), &BigNum(ref y)) => Ok(BigNum(*x - *y)),
+            _ => Err(BadArgType("Subtraction is only defined for numbers".to_str()))
+        }
+    }
+}
+
+impl Mul<Lit, LitRes> for Lit {
+    fn mul(&self, rhs: &Lit) -> LitRes {
+        match (self, rhs) {
+            (&BigNum(ref x), &BigNum(ref y)) => Ok(BigNum(*x * *y)),
+            _ => Err(BadArgType("Multiplication is only defined for numbers".to_str()))
+        }
+    }
+}
+
+impl Div<Lit, LitRes> for Lit {
+    fn div(&self, rhs: &Lit) -> LitRes {
+        use std::num;
+        use super::DivByZero;
+
+        match (self, rhs) {
+            (&BigNum(ref x), &BigNum(ref y
+)) => if y == &num::zero() {
+                Err(DivByZero)
+            } else {
+                Ok(BigNum(*x / *y))
+            },
+            _ => Err(BadArgType("Division is only defined for numbers".to_str()))
+        }
+    }
+}
+
+impl Rem<Lit, LitRes> for Lit {
+    fn rem(&self, rhs: &Lit) -> LitRes {
+        use std::num;
+        use super::DivByZero;
+
+        match (self, rhs) {
+            (&BigNum(ref x), &BigNum(ref y)) => if y == &num::zero() {
+                Err(DivByZero)
+            } else {
+                Ok(BigNum(*x % *y))
+            },
+            _ => Err(BadArgType("Rem is only defined for numbers".to_str()))
+        }
+    }
+}
+
 pub fn list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     let mut list: Vec<LiteralType> = Vec::new();
     for arg in args.iter() {

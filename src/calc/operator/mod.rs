@@ -3,7 +3,7 @@
 use std::num;
 pub use super::{BigRational, Ratio, bigint};
 pub use super::{CalcResult, Environment, ArgType, Atom, SExpr};
-pub use super::literal::{LiteralType, Symbol, cons, car, cdr, list};
+pub use super::literal::{LiteralType, Lit, LitRes, Symbol, cons, car, cdr, list};
 
 pub mod special;
 pub mod power;
@@ -53,21 +53,23 @@ impl OperatorType {
         }
     }
 
-    pub fn to_arith(&self) -> |BR, &BR| -> BR {
+    pub fn to_arith(&self) -> |Lit, &Lit| -> LitRes {
         match self {
-            &Add => |a: BR, b: &BR| a + *b, &Sub => |a: BR, b: &BR| a - *b,
-            &Mul => |a: BR, b: &BR| a * *b, &Div => |a: BR, b: &BR| a / *b,
-            &Rem => |a: BR, b: &BR| a % *b,
+            &Add => |a: Lit, b: &Lit| a + *b, &Sub => |a: Lit, b: &Lit| a - *b,
+            &Mul => |a: Lit, b: &Lit| a * *b, &Div => |a: Lit, b: &Lit| a / *b,
+            &Rem => |a: Lit, b: &Lit| a % *b,
             _ => fail!("Mismatched operator types (don't use arith with non-arithmetic")
         }
     }
 
-    pub fn to_arith_args(&self) -> (uint, |BR, &BR| -> BR, || -> BR) {
+    pub fn to_arith_args(&self) -> (uint, |Lit, &Lit| -> LitRes, || -> BR) {
         match self {
             &Add => (0, self.to_arith(), || num::zero()),
             &Sub => (1, self.to_arith(), || num::zero()),
             &Mul => (0, self.to_arith(), || num::one()),
-            _ => fail!("Don't try div or rem with this one.")
+            &Div => (1, self.to_arith(), || num::one()),
+            &Rem => (1, self.to_arith(), || num::one()),
+            _ => fail!("Mistmatched operator types (don't use arith with non-arithmetic")
         }
     }
 }
@@ -143,7 +145,7 @@ pub fn to_str(op: &OperatorType) -> String {
 pub fn eval(op_type: OperatorType, args: &Vec<ArgType>, 
             env: &mut Environment) -> CalcResult {
     use self::logic::{num_op, and_or, not, xor, ordering};
-    use self::arithmetic::{do_op, divrem};
+    use self::arithmetic::arith;
     use self::listops::{map, filter, reduce, rangelist, listlen};
     use self::special::{table, sort};
     use self::trig::float_ops;
@@ -164,11 +166,11 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         Map => listops::map(args, env), Reduce => reduce(args, env),
         Filter => filter(args, env),
 
-        Add | Sub | Mul => {
+        Add | Sub | Mul | Div | Rem => {
             let (min, op, ident) = op_type.to_arith_args();
-            do_op(args, env, min, op, ident)
+            arith(args, env, min, op, ident)
         },
-        Div | Rem  => divrem(args, env, op_type.to_arith()),
+//        Div | Rem  => divrem(args, env, op_type.to_arith()),
         Pow => power::pow_wrapper(args, env),
 
         Sin | Cos | Tan | ASin |
