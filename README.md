@@ -30,7 +30,7 @@ which allow recursion are also present.
 
 rcalc will not be considered complete until it has the following:
 
-*~~proper rational exponentiation~~
+* ~~proper rational exponentiation~~
 * limits
 * matrices and trees
 * help message for every feature, builtin function, and an interface for 
