@@ -31,24 +31,18 @@ pub fn pow(base: &BigRational, exponent: &BigRational,
     };
 
     let maybe_radix = exponent - exponent.floor();
-    let radix  = if maybe_radix == num::zero() {
+    let root  = if maybe_radix == num::zero() {
         num::one()
     } else {
-        let max = from_str::<BigRational>("100/1").unwrap();
-        if maybe_radix.recip() > max {
-            max.recip()
-        } else {
-            maybe_radix
+        let root_log = try!(float_ops(&vec!(Atom(BigNum(base.clone()))), env, Ln));
+        let r_log_mul = try!(do_op(&vec!(Atom(BigNum(maybe_radix)), root_log), env, 0, 
+                                   |a, b| a * *b, num::one));
+        match try!(float_ops(&vec!(r_log_mul), env, Exp)) {
+            Atom(BigNum(x)) => x,
+            _ => fail!("Impossible")
         }
     };
 
-    let root_log = try!(float_ops(&vec!(Atom(BigNum(base.clone()))), env, Ln));
-    let r_log_mul = try!(do_op(&vec!(Atom(BigNum(radix)), root_log), env, 0, 
-                          |a, b| a * *b, num::one));
-    let root = match try!(float_ops(&vec!(r_log_mul), env, Exp)) {
-        Atom(BigNum(x)) => x,
-        _ => fail!("Impossible")
-    };
     let powered = exp_by_sq(base, power);
 
     Ok(powered * root)
