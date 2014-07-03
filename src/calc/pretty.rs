@@ -38,6 +38,7 @@ pub fn pretty(arg: &LiteralType, env: &Environment) -> String {
             list = list.append(")");
             list
         },
+        &Matrix(ref x) => x.to_str(),
         &Proc(ref args, ref body) => {
             let mut symbols = args.to_str();
             symbols = symbols.append(" (");

@@ -30,7 +30,11 @@ pub enum OperatorType {
 
     Define, Lambda,
 
-    Help, Table, RangeList, Sort, 
+    Table, RangeList, Sort, 
+
+    MakeMatrix, MatrixExtend,
+
+    Help,
 }
 
 type BR<T = BigRational> = T;
@@ -105,8 +109,12 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "map" => Some(Map), "reduce" => Some(Reduce), "filter" => Some(Filter),
         "list-len" => Some(ListLen),
 
-        "help"  => Some(Help), "table" => Some(Table),
-        "range-list" => Some(RangeList), "sort" => Some(Sort),
+        "table" => Some(Table), "range-list" => Some(RangeList), 
+        "sort" => Some(Sort),
+
+        "make-matrix" => Some(MakeMatrix), "matrix-extend" => Some(MatrixExtend),
+
+        "help"  => Some(Help),
 
         _       => None
     }
@@ -135,8 +143,11 @@ pub fn to_str(op: &OperatorType) -> String {
 
         Map => "map", Reduce => "reduce", Filter => "filter", ListLen => "list-len",
 
-        Help  => "help", Table => "table", RangeList => "range-list", 
-        Sort => "sort",
+        Table => "table", RangeList => "range-list", Sort => "sort",
+
+        MakeMatrix => "make-matrix", MatrixExtend => "matrix-extend",
+
+        Help  => "help",
     };
 
     answer.to_str()
@@ -170,7 +181,6 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
             let (min, op, ident) = op_type.to_arith_args();
             arith(args, env, min, op, ident)
         },
-//        Div | Rem  => divrem(args, env, op_type.to_arith()),
         Pow => power::pow_wrapper(args, env),
 
         Sin | Cos | Tan | ASin |
@@ -185,11 +195,14 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
 
         Round | Ceiling | Floor | Zero | Even | Odd => num_op(args, env, op_type.to_numops()),
 
-        Help => super::common::help(args),
-
         Table => special::table(args, env),
 
         RangeList => rangelist(args, env), Sort => sort(args, env), 
         ListLen => listlen(args, env),
+
+        MakeMatrix => super::matrix::make_matrix(args, env),
+        MatrixExtend => super::matrix::matrix_extend(args, env),
+
+        Help => super::common::help(args),
     }
 }

@@ -1,6 +1,7 @@
 //! An enumeration of valid literaltypes
 
 use super::{BigRational, CalcResult, Environment, Atom, BadArgType, DivByZero, BadNumberOfArgs};
+use super::matrix::Matrice;
 use super::expression::{Expression, ArgType};
 use std::num;
 
@@ -8,72 +9,68 @@ use std::num;
 pub enum LiteralType {
     Boolean(bool),
     BigNum(BigRational),
-    Symbol(String),
-    Proc(Vec<String>, Expression),
     List(Vec<LiteralType>),
+    Matrix(Matrice),
+    Proc(Vec<String>, Expression),
+    Symbol(String),
     Void
 }
 
 pub type Lit<T = LiteralType> = T;
 pub type LitRes<T = CalcResult<LiteralType>> = T;
 
+pub fn apply(a: &Lit, b: &Lit, op: |&BigRational, &BigRational| -> BigRational) -> LitRes {
+    match (a, b) {
+        (&BigNum(ref x), &BigNum(ref y)) => Ok(BigNum(op(x, y))),
+        _ => Err(BadArgType("Arithmetic is only defined for numbers".to_str()))
+    }
+}
+
+pub fn apply_div(a: &Lit, b: &Lit, op: |&BigRational, &BigRational| -> BigRational) -> LitRes {
+    match (a, b) {
+        (&BigNum(ref x), &BigNum(ref y)) => if y == &num::zero() {
+            Err(DivByZero)
+        } else {
+            Ok(BigNum(op(x, y)))
+        },
+        _ => Err(BadArgType("Division is only defined for numbers".to_str()))
+    }
+}
+
 impl Add<Lit, LitRes> for Lit {
     fn add(&self, rhs: &LiteralType) -> LitRes {
-        match (self, rhs) {
-            (&BigNum(ref x), &BigNum(ref y)) => Ok(BigNum(*x + *y)),
-            _ => Err(BadArgType("Addition is only defined for numbers".to_str()))
-        }
+        apply(self, rhs, |a, b| a + *b)
     }
 }
 
 impl Sub<Lit, LitRes> for Lit {
     fn sub(&self, rhs: &Lit) -> LitRes {
-        match (self, rhs) {
-            (&BigNum(ref x), &BigNum(ref y)) => Ok(BigNum(*x - *y)),
-            _ => Err(BadArgType("Subtraction is only defined for numbers".to_str()))
-        }
+        apply(self, rhs, |a, b| a - *b)
     }
 }
 
 impl Mul<Lit, LitRes> for Lit {
     fn mul(&self, rhs: &Lit) -> LitRes {
-        match (self, rhs) {
-            (&BigNum(ref x), &BigNum(ref y)) => Ok(BigNum(*x * *y)),
-            _ => Err(BadArgType("Multiplication is only defined for numbers".to_str()))
-        }
+        apply(self, rhs, |a, b| a * *b)
     }
 }
 
 impl Div<Lit, LitRes> for Lit {
     fn div(&self, rhs: &Lit) -> LitRes {
-        match (self, rhs) {
-            (&BigNum(ref x), &BigNum(ref y)) => if y == &num::zero() {
-                Err(DivByZero)
-            } else {
-                Ok(BigNum(*x / *y))
-            },
-            _ => Err(BadArgType("Division is only defined for numbers".to_str()))
-        }
+        apply_div(self, rhs, |a, b| a / *b)
     }
 }
 
 impl Rem<Lit, LitRes> for Lit {
     fn rem(&self, rhs: &Lit) -> LitRes {
-        match (self, rhs) {
-            (&BigNum(ref x), &BigNum(ref y)) => if y == &num::zero() {
-                Err(DivByZero)
-            } else {
-                Ok(BigNum(*x % *y))
-            },
-            _ => Err(BadArgType("Rem is only defined for numbers".to_str()))
-        }
+        apply_div(self, rhs, |a, b| a % *b)
     }
 }
 
 pub fn list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     let mut list: Vec<LiteralType> = Vec::new();
     for arg in args.iter() {
-        list.push(try!(arg.desymbolize(env)));
+        list.push(try!(arg.arg_to_literal(env)));
     }
     Ok(Atom(List(list)))
 }
@@ -83,8 +80,8 @@ pub fn cons(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("Wrong number of arguments to `cons'".to_str()))
     }
 
-    let car = try!(args.get(0).desymbolize(env));
-    let cdr = try!(args.get(1).desymbolize(env));
+    let car = try!(args.get(0).arg_to_literal(env));
+    let cdr = try!(args.get(1).arg_to_literal(env));
 
     match cdr {
         List(x) => Ok(Atom(List(vec!(car).append(x.as_slice())))),

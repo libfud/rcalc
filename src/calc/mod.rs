@@ -10,6 +10,7 @@ pub use self::tokenize::{TokenStream, Token};
 pub use self::common::help;
 pub use std::collections::HashMap;
 
+pub mod matrix;
 pub mod literal;
 pub mod tokenize;
 pub mod translate;
@@ -28,6 +29,7 @@ pub enum ErrorKind {
     BadToken(String),
     BadPowerRange,
     BadFloatRange,
+    BadDimensionality,
     BadNumberOfArgs(String),
     BadArgType(String),
     DivByZero,
@@ -43,6 +45,7 @@ impl ErrorKind {
             BadToken(x) => x.clone(),
             BadPowerRange => "Exponent too large for builtin `pow'!".to_str(),
             BadFloatRange => "Number too large or precise for `exp' and `log'".to_str(),
+            BadDimensionality => "Invalid dimensionality for Matrix".to_str(),
             BadNumberOfArgs(x) => x.clone(),
             DivByZero => "Attempted division by zero!".to_str(),
             NonBoolean => "Non boolean condition".to_str(),
