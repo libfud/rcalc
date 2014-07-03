@@ -3,76 +3,95 @@
 use std::fmt;
 use super::{BadArgType, CalcResult, LiteralType};
 
-pub enum Dimension {
+pub enum Dimensionality {
     Null,
-    OneD(Vec<LiteralType>),
-    TwoD(Vec<Vec<LiteralType>>),
-    ThreeD(Vec<Vec<Vec<LiteralType>>>),
-    FourD(Vec<Vec<Vec<Vec<LiteralType>>>>),
+    OneD(uint),
+    TwoD(uint, uint),
+    ThreeD(uint, uint, uint),
+    FourD(uint, uint, uint, uint),
 }
 
+/*
+#[deriving(Show)]
 pub enum Axes {
     X, Y, Z, T,
     XY, XZ, XT, YZ, YT, ZT,
     XYZ, XYT, XZT, YZT,
     XYZT,
 }
+*/
 
-impl fmt::Show for Axes {
-    fn fmt(&self, _: &mut fmt::formatter)
+bitflags!(
+    #[deriving(Show)]
+    flags Axes: u8 {
+        static Empty = 0u8,
+
+        static X = 1u8, static Y = 2u8, static Z = 4u8, static T = 8u8,
+
+        static XY = X.bits | Y.bits, static XZ = X.bits | Z.bits,
+        static XT = X.bits | T.bits, static YZ = Y.bits | Z.bits,
+        static YT = Y.bits | T.bits, static ZT = Z.bits | T.bits,
+
+        static XYZ = XY.bits | Z.bits, static XYT = XY.bits | T.bits,
+        static XZT = XZ.bits | T.bits, static YZT = YZ.bits | T.bits,
+
+        static XYZT = XY.bits | ZT.bits
+    }
+)
+        
 
 pub struct Matrice {
-    x_len: Option<uint>,
-    y_len: Option<uint>,
-    z_len: Option<uint>,
-    t_len: Option<uint>,
-    elems: Dimension
+    dimensionality: Dimensionality,
+    axes: Axes,
+    elems: Vec<LiteralType>,
 }
 
 impl Matrice {
-    fn new(axes: Option<Axes>) -> Matrice {
-        let (x, y, z, t) = if axes.is_some() {
-            match axes.unwrap() {
-                X    => (Some(0), None, None, None),
-                Y    => (None, Some(0), None, None),
-                Z    => (None, None, Some(0), None),
-                T    => (None, None, None, Some(0)),
-                XY   => (Some(0), Some(0), None, None),
-                XZ   => (Some(0), None, Some(0), None),
-                XT   => (Some(0), None, None, Some(0)),
-                YZ   => (None, Some(0), Some(0), None),
-                YT   => (None, Some(0), None, Some(0)),
-                ZT   => (None, None, Some(0), Some(0)),
-                XYZ  => (Some(0), Some(0), Some(0), None),
-                XYT  => (Some(0), Some(0), None, Some(0)),
-                XZT  => (Some(0), None, Some(0), Some(0)),
-                YZT  => (None, Some(0), Some(0), Some(0)),
-                XYZT => (Some(0), Some(0), Some(0), Some(0))
-            }
-        } else {
-            (None, None, None, None)
+    fn new(axes: Axes) -> Matrice {
+        let dim = match axes {
+            X | Y | Z | T => OneD(0),
+            XY | XZ | XT | YZ | YT | ZT => TwoD(0, 0),
+            XYZ | XYT | XZT | YZT => ThreeD(0, 0, 0),
+            XYZT => FourD(0, 0, 0, 0),
+            _ => Null
         };
-
-        let elems = if axes.is_some() {
-            match axes.unwrap() {
-                X | Y | Z | T => OneD(vec![]),
-                XY | XZ | XT | YT | YZ | ZT => TwoD(vec![]),
-                XYZ | XYT | XZT | YZT => ThreeD(vec![]),
-                XYZT => FourD(vec![])
-            }
-        } else {
-            Null
-        };
-
-        Matrice { x_len: x, y_len: y, z_len: z, t_len: t, elems: elems }
+        
+        Matrice { dimensionality: dim, axes: axes, elems: vec![] }
     }
     
     pub fn new_null() -> Matrice {
-        Matrice::new(None)
+        Matrice::new(Empty)
     }
 
     pub fn new_1D(axis: Axes) -> CalcResult<Matrice> {
         match axis {
-            X | Y | Z | T => Matrice::new(Some(axis)),
-            _ => Err(BadArgType(format!("Cannot create a 1D matrix with 
+            X | Y | Z | T => Ok(Matrice::new(axis)),
+            _ => Err(BadArgType(format!("Cannot create a 1D matrix with {} dimensions!",
+                                        axis)))
+        }
+    }
+
+    pub fn new_2d(axes: Axes) -> CalcResult<Matrice> {
+        match axes {
+            XY | XZ | XT | YZ | YT | ZT => Ok(Matrice::new(axes)),
+            _ => Err(BadArgType(format!("Cannot create a 2D matrix with {} dimensions!",
+                                        axes)))
+        }
+    }
+
+    pub fn new_3d(axes: Axes) -> CalcResult<Matrice> {
+        match axes {
+            XYZ | XYT | XZT | YZT => Ok(Matrice::new(axes)),
+            _ => Err(BadArgType(format!("Cannot create a 3D matrix with {} dimensions!",
+                                        axes)))
+        }
+    }
+
+    pub fn new_4d(axes: Axes) -> CalcResult<Matrice> {
+        match axes {
+            XYZT => Ok(Matrice::new(axes)),
+            _ => Err(BadArgType(format!("Cannot create a 4D matrix with {} dimensions",
+                                        axes)))
+        }
+    }
 }
