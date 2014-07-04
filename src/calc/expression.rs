@@ -1,8 +1,6 @@
 //! Expressions
 
 use super::{LiteralType, function, operator, CalcResult, Environment, BadToken};
-use super::tokenize;
-use super::tokenize::Token;
 use super::operator::OperatorType;
 use super::pretty::pretty;
 
