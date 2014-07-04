@@ -1,22 +1,32 @@
 //! Translate tokens into expressions and atoms.
 
-use super::{CalcResult, Environment, BadExpr, BadToken};
-use super::tokenize::{Literal, LParen, RParen, Operator, Variable, TokenStream, Token};
-use super::expression;
-use super::expression::{Expression, ExprType, ArgType, Atom, SExpr};
-use super::literal::{LiteralType, Symbol, Proc, List};
-use super::operator;
+use super::{CalcResult, Environment, BadExpr, BadToken, BadArgType,
+            Expression, ArgType, Atom, SExpr, LiteralType};
+use super::tokenize::{Literal, LParen, RParen, Operator,
+                      Variable, Token, TokenStream};
+use super::sexpr;
+use super::literal::{List, Symbol, Proc};
+use super::sexpr::{BuiltIn, Function, ExprType};
 use super::operator::{Define, Lambda, Quote, Help, OperatorType};
 
-pub type Env<T = Environment> = T;
-pub type Expr<T = ArgType> = CalcResult<T>;
+pub type Env = Environment;
+pub type Expr = CalcResult<ArgType>;
+
+pub fn token_to_expr(token: Token) -> CalcResult<ExprType> {
+    match token {
+        Variable(x) => Ok(Function(x)),
+        Operator(op_ty) => Ok(BuiltIn(op_ty)),
+        _ => Err(BadToken(format!(
+            "Expected operator or function but found {}", token)))
+    }
+}
 
 pub fn begin_expr(tokens: &mut TokenStream) -> CalcResult<()> {
     match tokens.next() {
         Some(Ok(LParen)) => Ok(()),
         Some(Ok(_)) => return Err(BadExpr),
         Some(Err(msg)) => return Err(msg),
-        None => fail!("Empty expression!")
+        None => fail!("Empty sexpr!")
     }
 }
 
@@ -69,7 +79,7 @@ pub fn lambda(tokens: &mut TokenStream,
 }
 
 pub fn expr_accumulator(tokens: &mut TokenStream, env: &mut Env) -> CalcResult<Vec<ArgType>> {
-    use super::expression::Function;
+    use sexpr::Function;
 
     let dummy_expr_type = Function("dummy".to_str());
     let dumm_expr = try!(make_expr(dummy_expr_type, tokens, env));
@@ -81,8 +91,6 @@ pub fn expr_accumulator(tokens: &mut TokenStream, env: &mut Env) -> CalcResult<V
 }
 
 pub fn define(tokens: &mut TokenStream, env: &mut Env) -> CalcResult {
-    use super::BadArgType;
-
     let symbols: Vec<LiteralType> = try!(
         get_symbols(tokens)).move_iter().map(|x| Symbol(x)).collect();
 
@@ -109,7 +117,7 @@ pub fn define(tokens: &mut TokenStream, env: &mut Env) -> CalcResult {
 
     if try!(strip(tokens.peek())) == RParen {
         tokens.next();
-        let expr = SExpr(Expression::new(expression::Operator(Define), 
+        let expr = SExpr(Expression::new(sexpr::BuiltIn(Define), 
                                  vec!(Atom(List(symbols))).append(body.as_slice())));
         Ok(expr)
     } else {
@@ -120,8 +128,8 @@ pub fn define(tokens: &mut TokenStream, env: &mut Env) -> CalcResult {
 pub fn handle_operator(tokens: &mut TokenStream, env: &mut Env,
                        top_expr: &ExprType, op: OperatorType) -> Expr {
     match *top_expr {
-        expression::Operator(Help) => {
-            Ok(Atom(Symbol(operator::to_str((&op)))))
+        sexpr::BuiltIn(Help) => {
+            Ok(Atom(Symbol(op.op_to_str())))
         },
 
         _   => match op {
@@ -170,10 +178,8 @@ pub fn list_it(tokens: &mut TokenStream, env: &mut Env) -> CalcResult<Vec<Litera
         let token = try!(strip(tokens.next()));
         match token {
             LParen => {
-                tokens.index -= 1;
-                let val = try!(translate(tokens, env));
-                lit_vec.push(try!(val.arg_to_literal(env)));
-            },
+                return Err(BadToken("Sorry, gotta pull this feature for now".to_str()))
+            }
             Literal(lit_ty) => lit_vec.push(lit_ty),
             Variable(x) => lit_vec.push(try!(env.lookup(&x))),
             RParen => break,
@@ -191,15 +197,15 @@ pub fn list_it(tokens: &mut TokenStream, env: &mut Env) -> CalcResult<Vec<Litera
 
 pub fn make_expr(etype: ExprType, tokens: &mut TokenStream, env: &mut Env) -> Expr {
     match etype {
-        expression::Operator(Define)    => define(tokens, env),
-        expression::Operator(Lambda)    => {
+        sexpr::BuiltIn(Define)    => define(tokens, env),
+        sexpr::BuiltIn(Lambda)    => {
             let (symbols, body) = try!(lambda(tokens, env));
             match body {
                 Atom(_) => Ok(body),
                 SExpr(x) => Ok(Atom(Proc(symbols, x))),
             }
         }, 
-        expression::Operator(Quote)     => {
+        sexpr::BuiltIn(Quote)     => {
             let list = try!(list_it(tokens, env));
             Ok(Atom(List(list)))
         },
@@ -211,7 +217,7 @@ pub fn top_translate(tokens: &mut TokenStream, env: &mut Env) -> Expr {
     let expr = try!(translate(tokens, env));
     if tokens.next().is_some() {
         println!("{}", tokens.expr.as_slice().slice_from(tokens.index - 1));
-        Err(BadToken("Error: found tokens after end of expression".to_str()))
+        Err(BadToken("Error: found tokens after end of sexpr".to_str()))
     } else {
         Ok(expr)
     }
