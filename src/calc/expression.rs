@@ -12,15 +12,6 @@ pub enum ExprType {
     Function(String)
 }
 
-pub fn token_to_expr(token: Token) -> CalcResult<ExprType> {
-    match token {
-        tokenize::Variable(x) => Ok(Function(x)),
-        tokenize::Operator(op_ty) => Ok(Operator(op_ty)),
-        _ => Err(BadToken(format!(
-            "Expected operator or function but found {}", token)))
-    }
-}
-
 #[deriving(Clone, Show, PartialEq, PartialOrd)]
 pub struct Expression {
     pub expr_type: ExprType,

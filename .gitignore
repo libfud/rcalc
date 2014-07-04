@@ -12,3 +12,6 @@ dummy.rs
 *#
 .#*
 default.txt
+*.rlib
+*.o
+*.metadata
