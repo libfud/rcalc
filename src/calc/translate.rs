@@ -1,7 +1,7 @@
 //! Translate tokens into expressions and atoms.
 
 use super::{CalcResult, Environment, BadExpr, BadToken};
-use super::tokenize::{Literal, LParen, RParen, Operator, Variable, TokenStream};
+use super::tokenize::{Literal, LParen, RParen, Operator, Variable, TokenStream, Token};
 use super::expression;
 use super::expression::{Expression, ExprType, ArgType, Atom, SExpr};
 use super::literal::{LiteralType, Symbol, Proc, List};
@@ -219,6 +219,6 @@ pub fn top_translate(tokens: &mut TokenStream, env: &mut Env) -> Expr {
  
 pub fn translate(tokens: &mut TokenStream, env: &mut Env) -> Expr {
     try!(begin_expr(tokens));
-    let top_expr = try!(super::expression::token_to_expr(try!(strip(tokens.next()))));
+    let top_expr = try!(token_to_expr(try!(strip(tokens.next()))));
     make_expr(top_expr, tokens, env)
 }
