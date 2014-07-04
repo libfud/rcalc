@@ -1,6 +1,6 @@
 //! Special functions like table and plot points.
 
-use super::super::literal::{BigNum, List, Symbol, Void, LiteralType};
+use super::super::{BigNum, List, Symbol, Void, LiteralType};
 use super::listops::proc_getter;
 use super::super::{BadArgType, BadNumberOfArgs};
 use super::{Environment, CalcResult, ArgType, Atom};

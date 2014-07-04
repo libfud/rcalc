@@ -1,4 +1,4 @@
-#![crate_id = "sexpr-parse"]
+#![crate_id = "parse"]
 #![crate_type = "lib"]
 #![feature(default_type_params)]
 

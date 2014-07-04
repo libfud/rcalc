@@ -3,6 +3,8 @@
 #![feature(default_type_params, globs, macro_rules)]
 
 //! Polish notation programmable calculator.
+extern crate types;
+use types::Environment;
 
 #[cfg(target_os = "linux")]
 use r_readline::*;
@@ -10,7 +12,7 @@ use r_readline::*;
 #[cfg(not(target_os = "linux"))]
 use rust_no_readline::*;
 
-use calc::{eval, Environment};
+use calc::eval;
 use calc::pretty::pretty_print;
 use calc::HashMap;
 use std::io::{File, Open, ReadWrite};

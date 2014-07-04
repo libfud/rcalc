@@ -5,18 +5,17 @@ extern crate types;
 extern crate matrix;
 extern crate parse;
 
+pub use self::num::Integer;
 pub use self::types;
-pub use self::types::{ErrorKind, BadArgType, BadNumberOfArgs};
+pub use self::types::{ArgType, BigRational, CalcResult, Environment, 
+                      ErrorKind, BadArgType, BadNumberOfArgs,
+                      LiteralType};
+pub use self::types::literal::{BigNum, Boolean, List, Proc, Symbol};
 pub use self::matrix::Matrice;
-pub use self::num::rational::{BigRational, Ratio};
-pub use self::num::bigint;
-pub use self::expression::{Atom, SExpr, ArgType};
-pub use self::literal::LiteralType;
-pub use self::tokenize::{TokenStream, Token};
+pub use self::parse::parse;
 pub use self::common::help;
-pub use std::collections::HashMap;
 
-pub mod matrix;
+pub mod matrice;
 pub mod literal;
 pub mod expression;
 pub mod operator;
@@ -100,11 +99,8 @@ pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 /// Evaluates a string by creating a stream of tokens, translating those tokens
 /// recursively, and then evaluating the top expression.
 pub fn eval(s: &str, env: &mut Environment) -> CalcResult {
-    use self::translate::top_translate;
+    let expr = try!(parse(s));
 
-    let mut tokens = TokenStream::new(s.to_str());
-
-    let expr = try!(top_translate(&mut tokens, env));
     match expr {
         Atom(_) => Ok(expr),
         SExpr(x) => x.eval(env)
