@@ -1,7 +1,13 @@
 //! The parent module to every other module in calc.
 
 extern crate num;
+extern crate types;
+extern crate matrix;
+extern crate parse;
 
+pub use self::types;
+pub use self::types::{ErrorKind, BadArgType, BadNumberOfArgs};
+pub use self::matrix::Matrice;
 pub use self::num::rational::{BigRational, Ratio};
 pub use self::num::bigint;
 pub use self::expression::{Atom, SExpr, ArgType};
@@ -12,95 +18,14 @@ pub use std::collections::HashMap;
 
 pub mod matrix;
 pub mod literal;
-pub mod tokenize;
-pub mod translate;
 pub mod expression;
 pub mod operator;
 pub mod function;
 pub mod common;
 pub mod pretty;
 
-/// A shortcut for the result type that is used everywhere
-pub type CalcResult<T = ArgType> = Result<T, ErrorKind>;
-
-#[deriving(Clone, Show)]
-pub enum ErrorKind {
-    BadExpr,
-    BadToken(String),
-    BadPowerRange,
-    BadFloatRange,
-    BadDimensionality,
-    MismatchedAxes,
-    NullAxisExtension,
-    BadNumberOfArgs(String),
-    BadArgType(String),
-    DivByZero,
-    NonBoolean,
-    UnboundArg(String),
-}
-
-impl ErrorKind {
-    pub fn to_symbol(self) -> String {
-        match self {
-            BadArgType(x) => x.clone(),
-            BadExpr => "Malformed expression".to_str(),
-            BadToken(x) => x.clone(),
-            BadPowerRange => "Exponent too large for builtin `pow'!".to_str(),
-            BadFloatRange => "Number too large or precise for `exp' and `log'".to_str(),
-            BadDimensionality => "Invalid dimensionality for Matrix".to_str(),
-            MismatchedAxes => "Axes do not match for operation".to_str(),
-            NullAxisExtension => "Cannot extend an axis which doesn't exist".to_str(),
-            BadNumberOfArgs(x) => x.clone(),
-            DivByZero => "Attempted division by zero!".to_str(),
-            NonBoolean => "Non boolean condition".to_str(),
-            UnboundArg(x) => format!("Error: Unbound variable `{}'", x),
-        }
-    }
-}
 
 /// A structure to allow persistence of variables and functions
-#[deriving(Clone)]
-pub struct Environment {
-    pub symbols: HashMap<String, LiteralType>,
-    pub parent: Option<Box<Environment>>
-}
-
-impl Environment {
-    pub fn new_global() -> Environment {
-        Environment { symbols:  HashMap::new(), parent: None }
-    }
-
-    pub fn new_frame(par: &mut Environment) -> Environment {
-        Environment { symbols: HashMap::new(), parent: Some(box par.clone()) }
-    }
-
-    pub fn lookup(&self, var: &String) -> CalcResult<LiteralType> {
-        match self.symbols.find(var) {
-            Some(val) => Ok(val.clone()),
-            None      => {
-                if self.parent.is_some() {
-                    self.parent.clone().unwrap().lookup(var)
-                } else {
-                    Err(UnboundArg(var.clone()))
-                }
-            }
-        }
-    }
-
-    pub fn bind(vars: Vec<String>, vals: &Vec<ArgType>, 
-                env: &mut Environment) -> CalcResult<Environment> {
-        if vars.len() != vals.len() {
-            return Err(BadNumberOfArgs("Arguments don't match number of variables".to_str()))
-        }
-        
-        let mut child_env = Environment::new_frame(env);
-        for (var, val) in vars.iter().zip(vals.iter()) {
-            child_env.symbols.insert(var.clone(), try!(val.desymbolize(env)));
-        }
-        
-        Ok(child_env)
-    }
-}
 
 pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     use self::expression::Expression;

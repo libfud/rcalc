@@ -32,7 +32,7 @@ pub enum OperatorType {
 
     Table, RangeList, Sort, 
 
-    MakeMatrix, MatrixExtend,
+    MakeMatrix, MatrixExtend, MatrixSet,
 
     Help,
 }
@@ -113,6 +113,7 @@ pub fn from_str(s: &str) -> Option<OperatorType> {
         "sort" => Some(Sort),
 
         "make-matrix" => Some(MakeMatrix), "matrix-extend" => Some(MatrixExtend),
+        "matrix-set" => Some(MatrixSet),
 
         "help"  => Some(Help),
 
@@ -146,6 +147,7 @@ pub fn to_str(op: &OperatorType) -> String {
         Table => "table", RangeList => "range-list", Sort => "sort",
 
         MakeMatrix => "make-matrix", MatrixExtend => "matrix-extend",
+        MatrixSet => "matrix-set",
 
         Help  => "help",
     };
@@ -160,6 +162,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
     use self::listops::{map, filter, reduce, rangelist, listlen};
     use self::special::{table, sort};
     use self::trig::float_ops;
+    use super::matrix;
 
     match op_type {
         Define  => super::define(args, env),
@@ -200,8 +203,9 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         RangeList => rangelist(args, env), Sort => sort(args, env), 
         ListLen => listlen(args, env),
 
-        MakeMatrix => super::matrix::make_matrix(args, env),
-        MatrixExtend => super::matrix::matrix_extend(args, env),
+        MakeMatrix => matrix::make_matrix(args, env),
+        MatrixExtend => matrix::matrix_extend(args, env),
+        MatrixSet => matrix::matrix_set(args, env),
 
         Help => super::common::help(args),
     }
