@@ -1,11 +1,11 @@
 //!List operations.
 
+use super::super::{Expression, Evaluate};
 use super::{ArgType, Atom, CalcResult, Environment, BigRational, Ratio};
 use super::bigint::*;
-use super::super::literal::{LiteralType, BigNum, List, Proc, Symbol, Boolean};
+use super::super::{LiteralType, BigNum, List, Proc, Symbol, Boolean};
 use super::special::range_getter;
 use super::super::{BadArgType, BadNumberOfArgs};
-use super::super::expression::Expression;
 use std::iter::range_step;
 
 pub fn proc_getter(args: &Vec<ArgType>, 

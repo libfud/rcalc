@@ -14,7 +14,7 @@ use rust_no_readline::*;
 
 use calc::eval;
 use calc::pretty::pretty_print;
-use calc::HashMap;
+use std::collections::hashmap::HashMap;
 use std::io::{File, Open, ReadWrite};
 
 mod calc;

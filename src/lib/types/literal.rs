@@ -16,6 +16,7 @@ pub enum LiteralType {
 
 pub type Lit = LiteralType;
 pub type LitRes =  CalcResult<LiteralType>;
+type BR = BigRational;
 
 fn apply(a: &Lit, b: &Lit, op: |&BigRational, &BigRational| -> BigRational) -> LitRes {
     match (a, b) {

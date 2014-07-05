@@ -1,8 +1,6 @@
 //! Functions and variables which are used in more than one module.
 
-use super::CalcResult;
-use super::literal::{Symbol, Void};
-use super::expression::{ArgType, Atom};
+use super::{ArgType, Atom, Symbol, Void, CalcResult};
 use std::collections::hashmap::HashMap;
 
 pub fn help(args: &Vec<ArgType>) -> CalcResult {

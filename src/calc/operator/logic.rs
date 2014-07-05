@@ -1,7 +1,14 @@
 //! Logic and odering.
 
-use super::super::{CalcResult, Environment, NonBoolean, BadNumberOfArgs, BadArgType};
-use super::super::literal::{Boolean, BigNum, LiteralType};
+extern crate types;
+
+use self::types::sexpr::BuiltIn;
+use self::types::literal::{Boolean, BigNum};
+use self::types::operator::OperatorType;
+use self::types::operator;
+use super::super::{Evaluate, LiteralType, 
+                   CalcResult, Environment, NonBoolean, 
+                   BadNumberOfArgs, BadArgType};
 use super::{ArgType, Atom, SExpr, BigRational, If};
 
 pub type Args<T = Vec<ArgType>> = T;
@@ -32,7 +39,7 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
         match result {
             Atom(_) => return Ok(result),
             SExpr(ref x) => {
-                if x.expr_type == super::super::expression::Operator(If) {
+                if x.expr_type == BuiltIn(If) {
                     arguments = x.args.clone();
                 } else {
                     return x.eval(env)
@@ -110,6 +117,18 @@ pub enum NumOps {
 }
 
 impl NumOps {
+    pub fn builtin_to_op(builtin: OperatorType) -> NumOps {
+        match builtin {
+            operator::Round => Round,
+            operator::Floor => Floor,
+            operator::Ceiling => Ceiling,
+            operator::Even => Even,
+            operator::Odd => Odd,
+            operator::Zero => Zero,
+            _ => fail!("Don't do this")
+        }
+    }
+
     pub fn name(self) -> String {
         let s = match self {
             Round => "`round'",
@@ -136,9 +155,11 @@ impl NumOps {
     }
 }
 
-pub fn num_op(args: &Args, env: &mut Env, op: NumOps) -> CalcResult {
+pub fn num_op(args: &Args, env: &mut Env, op: OperatorType) -> CalcResult {
     use std::num;
     use super::super::num::Integer;
+
+    let op = NumOps::builtin_to_op(op);
 
     let one: BigRational = num::one();
     let two = one + one;

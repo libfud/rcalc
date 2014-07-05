@@ -1,11 +1,10 @@
 //! Special functions like table and plot points.
 
-use super::super::{BigNum, List, Symbol, Void, LiteralType};
+use super::super::{Expression, Evaluate, BigNum, List, Symbol, Void, LiteralType};
 use super::listops::proc_getter;
 use super::super::{BadArgType, BadNumberOfArgs};
 use super::{Environment, CalcResult, ArgType, Atom};
 use super::super::pretty::{pretty_print, pretty};
-use super::super::expression::Expression;
 use std::{iter, cmp};
 
 pub fn range_getter(arg: LiteralType) -> CalcResult<int> {

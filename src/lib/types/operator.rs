@@ -23,7 +23,7 @@ pub enum OperatorType {
 
     Table, RangeList, Sort, 
 
-    MakeMatrix, MatrixExtend, MatrixSet,
+    MakeMatrix, MatrixExtend, MatrixSet, MatrixAdd,
 
     Help,
 }
@@ -37,6 +37,7 @@ impl OperatorType {
             _ => fail!("Mismatched operator types (don't use ord with nonord)")
         }
     }
+
 
     pub fn to_arith(&self) -> |Lit, &Lit| -> LitRes {
         match self {
@@ -86,7 +87,7 @@ impl OperatorType {
             Table => "table", RangeList => "range-list", Sort => "sort",
 
             MakeMatrix => "make-matrix", MatrixExtend => "matrix-extend",
-            MatrixSet => "matrix-set",
+            MatrixSet => "matrix-set", MatrixAdd => "matrix-add",
 
             Help  => "help",
         };
@@ -129,6 +130,7 @@ impl OperatorType {
             "sort" => Some(Sort),
 
             "make-matrix" => Some(MakeMatrix), "matrix-extend" => Some(MatrixExtend),
+            "matrix-set" => Some(MatrixSet), "matrix-add" => Some(MatrixAdd),
 
             "help" => Some(Help),
 

@@ -1,9 +1,14 @@
 //! Operators
 
-use std::num;
-pub use super::{BigRational, Ratio, bigint};
-pub use super::{CalcResult, Environment, ArgType, Atom, SExpr};
-pub use super::{LiteralType, Symbol, cons, car, cdr, list};
+extern crate types;
+extern crate num;
+
+pub use self::num::bigint;
+pub use super::{BigRational, Ratio, CalcResult, Environment, ArgType, Atom, SExpr};
+pub use super::{LiteralType, Lit, LitRes, Symbol, Void};
+pub use super::literal::{cons, car, cdr, list};
+pub use self::types::operator::*;
+use super::matrice;
 
 pub mod special;
 pub mod power;
@@ -19,14 +24,13 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
     use self::listops::{map, filter, reduce, rangelist, listlen};
     use self::special::{table, sort};
     use self::trig::float_ops;
-    use super::matrix;
 
     match op_type {
         Define  => super::define(args, env),
-        Lambda => Ok(Atom(super::literal::Void)),
+        Lambda => Ok(Atom(Void)),
 
         List => list(args, env),
-        Quote => Ok(Atom(super::literal::Void)),
+        Quote => Ok(Atom(Void)),
         Cons => cons(args, env), 
         Car => car(args, env), Cdr => cdr(args, env),
         Cadr => car(&vec!(try!(cdr(args, env))), env), 
@@ -37,10 +41,8 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         Map => listops::map(args, env), Reduce => reduce(args, env),
         Filter => filter(args, env),
 
-        Add | Sub | Mul | Div | Rem => {
-            let (min, op, ident) = op_type.to_arith_args();
-            arith(args, env, min, op, ident)
-        },
+        Add | Sub | Mul | Div | Rem => arith(args, env, op_type),
+
         Pow => power::pow_wrapper(args, env),
 
         Sin | Cos | Tan | ASin |
@@ -53,16 +55,17 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
 
         Lt | LtEq | Eq | NEq | GtEq | Gt => ordering(args, env, op_type.to_ord()),
 
-        Round | Ceiling | Floor | Zero | Even | Odd => num_op(args, env, op_type.to_numops()),
+        Round | Ceiling | Floor | Zero | Even | Odd => num_op(args, env, op_type),
 
         Table => special::table(args, env),
 
         RangeList => rangelist(args, env), Sort => sort(args, env), 
         ListLen => listlen(args, env),
 
-        MakeMatrix => matrix::make_matrix(args, env),
-        MatrixExtend => matrix::matrix_extend(args, env),
-        MatrixSet => matrix::matrix_set(args, env),
+        MakeMatrix => matrice::make_matrix(args, env),
+        MatrixExtend => matrice::matrix_extend(args, env),
+        MatrixSet => matrice::matrix_set(args, env),
+        MatrixAdd => matrice::matrix_add(args, env),
 
         Help => super::common::help(args),
     }

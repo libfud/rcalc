@@ -2,33 +2,30 @@
 
 extern crate num;
 extern crate types;
-extern crate matrix;
 extern crate parse;
 
-pub use self::num::Integer;
-pub use self::types;
-pub use self::types::{ArgType, BigRational, CalcResult, Environment, 
-                      ErrorKind, BadArgType, BadNumberOfArgs,
-                      LiteralType};
-pub use self::types::literal::{BigNum, Boolean, List, Proc, Symbol};
-pub use self::matrix::Matrice;
-pub use self::parse::parse;
+pub use self::num::rational::{BigRational, Ratio};
+pub use self::num::bigint;
+pub use self::types::{CalcResult, Environment, 
+                      ErrorKind, BadArgType, BadNumberOfArgs, 
+                      BadPowerRange, BadFloatRange, NonBoolean,
+                      };
+pub use self::types::sexpr::{Atom, SExpr, Expression, ArgType, BuiltIn, Function};
+pub use self::types::literal::{Lit, LitRes, LiteralType, 
+                               BigNum, Boolean, List, Matrix, Proc, Symbol, Void};
 pub use self::common::help;
+pub use self::literal::{cons, car, cdr, list};
 
 pub mod matrice;
 pub mod literal;
-pub mod expression;
 pub mod operator;
 pub mod function;
 pub mod common;
 pub mod pretty;
 
-
 /// A structure to allow persistence of variables and functions
 
 pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
-    use self::expression::Expression;
-    use self::literal::{List, Proc, Void, Symbol};
     if args.len() < 2 {
         return Err(BadNumberOfArgs(
             format!("Cannot define a variable without having a name and val")))
@@ -62,13 +59,14 @@ pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     };
 
     if args.len() == 2 {
-        match args.last().unwrap() {
+        let arg = args.last().unwrap();
+        match arg {
             &Atom(ref x) => {
                 env.symbols.insert(name, x.clone());
                 return Ok(Atom(Void))
             }
             &SExpr(ref x) => {
-                match x.eval(env) {
+                match arg.eval(env) {
                     Ok(res) => { 
                         env.symbols.insert(name, match res {
                             Atom(y) => y,
@@ -96,13 +94,63 @@ pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     }
 }
 
+pub trait Evaluate {
+    fn eval(&self, env: &mut Environment) -> CalcResult;
+    fn arg_to_literal(&self, env: &mut Environment) -> CalcResult<LiteralType>;
+    fn desymbolize(&self, env: &mut Environment) -> CalcResult<LiteralType>;
+}
+
+impl Evaluate for ArgType {
+    fn eval(&self, env: &mut Environment) -> CalcResult {
+        match self {
+            &Atom(_) => Ok(self.clone()),
+            &SExpr(ref s) =>  match s.expr_type {
+                BuiltIn(x) => operator::eval(x, &s.args, env),
+                Function(ref f) => function::eval(f, &s.args, env)
+            }
+        }
+    }
+
+    fn arg_to_literal(&self, env: &mut Environment) -> CalcResult<LiteralType> {
+        match self {
+            &Atom(ref x) => Ok(x.clone()),
+            &SExpr(_) => try!(self.eval(env)).arg_to_literal(env)
+        }
+    }
+
+    fn desymbolize(&self, env: &mut Environment) -> CalcResult<LiteralType> {
+        match self {
+            &Atom(Symbol(ref x)) => Atom(try!(env.lookup(x))).desymbolize(env),
+            &Atom(ref x) => Ok(x.clone()),
+            &SExpr(_) => try!(self.eval(env)).desymbolize(env)
+        }
+    }
+}
+
+impl Evaluate for Expression {
+    fn eval(&self, env: &mut Environment) -> CalcResult {
+        match self.expr_type {
+            BuiltIn(x) => operator::eval(x, &self.args, env),
+            Function(ref f) => function::eval(f, &self.args, env)
+        }
+    }
+
+    fn arg_to_literal(&self, env: &mut Environment) -> CalcResult<LiteralType> {
+        let res = try!(self.eval(env)).arg_to_literal(env);
+        res
+    }
+
+    fn desymbolize(&self, env: &mut Environment) -> CalcResult<LiteralType> {
+        let res = try!(self.eval(env)).desymbolize(env);
+        res
+    }
+}
+        
+
 /// Evaluates a string by creating a stream of tokens, translating those tokens
 /// recursively, and then evaluating the top expression.
 pub fn eval(s: &str, env: &mut Environment) -> CalcResult {
-    let expr = try!(parse(s));
+    let expr = try!(self::parse::parse(s, env));
 
-    match expr {
-        Atom(_) => Ok(expr),
-        SExpr(x) => x.eval(env)
-    }
+    expr.eval(env)
 }

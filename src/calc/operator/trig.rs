@@ -1,10 +1,15 @@
 //! Trigonometry
 
-use super::*;
-use super::super::literal::BigNum;
-use super::super::{CalcResult, Environment, Atom, ArgType, BadNumberOfArgs, 
+extern crate num;
+extern crate types;
+
+use self::num::rational::Ratio;
+use self::types::operator::{Sin, Cos, Tan, ASin, ACos, ATan, SinH, CosH, TanH,
+                            ASinH, ACosH, ATanH, Log, Ln, Exp, OperatorType};
+use self::types::literal::BigNum;
+use self::types::sexpr::{Atom, ArgType};
+use super::super::{CalcResult, Environment, Evaluate, BadNumberOfArgs,
                    BigRational, BadArgType, BadFloatRange};
-use super::super::tokenize::str_to_rational;
 
 pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: OperatorType) -> CalcResult {
     if args.len() > 1 {
@@ -35,9 +40,10 @@ pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: OperatorType) 
         _ => fail!("That shouldn't happen")
     };
         
-    let result = try!(str_to_rational(answer.to_str().as_slice()));
-        
-    Ok(Atom(BigNum(result)))
+    match Ratio::from_float(answer) {
+        Some(x) => Ok(Atom(BigNum(x))),
+        None => Err(BadFloatRange)
+    }
 }
 
 pub fn rational_to_f64(big: &BigRational) -> CalcResult<f64> {

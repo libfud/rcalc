@@ -1,21 +1,37 @@
 //!Basic arithemtic functions. 
 
-use super::super::{CalcResult, Environment, BadNumberOfArgs};
-use super::super::literal::{BigNum};
+extern crate types;
+
+use std::num;
+use self::types::operator::{Add, Sub, Mul, Div, Rem, OperatorType};
+use super::super::{CalcResult, Environment, BadNumberOfArgs, Evaluate};
+use super::super::{BigNum};
 use super::{BigRational, ArgType, Atom, Lit, LitRes};
 
 pub type Args<T = ArgType> = Vec<T>;
 pub type BigR = BigRational;
 pub type Env = Environment;
 
-pub fn arith(args: &Args, env: &mut Env, min_len: uint, 
-             op: |Lit, &Lit| -> LitRes, ident_fn: || -> BigR) -> CalcResult {
+fn minlen_op_ident(op: OperatorType) -> (uint, |Lit, &Lit| -> LitRes,  BigR) {
+    match op {
+        Add => (0, |a: Lit, b: &Lit| a + *b, num::zero()),
+        Sub => (1, |a: Lit, b: &Lit| a - *b, num::zero()),
+        Mul => (0, |a: Lit, b: &Lit| a * *b, num::one()),
+        Div => (1, |a: Lit, b: &Lit| a / *b, num::one()),
+        Rem => (1, |a: Lit, b: &Lit| a % *b, num::one()),
+        _ => fail!("Don't do that")
+    }
+}
+
+pub fn arith(args: &Args, env: &mut Env, oper: OperatorType) -> CalcResult {
+    let (min_len, op, ident) = minlen_op_ident(oper);
+
     if args.len() < min_len {
         return Err(BadNumberOfArgs(format!(
             "Specified operation requires at least {} arguments", min_len)))
     }
 
-    let ident = BigNum(ident_fn());
+    let ident = BigNum(ident);
 
     if args.len() == 1 {
         Ok(Atom(try!(op(ident, &try!(args.get(0).desymbolize(env))))))

@@ -1,8 +1,10 @@
 //!Pretty print just prints the "relevant" information for a result.
 
+
 use std::num;
-use super::literal::*;
-use super::{Atom, SExpr, Environment, CalcResult};
+use super::types::literal::*;
+use super::types::sexpr::{Function, BuiltIn};
+use super::{Atom, SExpr, Environment, Evaluate, CalcResult};
 
 pub fn pretty_print(result: &CalcResult, env: &Environment) -> String {
     let res = match result {
@@ -43,11 +45,11 @@ pub fn pretty(arg: &LiteralType, env: &Environment) -> String {
             let mut symbols = args.to_str();
             symbols = symbols.append(" (");
             match body.expr_type {
-                super::expression::Function(ref f) => {
+                Function(ref f) => {
                     symbols = symbols.append(f.as_slice());
                 }
-                super::expression::Operator(ref op) => {
-                    symbols = symbols.append(super::operator::to_str(op).as_slice());
+                BuiltIn(ref op) => {
+                    symbols = symbols.append(op.op_to_str().as_slice());
                 }
             }
             for argument in body.args.iter() {

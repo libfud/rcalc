@@ -1,10 +1,12 @@
 //! An enumeration of valid literaltypes
 
-use super::{CalcResult, Environment, Atom, BadArgType, BadNumberOfArgs};
-use super::type::literal::{List};
-use super::matrix::Matrice;
-use super::expression::{Expression, ArgType};
-use std::num;
+extern crate types;
+extern crate matrix;
+
+use self::types::literal::{LiteralType, List};
+use self::types::sexpr::{ArgType, Atom};
+use self::types::{BadArgType, BadNumberOfArgs};
+use super::{CalcResult, Environment, Evaluate};
 
 pub fn list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     let mut list: Vec<LiteralType> = Vec::new();

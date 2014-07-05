@@ -1,8 +1,8 @@
 //! Methods of raising an index to a given power.
 
 use std::num;
-use super::super::{CalcResult, Environment, BadArgType, BadNumberOfArgs, BadPowerRange};
-use super::super::literal::BigNum;
+use super::super::{BigNum, CalcResult, Environment, Evaluate, BadArgType,
+                   BadNumberOfArgs, BadPowerRange};
 use super::{BigRational, ArgType, Atom};
 use super::trig::float_ops;
 use super::{Ln, Exp};

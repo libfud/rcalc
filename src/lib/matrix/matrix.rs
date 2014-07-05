@@ -8,7 +8,8 @@ pub enum MatrixErrors {
     InvalidAxis,
     MismatchedAxes, 
     BadDimensionality,
-    NullAxisExtension
+    NullAxisExtension,
+    BadMatrixOp
 }
 
 #[deriving(Show, Clone, PartialOrd, PartialEq)]
@@ -55,9 +56,9 @@ impl Axes {
 
 #[deriving(Clone, PartialOrd, PartialEq)]
 pub struct Matrice<T> {
-    dimensionality: Dimensionality,
-    axes: Option<Axes>,
-    elems: Vec<T>,
+    pub dimensionality: Dimensionality,
+    pub axes: Option<Axes>,
+    pub elems: Vec<T>,
 }
 
 impl<T: fmt::Show > fmt::Show for Matrice<T> {
@@ -80,8 +81,9 @@ impl<T: fmt::Show > fmt::Show for Matrice<T> {
     }
 }            
 
-impl<T: Clone> Matrice<T> {
-    pub fn new<T>(axes: Option<Axes>) -> Matrice<T> {
+impl<T: Clone + Add<T, Result<T, U>> + Sub<T, Result<T, U>> + 
+    Mul<T, Result<T, U>> + Div<T, Result<T, U>> + Rem<T, Result<T, U>>, U> Matrice<T> {
+    pub fn new(axes: Option<Axes>) -> Matrice<T> {
         let dim = if axes.is_some() {
             match axes.unwrap() {
                 X | Y | Z | T => OneD(0),
@@ -93,10 +95,27 @@ impl<T: Clone> Matrice<T> {
             Null
         };
 
-        Matrice { dimensionality: dim, axes: axes, elems: vec![] }
+        let elems: Vec<T> = Vec::new();
+        Matrice { dimensionality: dim, axes: axes, elems: elems }
+    }
+
+    pub fn scalar<U>(&self, scalar: &T, op: |&T, &T| -> Result<T, U>) -> MatrixResult<Matrice<T>> {
+        let mut elems = Vec::new();
+        for x in self.elems.iter() {
+            let res = op(x, scalar);
+            match res {
+                Ok(x) => elems.push(x),
+                Err(_) => return Err(BadMatrixOp)
+            }
+        }
+
+        Ok(Matrice { dimensionality: self.dimensionality.clone(),
+                  axes: self.axes.clone(),
+                  elems: elems
+        })
     }
     
-    pub fn extend_1d<T: Clone>(&mut self, axis: Axes, other: Vec<T>) -> MatrixResult<()> {
+    pub fn extend_1d(&mut self, axis: Axes, other: Vec<T>) -> MatrixResult<()> {
         if self.axes.is_none() {
             return Err(NullAxisExtension)
         }
@@ -115,7 +134,7 @@ impl<T: Clone> Matrice<T> {
         Ok(())
     }
 
-    pub fn set_2d<T: Clone>(&mut self, axes: Axes, other: Vec<T>, 
+    pub fn set_2d(&mut self, axes: Axes, other: Vec<T>, 
                             other_dim: Dim) -> MatrixResult<()> {
         if self.axes.is_none() {
             return Err(NullAxisExtension)
@@ -145,7 +164,7 @@ impl<T: Clone> Matrice<T> {
         Ok(())
     }
 
-    pub fn extend_2d<T: Clone>(&mut self, axes: Axes, other: Vec<T>, 
+    pub fn extend_2d(&mut self, axes: Axes, other: Vec<T>, 
                                other_dim: Dim) -> MatrixResult<()> {
         if self.axes.is_none() {
             return Err(NullAxisExtension)
@@ -153,7 +172,9 @@ impl<T: Clone> Matrice<T> {
 
         match axes {
             XY | XZ | XT | YZ | YT | ZT => { },
-            _ => return Err(BadDimensionality)
+            _ => {
+                return Err(BadDimensionality)
+            }
         }
 
         if self.axes.unwrap() != axes {
@@ -184,5 +205,105 @@ impl<T: Clone> Matrice<T> {
         self.dimensionality = TwoD(new_len, width);
         self.elems = new_elems;
         Ok(())
+    }
+}
+ 
+impl<T: Add<T, Result<T, U>>, U> Add<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
+    fn add(&self, other: &Matrice<T>) -> MatrixResult<Matrice<T>> {
+        if self.dimensionality != other.dimensionality {
+            return Err(MismatchedAxes)
+        }
+        let mut new_elems = Vec::new();
+        for (a, b) in self.elems.iter().zip(other.elems.iter()) {
+            new_elems.push(match *a + *b { 
+                Ok(x) => x,
+                Err(_) => return Err(BadMatrixOp)
+            });
+        }
+
+        Ok(Matrice { dimensionality: self.dimensionality.clone(), 
+                     axes: self.axes.clone(),
+                     elems: new_elems
+        })
+    }
+}
+
+impl<T: Sub<T, Result<T, U>>, U> Sub<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
+    fn sub(&self, other: &Matrice<T>) -> MatrixResult<Matrice<T>> {
+        if self.dimensionality != other.dimensionality {
+            return Err(MismatchedAxes)
+        }
+        let mut new_elems = Vec::new();
+        for (a, b) in self.elems.iter().zip(other.elems.iter()) {
+            new_elems.push(match *a - *b { 
+                Ok(x) => x,
+                Err(_) => return Err(BadMatrixOp)
+            });
+        }
+
+        Ok(Matrice { dimensionality: self.dimensionality.clone(), 
+                     axes: self.axes.clone(),
+                     elems: new_elems
+        })
+    }
+}
+
+impl<T: Mul<T, Result<T, U>>, U> Mul<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
+    fn mul(&self, other: &Matrice<T>) -> MatrixResult<Matrice<T>> {
+        if self.dimensionality != other.dimensionality {
+            return Err(MismatchedAxes)
+        }
+        let mut new_elems = Vec::new();
+        for (a, b) in self.elems.iter().zip(other.elems.iter()) {
+            new_elems.push(match *a * *b {
+                Ok(x) => x,
+                Err(_) => return Err(BadMatrixOp)
+            });
+        }
+
+        Ok(Matrice { dimensionality: self.dimensionality.clone(), 
+                     axes: self.axes.clone(),
+                     elems: new_elems
+        })
+    }
+}
+
+impl<T: Div<T, Result<T, U>>, U> Div<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
+    fn div(&self, other: &Matrice<T>) -> MatrixResult<Matrice<T>> {
+        if self.dimensionality != other.dimensionality {
+            return Err(MismatchedAxes)
+        }
+        let mut new_elems = Vec::new();
+        for (a, b) in self.elems.iter().zip(other.elems.iter()) {
+            new_elems.push( match *a / *b {
+                Ok(x) => x,
+                Err(_) => return Err(BadMatrixOp)
+            });
+        }
+
+        Ok(Matrice { dimensionality: self.dimensionality.clone(), 
+                     axes: self.axes.clone(),
+                     elems: new_elems
+        })
+    }
+}
+
+impl<T: Rem<T, Result<T, U>>, U> Rem<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
+    fn rem(&self, other: &Matrice<T>) -> MatrixResult<Matrice<T>> {
+        if self.dimensionality != other.dimensionality {
+            return Err(MismatchedAxes)
+        }
+        let mut new_elems = Vec::new();
+        for (a, b) in self.elems.iter().zip(other.elems.iter()) {
+            new_elems.push(match *a % *b {
+                Ok(x) => x,
+                Err(_) => return Err(BadMatrixOp)
+            });
+        }
+
+        Ok(Matrice { dimensionality: self.dimensionality.clone(), 
+                     axes: self.axes.clone(),
+                     elems: new_elems
+        })
     }
 }
