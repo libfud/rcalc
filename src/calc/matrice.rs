@@ -1,10 +1,14 @@
 //! Matrices
 
-use super::Matrice;
-use super::{ArgType, Atom, BigRational, CalcResult, Environment};
-use super::{BadArgType, BadNumberOfArgs, MismatchedAxes, 
-            BadDimensionality, NullAxisExtension};
-use super::literal::{Lit, BigNum, List, Matrix, Symbol, Void};
+extern crate matrix;
+extern crate types;
+
+use self::matrix::Matrice;
+use self::matrix::*;
+use self::types::MatrixErr;
+use super::{ArgType, Atom, BigRational, CalcResult, Environment, Evaluate};
+use super::{BadArgType, BadNumberOfArgs};
+use super::{Lit, BigNum, List, Matrix, Symbol, Void};
 
 type BR<T = BigRational> = T;
 type Env<T = Environment> = T;
@@ -12,7 +16,10 @@ type Args<T = ArgType> = Vec<T>;
 
 pub fn get_axes(arg: Lit) -> CalcResult<Option<Axes>> {
     match arg {
-        Symbol(ref x) => Axes::from_str(x),
+        Symbol(ref x) => match Axes::from_str(x) {
+            Ok(axes) => Ok(axes),
+            Err(m) => Err(MatrixErr(m)),
+        },
         _ => Err(BadArgType("Bad argument for axes".to_str()))
     }
 }
@@ -21,33 +28,20 @@ pub fn get_dimens(arg: Lit) -> CalcResult<u8> {
     match arg {
         BigNum(x) => match x.to_integer().to_u8() {
             Some(num) => Ok(num),
-            None => Err(BadDimensionality)
+            None => Err(MatrixErr(BadDimensionality))
         },
         _ => return Err(BadArgType("Dimensionality must be specified as a number".to_str()))
     }
 }
 
 pub fn make_matrix(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
-    if args.len() != 2 {
-        return Err(BadNumberOfArgs("`make-matrix' takes two arguments".to_str()))
+    if args.len() != 1 {
+        return Err(BadNumberOfArgs("`make-matrix' takes one argument for axes".to_str()))
     }
 
-    let dimens_arg = try!(get_dimens(try!(args.get(0).desymbolize(env))));
-    let axis_arg = try!(get_axes(try!(args.get(1).arg_to_literal(env))));
+    let axis_arg = try!(get_axes(try!(args.get(0).arg_to_literal(env))));
 
-    if axis_arg == None && dimens_arg == 0 {
-        return Ok(Atom(Matrix(Matrice::new_null())))
-    } else if (axis_arg == None) ^ (dimens_arg == 0) {
-        return Err(BadArgType("Tried to create a non-null matrix with no axes".to_str()))
-    }
-
-    let matrix = match dimens_arg {
-        1 => try!(Matrice::new_1d(axis_arg.unwrap())),
-        2 => try!(Matrice::new_2d(axis_arg.unwrap())),
-        3 => try!(Matrice::new_3d(axis_arg.unwrap())),
-        4 => try!(Matrice::new_4d(axis_arg.unwrap())),
-        _ => return Err(BadArgType("Idk yet".to_str()))
-    };
+    let matrix: Matrice<Lit> = Matrice::new(axis_arg);
 
     Ok(Atom(Matrix(matrix)))
 }
