@@ -1,9 +1,12 @@
 //! An enumeration of valid literaltypes
 
+extern crate num;
+
 use super::{BigRational, CalcResult, BadArgType, DivByZero, Expression, Matrice};
 use std::num;
+use std::fmt;
 
-#[deriving(Clone, Show, PartialEq, PartialOrd)]
+#[deriving(Clone, PartialEq, PartialOrd)]
 pub enum LiteralType {
     Boolean(bool),
     BigNum(BigRational),
@@ -14,18 +17,48 @@ pub enum LiteralType {
     Void
 }
 
+pub struct WithEnv<'a, T> {
+    env: &'a Env,
+    data: &'a T
+}
+
+impl<'a:T: EnvShow> fmt::Show for WithEnv<'a, T> {
+    
+
+impl fmt::Show for LiteralType {
+    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &Boolean(ref x) => print!("{}", x),
+            &BigNum(ref x) => if x.is_integer() {
+                print!("{}", x.numer())
+            } else {
+                print!("{}", x)
+            },
+            &List(ref list) => print!("{}", list),
+            &Matrix(ref m) => print!("{}", m),
+            &Proc(ref args, ref expr) => {
+                print!("Procedure: parameters: {}, body: {}", args, expr)
+            },
+            &Symbol(ref s) => print!("{}", s),
+            &Void => print!("")
+        }
+
+        Ok(())
+    }
+}
+
 pub type Lit = LiteralType;
 pub type LitRes =  CalcResult<LiteralType>;
 type BR = BigRational;
 
-fn apply(a: &Lit, b: &Lit, op: |&BigRational, &BigRational| -> BigRational) -> LitRes {
+fn apply(a: &Lit, b: &Lit, op: |&BR, &BR| -> BR) -> LitRes {
     match (a, b) {
         (&BigNum(ref x), &BigNum(ref y)) => Ok(BigNum(op(x, y))),
         _ => Err(BadArgType("Arithmetic is only defined for numbers".to_str()))
     }
 }
 
-fn apply_div(a: &Lit, b: &Lit, op: |&BigRational, &BigRational| -> BigRational) -> LitRes {
+fn apply_div(a: &Lit, b: &Lit, op: |&BR, &BR| -> BR) -> LitRes {
     match (a, b) {
         (&BigNum(ref x), &BigNum(ref y)) => if y == &num::zero() {
             Err(DivByZero)
