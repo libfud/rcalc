@@ -5,7 +5,7 @@ pub type MaybeToken<T, U> = (Option<Result<T, U>>, uint);
 pub struct TokenStream<T, U> {
     expr: String,
     index: uint,
-    rules: Vec< fn(&str) -> MaybeToken<T, U>>,
+    rules: Vec<fn(&str) -> MaybeToken<T, U>>,
     on_err: U,
 }
 
@@ -47,6 +47,18 @@ impl<T, U: Clone> TokenStream<T, U> {
 
     pub fn expr(&self) -> String {
         self.expr.clone()
+    }
+
+    pub fn rules<'a>(&'a self) -> &'a [fn(&str) -> MaybeToken<T, U>] {
+        self.rules.as_slice()
+    }
+
+    pub fn index(&self) -> uint {
+        self.index
+    }
+
+    pub fn on_err(&self) -> U {
+        self.on_err.clone()
     }
 }
 
