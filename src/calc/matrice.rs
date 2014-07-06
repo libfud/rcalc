@@ -17,18 +17,17 @@ pub fn make_matrix(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("`make-matrix' takes at most one argument".to_str()))
     }
 
-    let matrix: Matrice<Lit> = if args.len() == 0 {
+    let matrix_res: Result<Matrice<Lit>, MatrixErrors> = if args.len() == 0 {
         let empty: Vec<Lit> = Vec::new();
-        match Matrice::new(empty, 0, 0) {
-            Ok(x) => x,
-            Err(_) => fail!("That shouldn't happen.")
-        }
+        Matrice::new(empty, 0, 0) 
     } else {
         let (elems, (x, y)) = try!(list_to_2d(try!(args.get(1).desymbolize(env)), env));
-        match Matrice::new(elems, x, y) {
-            Ok(x) => x,
-            Err(m) => return Err(MatrixErr(m))
-        }
+        Matrice::new(elems, x, y) 
+    };
+
+    let matrix = match matrix_res {
+        Ok(x) => x,
+        Err(m) => return Err(MatrixErr(m))
     };
 
     Ok(Atom(Matrix(matrix)))
