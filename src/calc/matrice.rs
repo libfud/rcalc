@@ -18,10 +18,17 @@ pub fn make_matrix(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     }
 
     let matrix: Matrice<Lit> = if args.len() == 0 {
-        Matrice::new_empty()
+        let empty: Vec<Lit> = Vec::new();
+        match Matrice::new(empty, 0, 0) {
+            Ok(x) => x,
+            Err(_) => fail!("That shouldn't happen.")
+        }
     } else {
         let (elems, (x, y)) = try!(list_to_2d(try!(args.get(1).desymbolize(env)), env));
-        Matrice::new(elems, x, y);
+        match Matrice::new(elems, x, y) {
+            Ok(x) => x,
+            Err(m) => return Err(MatrixErr(m))
+        }
     };
 
     Ok(Atom(Matrix(matrix)))
