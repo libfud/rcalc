@@ -12,12 +12,13 @@ pub use literal::{LiteralType};
 pub use sexpr::{ArgType, Atom, SExpr, Expression};
 pub use operator::OperatorType;
 use std::collections::hashmap::HashMap;
+use std::fmt;
 
 pub mod sexpr;
 pub mod literal;
 pub mod operator;
 
-#[deriving(Clone, Show)]
+#[deriving(Clone)]
 pub enum ErrorKind {
     BadExpr,
     BadToken(String),
@@ -45,6 +46,25 @@ impl ErrorKind {
             NonBoolean => "Non boolean condition".to_str(),
             UnboundArg(x) => format!("Error: Unbound variable `{}'", x),
         }
+    }
+}
+
+impl fmt::Show for ErrorKind {
+    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
+        let res = match self {
+            &BadArgType(ref x) => x.clone(),
+            &BadExpr => "Malformed expression".to_str(),
+            &BadToken(ref x) => x.clone(),
+            &BadPowerRange => "Exponent too large for builtin `pow'!".to_str(),
+            &BadFloatRange => "Number too large or precise for `exp' and `log'".to_str(),
+            &MatrixErr(ref x) => x.to_str(),
+            &BadNumberOfArgs(ref x) => x.clone(),
+            &DivByZero => "Attempted division by zero!".to_str(),
+            &NonBoolean => "Non boolean condition".to_str(),
+            &UnboundArg(ref x) => format!("Error: Unbound variable `{}'", x),
+        };
+        print!("{}", res);
+        Ok(())
     }
 }
 
@@ -76,5 +96,13 @@ impl Environment {
                 }
             }
         }
+    }
+}
+
+impl fmt::Show for Environment {
+    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
+        println!("{}", self.symbols);
+        print!("Has {} parent.", if self.parent.is_some() { "a" } else { "no" });
+        Ok(())
     }
 }
