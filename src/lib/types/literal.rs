@@ -2,7 +2,7 @@
 
 extern crate num;
 
-use super::{BigRational, CalcResult, BadArgType, DivByZero, Expression, Matrice};
+use super::{BigRational, CalcResult, BadArgType, DivByZero, Expression, Matrice, Environment};
 use std::num;
 use std::fmt;
 
@@ -17,13 +17,35 @@ pub enum LiteralType {
     Void
 }
 
-pub struct WithEnv<'a, T> {
-    env: &'a Env,
-    data: &'a T
+pub struct WithEnv<'a> {
+    env: &'a Environment,
+    data: &'a LiteralType
 }
 
-impl<'a:T: EnvShow> fmt::Show for WithEnv<'a, T> {
-    
+impl<'a> fmt::Show for WithEnv<'a> {
+    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
+        match self.data {
+            &Boolean(ref x) => print!("{}", x),
+            &BigNum(ref x) => if x.is_integer() {
+                print!("{}", x.numer())
+            } else {
+                print!("{}", x)
+            },
+            &List(ref list) => print!("{}", list),
+            &Matrix(ref m) => print!("{}", m),
+            &Proc(ref args, ref expr) => {
+                print!("Procedure: parameters: {}, body: {}", args, expr)
+            },
+            &Symbol(ref s) => print!("{} {}", s, match self.env.lookup(s) {
+                Ok(x) => format!("= {}", x),
+                Err(m) => m.to_str(),
+            }),
+            &Void => print!("")
+        }
+
+        Ok(())
+    }
+}
 
 impl fmt::Show for LiteralType {
     fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
