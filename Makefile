@@ -1,21 +1,29 @@
 RUSTC = rustc 
 LIBDIR = src/lib
 
-.PHONY : rcalc clean libs types matrix parse
+MATRIX_SRC = $(wildcard src/lib/matrix/*.rs src/lib/matrix/*/*.rs src/lib/matrix/*/*/*.rs)
+TYPES_SRC = $(wildcard src/lib/types/*.rs src/lib/types/*/*.rs src/lib/types/*/*/*.rs)
+PARSE_SRC = $(wildcard src/lib/parse/*.rs src/lib/parse/*/*.rs src/lib/parse/*/*/*.rs)
+CALC_SRC = src/main.rs $(wildcard src/calc/*.rs src/calc/*/*.rs src/calc/*/*/*.rs)
 
-rcalc :
-	$(RUSTC) -L $(LIBDIR) src/main.rs --out-dir bin/
+.PHONY: all clean
 
-libs : 	matrix types parse
+all: bin/rcalc
 
-types: 
-	$(RUSTC) $(LIBDIR)/types/types.rs -L $(LIBDIR) -O --out-dir src/lib
+bin/rcalc: $(CALC_SRC) $(LIBDIR)/libtypes.dummy $(LIBDIR)/libparse.dummy
+	$(RUSTC) -L $(LIBDIR) src/main.rs -o bin/
 
-matrix: 
-	$(RUSTC) $(LIBDIR)/matrix/matrix.rs -O --out-dir src/lib
+$(LIBDIR)/libtypes.dummy: $(TYPES_SRC) $(LIBDIR)/libmatrix.dummy
+	$(RUSTC) $(LIBDIR)/types/types.rs -L $(LIBDIR) -O --out-dir $(LIBDIR)
+	touch $@
 
-parse:
-	$(RUSTC) $(LIBDIR)/parse/parse.rs -L $(LIBDIR) -O --out-dir src/lib
+$(LIBDIR)/libmatrix.dummy: $(MATRIX_SRC)
+	$(RUSTC) $(LIBDIR)/matrix/matrix.rs -O --out-dir $(LIBDIR)
+	touch $@
 
-clean :
-	rm bin/rcalc
+$(LIBDIR)/libparse.dummy: $(PARSE_SRC) $(LIBDIR)/libtypes.dummy
+	$(RUSTC) $(LIBDIR)/parse/parse.rs -L $(LIBDIR) -O --out-dir $(LIBDIR)
+	touch $@
+
+clean:
+	rm bin/rcalc $(LIBDIR)/*.rlib $(LIBDIR)/*.dummy
