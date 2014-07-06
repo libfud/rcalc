@@ -1,9 +1,11 @@
 //! Translate tokens into expressions and atoms.
 
-use super::{CalcResult, Environment, BadExpr, BadToken, BadArgType,
-            Expression, ArgType, Atom, SExpr, LiteralType};
-use super::tokenize::{Literal, LParen, RParen, Operator,
-                      Variable, Token, TokenStream};
+extern crate types;
+
+use self::types::{ErrorKind, BadExpr, BadToken, BadArgType};
+use super::{CalcResult, Environment, Expression, ArgType, Atom, SExpr, LiteralType};
+use super::{Literal, LParen, RParen, Operator, Variable, Token};
+use super::tokenize::TokenStream;
 use super::sexpr;
 use super::literal::{List, Symbol, Proc};
 use super::sexpr::{BuiltIn, Function, ExprType};
@@ -21,7 +23,7 @@ pub fn token_to_expr(token: Token) -> CalcResult<ExprType> {
     }
 }
 
-pub fn begin_expr(tokens: &mut TokenStream) -> CalcResult<()> {
+pub fn begin_expr(tokens: &mut TokenStream<Token, ErrorKind>) -> CalcResult<()> {
     match tokens.next() {
         Some(Ok(LParen)) => Ok(()),
         Some(Ok(_)) => return Err(BadExpr),
@@ -37,7 +39,7 @@ pub fn strip<T>(t: Option<CalcResult<T>>) -> CalcResult<T> {
     }
 }
 
-pub fn get_symbols(tokens: &mut TokenStream) -> CalcResult<Vec<String>> {    
+pub fn get_symbols(tokens: &mut TokenStream<Token, ErrorKind>) -> CalcResult<Vec<String>> {    
     match try!(strip(tokens.next())) {
         LParen => {
             let mut symbols: Vec<String> = Vec::new();
@@ -55,13 +57,16 @@ pub fn get_symbols(tokens: &mut TokenStream) -> CalcResult<Vec<String>> {
     }
 }                
 
-pub fn lambda(tokens: &mut TokenStream, 
+pub fn lambda(tokens: &mut TokenStream<Token, ErrorKind>, 
               env: &mut Environment) -> CalcResult<(Vec<String>, ArgType)> {
     
     let symbols = try!(get_symbols(tokens));
     let body = match try!(strip(tokens.next())) {
         LParen => {
-            tokens.index -= 1;
+            match tokens.rev(1) {
+                Ok(()) => { },
+                Err(()) => fail!("Unexpected truncation of expression")
+            }
             try!(translate(tokens, env))
         },
         Variable(x) => Atom(Symbol(x)),
@@ -78,19 +83,23 @@ pub fn lambda(tokens: &mut TokenStream,
     }
 }
 
-pub fn expr_accumulator(tokens: &mut TokenStream, env: &mut Env) -> CalcResult<Vec<ArgType>> {
+pub fn expr_accumulator(tokens: &mut TokenStream<Token, ErrorKind>, 
+                        env: &mut Env) -> CalcResult<Vec<ArgType>> {
     use sexpr::Function;
 
     let dummy_expr_type = Function("dummy".to_str());
     let dumm_expr = try!(make_expr(dummy_expr_type, tokens, env));
-    tokens.index -= 1;
+    match tokens.rev(1) {
+        Ok(()) => { },
+        Err(()) => fail!("Unexpected truncation of expression")
+    }
     match dumm_expr {
         SExpr(x) => Ok(x.args),
         Atom(_) => fail!("Impossibru")
     }
 }
 
-pub fn define(tokens: &mut TokenStream, env: &mut Env) -> CalcResult {
+pub fn define(tokens: &mut TokenStream<Token, ErrorKind>, env: &mut Env) -> CalcResult {
     let symbols: Vec<LiteralType> = try!(
         get_symbols(tokens)).move_iter().map(|x| Symbol(x)).collect();
 
@@ -100,7 +109,10 @@ pub fn define(tokens: &mut TokenStream, env: &mut Env) -> CalcResult {
 
     let body = match try!(strip(tokens.next())) {
         LParen => {
-            tokens.index -= 1;
+            match tokens.rev(1) {
+                Ok(()) => { },
+                Err(()) => fail!("Unexpected truncation of expression")
+            }
             try!(expr_accumulator(tokens, env))
         },
         Variable(x) => vec!(Atom(Symbol(x))),
@@ -125,7 +137,7 @@ pub fn define(tokens: &mut TokenStream, env: &mut Env) -> CalcResult {
     }
 }
 
-pub fn handle_operator(tokens: &mut TokenStream, env: &mut Env,
+pub fn handle_operator(tokens: &mut TokenStream<Token, ErrorKind>, env: &mut Env,
                        top_expr: &ExprType, op: OperatorType) -> Expr {
     match *top_expr {
         sexpr::BuiltIn(Help) => {
@@ -143,7 +155,7 @@ pub fn handle_operator(tokens: &mut TokenStream, env: &mut Env,
     }
 }
 
-pub fn arg_accumulator(etype: &ExprType, tokens: &mut TokenStream,
+pub fn arg_accumulator(etype: &ExprType, tokens: &mut TokenStream<Token, ErrorKind>,
                        env: &mut Env) -> CalcResult<Vec<ArgType>> {
     let mut args: Vec<ArgType> = Vec::new();
 
@@ -153,7 +165,10 @@ pub fn arg_accumulator(etype: &ExprType, tokens: &mut TokenStream,
         match token {
             Variable(var) => args.push(Atom(Symbol(var))),
             LParen => {
-                tokens.index -= 1;
+                match tokens.rev(1) {
+                    Ok(()) => { },
+                    Err(()) => fail!("Unexpected truncation of expression")
+                }
                 let sub_expr = try!(translate(tokens, env));
                 args.push(sub_expr);
             },
@@ -164,13 +179,14 @@ pub fn arg_accumulator(etype: &ExprType, tokens: &mut TokenStream,
     }
 }
 
-pub fn un_special(etype: ExprType, tokens: &mut TokenStream, 
+pub fn un_special(etype: ExprType, tokens: &mut TokenStream<Token, ErrorKind>, 
                   env: &mut Env) -> CalcResult<Expression> {
     let args = try!(arg_accumulator(&etype, tokens, env));
     Ok(Expression::new(etype, args))
 }
 
-pub fn list_it(tokens: &mut TokenStream, env: &mut Env) -> CalcResult<Vec<LiteralType>> {
+pub fn list_it(tokens: &mut TokenStream<Token, ErrorKind>, 
+               env: &mut Env) -> CalcResult<Vec<LiteralType>> {
     try!(begin_expr(tokens));
 
     let mut lit_vec: Vec<LiteralType> = Vec::new();
@@ -195,7 +211,9 @@ pub fn list_it(tokens: &mut TokenStream, env: &mut Env) -> CalcResult<Vec<Litera
 }
         
 
-pub fn make_expr(etype: ExprType, tokens: &mut TokenStream, env: &mut Env) -> Expr {
+pub fn make_expr(etype: ExprType, tokens: &mut TokenStream<Token, ErrorKind>,
+                 env: &mut Env) -> Expr {
+
     match etype {
         sexpr::BuiltIn(Define)    => define(tokens, env),
         sexpr::BuiltIn(Lambda)    => {
@@ -213,17 +231,16 @@ pub fn make_expr(etype: ExprType, tokens: &mut TokenStream, env: &mut Env) -> Ex
     }
 }
 
-pub fn top_translate(tokens: &mut TokenStream, env: &mut Env) -> Expr {
+pub fn top_translate(tokens: &mut TokenStream<Token, ErrorKind>, env: &mut Env) -> Expr {
     let expr = try!(translate(tokens, env));
     if tokens.next().is_some() {
-        println!("{}", tokens.expr.as_slice().slice_from(tokens.index - 1));
         Err(BadToken("Error: found tokens after end of sexpr".to_str()))
     } else {
         Ok(expr)
     }
 }
  
-pub fn translate(tokens: &mut TokenStream, env: &mut Env) -> Expr {
+pub fn translate(tokens: &mut TokenStream<Token, ErrorKind>, env: &mut Env) -> Expr {
     try!(begin_expr(tokens));
     let top_expr = try!(token_to_expr(try!(strip(tokens.next()))));
     make_expr(top_expr, tokens, env)
