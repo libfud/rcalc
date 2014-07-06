@@ -1,8 +1,4 @@
 //! Tokenizes strings.
-/* Largely adapted from Aochagavia's work, with modifications in mind for
- * BigRationals and some other items. Thank you very much, Aochagavia! */
-
-extern crate num;
 
 pub type MaybeToken<T, U> = (Option<Result<T, U>>, uint);
 
