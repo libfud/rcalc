@@ -3,7 +3,7 @@
 
 use std::fmt;
 
-#[deriving(Show, Clone)]
+#[deriving(Clone)]
 pub enum MatrixErrors {
     InvalidAxis,
     MismatchedAxes, 
@@ -74,14 +74,13 @@ impl Dimensionality {
         }
     }
 
-    pub fn get_dim(dimens: (Vec<(Axis, uint)>)) -> Result<Dimensionality> {
-        if dimens.len() > 4 {
-            return Err(BadDimensionality)
-        }
-
+    pub fn get_dim(dimens: (Vec<(Axis, uint)>)) -> MatrixResult<Dimensionality> {
         match dimens.len() {
             0 => Ok(Null),
-            1 => Ok(dimens.get(0).clone()),
+            1 => {
+                let (x, len) = dimens.get(0).clone();
+                Ok(OneD(x, len))
+            },
             2 => {
                 let (x, len) = dimens.get(0).clone();
                 let (y, wid) = dimens.get(1).clone();
@@ -109,6 +108,7 @@ impl Dimensionality {
                 }
                 Ok(FourD((x, len), (y, wid), (z, h), (t, s)))
             }
+            _ => Err(BadDimensionality)
         }
     }
 }
@@ -116,7 +116,7 @@ impl Dimensionality {
 impl fmt::Show for Dimensionality {
     fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
         let axes = self.get_axes();
-        let dimens = self.get_dimens();
+        let dimens = self.get_lens();
         for (a, b) in axes.iter().zip(dimens.iter()) {
             print!("{} : {} ", a, b);
         }
@@ -134,15 +134,17 @@ pub struct Tensor<T> {
     elems: Vec<T>,
 }
 
-impl<T: fmt::Show > fmt::Show for Matrice<T> {
+impl<T: fmt::Show > fmt::Show for Tensor<T> {
     fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
         println!("{}", self.dimensionality);
+        let lens = self.dimensionality.get_lens();
         match self.dimensionality {
             Null => { },
-            OneD(_) => println!("{}", self.elems),
-            TwoD(x, y) => {
-                for column in range(0, x) {
-                    println!("{} ", self.elems.slice(column * y, column * y + y));
+            OneD(_, _) => println!("{}", self.elems),
+            TwoD(_, _) => {
+                let (a, b) = (lens.get(0), lens.get(1));
+                for column in range(0, *a) {
+                    println!("{} ", self.elems.slice(column * *b, column * *b + *b));
                 }
             }
             _ => println!("I don't know yet.\n{}", self.elems),
@@ -175,41 +177,18 @@ impl<T: Clone + FakeNum<T, U>, U> Tensor<T> {
             }
         }
 
-        let e = vec![];
-        match axes.len() {
-            0 => Tensor { dimensionality: Null, elems: e },
-            1 => Tensor { dimensionality: OneD(axes.as_slice()[0], 0), elems: e },
-            2 => Tensor { 
-                dimensionality: TwoD((axes.get(0).clone(), 0), (axes.get(1).clone(), 0)),
-                elems: e
-            },
-            3 => Tensor {
-                dimensionality: ThreeD(
-                    (axes.get(0).clone(), 0),
-                    (axes.get(1).clone(), 0),
-                    (axes.get(2).clone(), 0)),
-                elems: e
-            },
-            4 | _ => Tensor {
-                dimensionality: FourD(
-                    (axes.get(0).clone(), 0),
-                    (axes.get(1).clone(), 0),
-                    (axes.get(2).clone(), 0),
-                    (axes.get(3).clone(), 0)),
-                elems: e
-            }
-        }
+        let e: Vec<T> = vec![];
+        let dimens: Vec<(Axis, uint)> = axes.move_iter().map(|x| (x, 0)).collect();
+        Ok(Tensor { dimensionality: try!(Dimensionality::get_dim(dimens)), elems: e })
     }
 
     pub fn new(other: Vec<T>, other_dim: Vec<(Axis, uint)>) -> MatrixResult<Tensor<T>> {
-        let total_len = other_dim.iter().reduce(1, |mut a, b| a * match b {
-            (_, x) => x
-        });
+        let total_len = other_dim.iter().fold(1, |a, &b| a * match b { (_, x) => x });
         if other.len() != total_len {
             return Err(BadDimensionality)
         }
 
-        let dimens = try!(Dimensionality::get_dimens(other_dim));
+        let dimens = try!(Dimensionality::get_dim(other_dim));
         
         Ok(Tensor { dimensionality : dimens, elems: other })
     }
@@ -229,9 +208,8 @@ impl<T: Clone + FakeNum<T, U>, U> Tensor<T> {
     }
 
     pub fn set(&mut self, other: Vec<T>, other_dim: Dim) -> MatrixResult<()> {
-        let total_len = other_dim.iter().reduce(1, |mut a, b| a * match b {
-            (_, x) => x,
-        });
+        let lens = other_dim.get_lens();
+        let total_len = lens.iter().fold(1u, |a, &b| a * b);
         if total_len != other.len() {
             return Err(BadDimensionality)
         }
@@ -244,27 +222,48 @@ impl<T: Clone + FakeNum<T, U>, U> Tensor<T> {
     
     pub fn extend_1d(&mut self, other: Vec<T>) -> MatrixResult<()> {
         let axes = self.dimensionality.get_axes();
+
         let axis = match axes.len() {
             1 => axes.get(0).clone(),
             _ => return Err(MismatchedAxes)
         };
             
         self.elems.push_all(other.as_slice());
-        
-        self.dimensionality = OneD(self.elems.len());
+        let len = self.elems.len();
+
+        self.dimensionality = OneD(axis, len);
         Ok(())
     }
 
     pub fn extend_2d(&mut self, other: Vec<T>, other_dim: Dim) -> MatrixResult<()> {
-        let (length, width) = match self.dimensionality {
-            TwoD(x, y) => (x, y),
-            x => fail!(format!("Expected a TwoD matrix, found {}!", x))
+        let scalars = self.dimensionality.get_lens();
+        let (length, width) = match scalars.len() {
+            2 => (scalars.get(0).clone(), scalars.get(1).clone()),
+            _ => return Err(BadDimensionality)
         };
 
-        let (other_len, other_wid) = match other_dim {
-            TwoD(x, y) => (x, y),
-            _ => return Err(MismatchedAxes),
+        let other_scalars = other_dim.get_lens();
+        let (other_len, other_wid) = match other_scalars.len() {
+            2 => (other_scalars.get(0).clone(), other_scalars.get(1).clone()),
+            _ => return Err(BadDimensionality),
         };
+
+        let axes = self.dimensionality.get_axes();
+        let (a, b) = match axes.len() {
+            2 => (axes.get(0), axes.get(1)),
+            _ => return Err(BadDimensionality),
+        };
+
+
+        let other_axes = other_dim.get_axes();
+        let (x, y) = match other_axes.len() {
+            2 => (other_axes.get(0), other_axes.get(1)),
+            _ => return Err(BadDimensionality),
+        };
+
+        if (a != x) || (b != y) {
+            return Err(MismatchedAxes)
+        }
         
         if other_wid != width || other_len * other_wid != other.len() {
             return Err(MismatchedAxes)
@@ -277,7 +276,8 @@ impl<T: Clone + FakeNum<T, U>, U> Tensor<T> {
             new_elems.push_all(other.slice(column * other_len, column * other_len + other_len));
         }
 
-        self.dimensionality = TwoD(new_len, width);
+        self.dimensionality = try!(Dimensionality::get_dim(vec!((x.clone(), new_len),
+                                                                (y.clone(), width))));
         self.elems = new_elems;
         Ok(())
     }
