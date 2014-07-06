@@ -153,7 +153,7 @@ impl<T: fmt::Show > fmt::Show for Tensor<T> {
     }
 }            
 
-trait FakeNum<T, U>: Add<T, Result<T, U>> + 
+pub trait FakeNum<T, U>: Add<T, Result<T, U>> + 
     Sub<T, Result<T, U>> + Mul<T, Result<T, U>> + 
     Div<T, Result<T, U>> + Rem<T, Result<T, U>> { }
 
@@ -369,12 +369,40 @@ impl<T: Rem<T, Result<T, U>>, U> Rem<Tensor<T>, MatrixResult<Tensor<T>>> for Ten
     }
 }
 
-
 #[deriving(Clone, PartialOrd, PartialEq)]
 pub struct Matrice<T> {
-    dimensionality: ((Axis, uint), (Axis, uint)),
+    dimensionality: (uint, uint),
     elems: Vec<T>
 }
+
+impl<T: fmt::Show > fmt::Show for Matrice<T> {
+    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
+        let (a, b) = self.dimensionality;
+        for column in range(0, a) {
+            println!("{} ", self.elems.slice(column * b, column * b + b));
+        }
+        Ok(())
+    }
+}
+
+impl<T: FakeNum<T, U>, Clone, U> Matrice<T> {
+    pub fn new_empty() -> Matrice<T> {
+        Matrice { dimensionality: (0, 0), elems: vec![] }
+    }
+
+    pub fn new_one_row(other: Vec<T>) -> Matrice<T> {
+        Matrice { dimensionality: (other.len(), 0), elems: other }
+    }
+
+    pub fn new(other: Vec<T>, x: uint, y: uint) -> MatrixResult<Matrice<T>> {
+        if x * y != other.len() {
+            Err(BadDimensionality)
+        } else {
+            Ok(Matrice { dimensionality: (x, y), elems: other })
+        }
+    }
+}
+        
  
 impl<T: Add<T, Result<T, U>>, U> Add<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
     fn add(&self, other: &Matrice<T>) -> MatrixResult<Matrice<T>> {

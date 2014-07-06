@@ -1,8 +1,10 @@
 //! An enumeration of valid literaltypes
 
 extern crate num;
+extern crate matrix;
 
-use super::{BigRational, CalcResult, BadArgType, DivByZero, Expression, Matrice, Environment};
+use self::matrix::{Matrice, FakeNum};
+use super::{BigRational, CalcResult, BadArgType, DivByZero, Expression, ErrorKind, Environment};
 use std::num;
 use std::fmt;
 
@@ -90,6 +92,8 @@ fn apply_div(a: &Lit, b: &Lit, op: |&BR, &BR| -> BR) -> LitRes {
         _ => Err(BadArgType("Division is only defined for numbers".to_str()))
     }
 }
+
+impl FakeNum<Lit, ErrorKind> for Lit { }
 
 impl Add<Lit, LitRes> for Lit {
     fn add(&self, rhs: &LiteralType) -> LitRes {
