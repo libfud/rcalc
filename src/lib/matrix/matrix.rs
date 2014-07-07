@@ -2,6 +2,7 @@
 #![crate_type = "lib"]
 
 use std::fmt;
+use std::cmp;
 
 #[deriving(Clone)]
 pub enum MatrixErrors {
@@ -369,6 +370,8 @@ impl<T: Rem<T, Result<T, U>>, U> Rem<Tensor<T>, MatrixResult<Tensor<T>>> for Ten
     }
 }
 
+/* Matrices and their implementation */
+
 #[deriving(Clone, PartialOrd, PartialEq)]
 pub struct Matrice<T> {
     length: uint,
@@ -382,6 +385,33 @@ impl<T: fmt::Show > fmt::Show for Matrice<T> {
             try!(writeln!(fmt, "{} ", self.elems.slice(row * self.length, 
                                                      row * self.length + self.length)));
         }
+
+        try!(writeln!(fmt, ""));
+
+        let mut columns: Vec<Vec<String>> = Vec::new();
+        let mut col_widths: Vec<uint> = Vec::new();
+
+        for column in range(0, self.length) {
+            let mut col = Vec::new();
+            for row in range(0, self.height) {
+                col.push(self.elems.get(column + row * self.length).to_str());
+            }
+            col_widths.push(col.iter().fold(0, |a, b| cmp::max(a, b.len())));
+            columns.push(col);
+        }
+
+        try!(writeln!(fmt, "{}\n", columns));
+
+        for row in range(0, self.height) {
+            try!(write!(fmt, "["));
+            for col in range(0, self.length) {
+                let len = columns.get(col).get(row).len(); // space and comma
+                try!(write!(fmt, "{a}{b},", b = columns.get(col).get(row),
+                            a = " ".repeat(col_widths.get(col) + 2 - len)));
+            }
+            try!(writeln!(fmt, "]"));
+        }                
+
         Ok(())
     }
 }

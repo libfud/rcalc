@@ -50,21 +50,21 @@ impl<'a> fmt::Show for WithEnv<'a> {
 }
 
 impl fmt::Show for LiteralType {
-    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &Boolean(ref x) => print!("{}", x),
+            &Boolean(ref x) => try!(write!(fmt, "{}", x)),
             &BigNum(ref x) => if x.is_integer() {
-                print!("{}", x.numer())
+                try!(write!(fmt, "{}", x.numer()))
             } else {
-                print!("{}", x)
+                try!(write!(fmt, "{}", x))
             },
-            &List(ref list) => print!("{}", list),
-            &Matrix(ref m) => print!("{}", m),
+            &List(ref list) => try!(write!(fmt, "{}", list)),
+            &Matrix(ref m) => try!(write!(fmt, "{}", m)),
             &Proc(ref args, ref expr) => {
-                print!("Procedure: parameters: {}, body: {}", args, expr)
+                try!(write!(fmt, "Procedure: parameters: {}, body: {}", args, expr))
             },
-            &Symbol(ref s) => print!("{}", s),
-            &Void => print!("")
+            &Symbol(ref s) => try!(write!(fmt, "{}", s)),
+            &Void => try!(write!(fmt, ""))
         }
 
         Ok(())
