@@ -371,34 +371,35 @@ impl<T: Rem<T, Result<T, U>>, U> Rem<Tensor<T>, MatrixResult<Tensor<T>>> for Ten
 
 #[deriving(Clone, PartialOrd, PartialEq)]
 pub struct Matrice<T> {
-    dimensionality: (uint, uint),
+    length: uint,
+    height: uint,
     elems: Vec<T>
 }
 
 impl<T: fmt::Show > fmt::Show for Matrice<T> {
     fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
-        let (a, b) = self.dimensionality;
-        for column in range(0, a) {
-            println!("{} ", self.elems.slice(column * b, column * b + b));
+        for column in range(0, self.height) {
+            println!("{} ", self.elems.slice(column * self.length, 
+                                             column * self.length + self.length));
         }
         Ok(())
     }
 }
 
-impl<T: FakeNum<T, U>, Clone, U> Matrice<T> {
+impl<T: FakeNum<T, U> + Clone, U> Matrice<T> {
     pub fn new_empty() -> Matrice<T> {
-        Matrice { dimensionality: (0, 0), elems: vec![] }
+        Matrice { length: 0, height: 0, elems: vec![] }
     }
 
     pub fn new_one_row(other: Vec<T>) -> Matrice<T> {
-        Matrice { dimensionality: (other.len(), 0), elems: other }
+        Matrice { length: other.len(), height: 1, elems: other }
     }
 
-    pub fn new(other: Vec<T>, x: uint, y: uint) -> MatrixResult<Matrice<T>> {
-        if x * y != other.len() {
+    pub fn new(other: Vec<T>, len: uint, h: uint) -> MatrixResult<Matrice<T>> {
+        if len * h != other.len() {
             Err(BadDimensionality)
         } else {
-            Ok(Matrice { dimensionality: (x, y), elems: other })
+            Ok(Matrice { length: len, height: h, elems: other })
         }
     }
 }
@@ -406,7 +407,7 @@ impl<T: FakeNum<T, U>, Clone, U> Matrice<T> {
  
 impl<T: Add<T, Result<T, U>>, U> Add<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
     fn add(&self, other: &Matrice<T>) -> MatrixResult<Matrice<T>> {
-        if self.dimensionality != other.dimensionality {
+        if (self.length, self.height) != (other.length, other.height) {
             return Err(MismatchedAxes)
         }
         let mut new_elems = Vec::new();
@@ -417,13 +418,13 @@ impl<T: Add<T, Result<T, U>>, U> Add<Matrice<T>, MatrixResult<Matrice<T>>> for M
             });
         }
 
-        Ok(Matrice { dimensionality: self.dimensionality.clone(), elems: new_elems })
+        Ok(Matrice { length: self.length, height: self.height, elems: new_elems })
     }
 }
 
 impl<T: Sub<T, Result<T, U>>, U> Sub<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
     fn sub(&self, other: &Matrice<T>) -> MatrixResult<Matrice<T>> {
-        if self.dimensionality != other.dimensionality {
+        if (self.length, self.height) != (other.length, other.height) {
             return Err(MismatchedAxes)
         }
         let mut new_elems = Vec::new();
@@ -434,13 +435,13 @@ impl<T: Sub<T, Result<T, U>>, U> Sub<Matrice<T>, MatrixResult<Matrice<T>>> for M
             });
         }
 
-        Ok(Matrice { dimensionality: self.dimensionality.clone(), elems: new_elems })
+        Ok(Matrice { length: self.length, height: self.height, elems: new_elems })
     }
 }
 
 impl<T: Mul<T, Result<T, U>>, U> Mul<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
     fn mul(&self, other: &Matrice<T>) -> MatrixResult<Matrice<T>> {
-        if self.dimensionality != other.dimensionality {
+        if (self.length, self.height) != (other.length, other.height) {
             return Err(MismatchedAxes)
         }
         let mut new_elems = Vec::new();
@@ -451,13 +452,13 @@ impl<T: Mul<T, Result<T, U>>, U> Mul<Matrice<T>, MatrixResult<Matrice<T>>> for M
             });
         }
 
-        Ok(Matrice { dimensionality: self.dimensionality.clone(), elems: new_elems })
+        Ok(Matrice { length: self.length, height: self.height, elems: new_elems })
     }
 }
 
 impl<T: Div<T, Result<T, U>>, U> Div<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
     fn div(&self, other: &Matrice<T>) -> MatrixResult<Matrice<T>> {
-        if self.dimensionality != other.dimensionality {
+        if (self.length, self.height) != (other.length, other.height) {
             return Err(MismatchedAxes)
         }
         let mut new_elems = Vec::new();
@@ -468,13 +469,13 @@ impl<T: Div<T, Result<T, U>>, U> Div<Matrice<T>, MatrixResult<Matrice<T>>> for M
             });
         }
 
-        Ok(Matrice { dimensionality: self.dimensionality.clone(), elems: new_elems })
+        Ok(Matrice { length: self.length, height: self.height, elems: new_elems })
     }
 }
 
 impl<T: Rem<T, Result<T, U>>, U> Rem<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
     fn rem(&self, other: &Matrice<T>) -> MatrixResult<Matrice<T>> {
-        if self.dimensionality != other.dimensionality {
+        if (self.length, self.height) != (other.length, other.height) {
             return Err(MismatchedAxes)
         }
 
@@ -486,6 +487,6 @@ impl<T: Rem<T, Result<T, U>>, U> Rem<Matrice<T>, MatrixResult<Matrice<T>>> for M
             });
         }
 
-        Ok(Matrice { dimensionality: self.dimensionality.clone(), elems: new_elems })
+        Ok(Matrice { length: self.length, height: self.height, elems: new_elems })
     }
 }

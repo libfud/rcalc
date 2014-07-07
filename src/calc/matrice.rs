@@ -19,9 +19,10 @@ pub fn make_matrix(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
     let matrix_res: Result<Matrice<Lit>, MatrixErrors> = if args.len() == 0 {
         let empty: Vec<Lit> = Vec::new();
-        Matrice::new(empty, 0, 0) 
+        let wat: Result<Matrice<Lit>, MatrixErrors> = Matrice::new(empty, 0, 0);
+        wat
     } else {
-        let (elems, (x, y)) = try!(list_to_2d(try!(args.get(1).desymbolize(env)), env));
+        let (elems, (x, y)) = try!(list_to_2d(try!(args.get(0).desymbolize(env)), env));
         Matrice::new(elems, x, y) 
     };
 
@@ -37,7 +38,7 @@ pub fn list_to_1d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, uint)> {
     match arg {
         List(list) => {
             let len = list.len();
-            Ok((list, list.len()))
+            Ok((list, len))
         }
         Symbol(ref s) => list_to_1d(try!(env.lookup(s)), env),
         _ =>  Err(BadArgType("Elements to extend a matrix must be given in a list".to_str()))

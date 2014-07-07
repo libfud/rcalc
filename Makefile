@@ -11,7 +11,7 @@ CALC_SRC = src/main.rs $(wildcard src/calc/*.rs src/calc/*/*.rs src/calc/*/*/*.r
 all: bin/rcalc
 
 bin/rcalc: $(CALC_SRC) $(LIBDIR)/libtypes.dummy $(LIBDIR)/libparse.dummy
-	$(RUSTC) -L $(LIBDIR) src/main.rs -o bin/
+	$(RUSTC) -L $(LIBDIR) src/main.rs --out-dir bin/
 
 $(LIBDIR)/libtypes.dummy: $(TYPES_SRC) $(LIBDIR)/libmatrix.dummy
 	$(RUSTC) $(LIBDIR)/types/types.rs -L $(LIBDIR) -O --out-dir $(LIBDIR)
