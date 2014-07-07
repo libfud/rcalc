@@ -8,7 +8,7 @@ use std::iter::range_step;
 #[cfg(use_fancy)]
 use fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
 #[cfg(not(use_fancy))]
-use not_fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, Middle, MiddleRight};
+use not_fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
 
 #[cfg(use_fancy)]
 mod fancy {
@@ -30,7 +30,7 @@ mod not_fancy {
     pub static MiddleRight: &'static str = "|";
 }
 
-#[deriving(Clone)]
+#[deriving(Clone, PartialEq)]
 pub enum MatrixErrors {
     InvalidAxis,
     MismatchedAxes, 
@@ -472,14 +472,59 @@ impl<T: FakeNum<T, U> + Clone, U> Matrice<T> {
             return Err(BadDimensionality)
         }
 
-        let mut column: Vec<&'a T> = Vec::new();
+        let mut column: Vec<&'a T> = Vec::with_capacity(self.height);
         for row in range_step(0u, self.height, self.length) {
             column.push(self.elems.get(col + row));
         }
 
         Ok(column)
     }
-}        
+}
+
+#[deriving(Clone, Show, PartialEq)]
+struct Fake {
+    fake: int
+}
+
+impl Fake { pub fn new(x: int) -> Fake { Fake { fake: x } } }
+
+impl FakeNum<Fake, Fake> for Fake { }
+
+impl Add<Fake, Result<Fake, Fake>> for Fake {
+    fn add(&self, rhs: &Fake) -> Result<Fake, Fake> { 
+        Ok(Fake { fake: self.fake + rhs.fake })
+    }
+}
+impl Sub<Fake, Result<Fake, Fake>> for Fake {
+    fn sub(&self, rhs: &Fake) -> Result<Fake, Fake> { 
+        Ok( Fake { fake: self.fake - rhs.fake })
+    }
+}
+impl Mul<Fake, Result<Fake, Fake>> for Fake {
+    fn mul(&self, rhs: &Fake) -> Result<Fake, Fake> { 
+        Ok( Fake { fake: self.fake * rhs.fake } )
+    }
+}
+impl Div<Fake, Result<Fake, Fake>> for Fake {
+    fn div(&self, rhs: &Fake) -> Result<Fake, Fake> { 
+        Ok( Fake { fake: self.fake / rhs.fake })
+    }
+}
+impl Rem<Fake, Result<Fake, Fake>> for Fake {
+    fn rem(&self, rhs: &Fake) -> Result<Fake, Fake> { 
+        Ok( Fake { fake: self.fake % rhs.fake })
+    }
+}
+
+#[test]
+fn matrix_test() {
+
+    let (f1, f2, f3, f4) = (Fake::new(1), Fake::new(2), Fake::new(3),Fake::new(4));
+    let (g1, g2, g3, g4) = (f1.clone(), f2.clone(), f3.clone(), f4.clone());
+
+    let x = Matrice::new(vec!(f1, f2, f3, f4), 2, 2);
+    assert!(x == Ok(Matrice { length: 2, height: 2, elems: vec!(g1, g2, g3, g4) }));
+}
  
 impl<T: Add<T, Result<T, U>>, U> Add<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
     fn add(&self, other: &Matrice<T>) -> MatrixResult<Matrice<T>> {
