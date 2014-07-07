@@ -3,7 +3,6 @@
 
 use std::fmt;
 use std::cmp;
-use std::iter::range_step;
 
 #[cfg(use_fancy)]
 use fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
@@ -459,25 +458,25 @@ impl<T: FakeNum<T, U> + Clone, U> Matrice<T> {
         }
     }
 
-    pub fn get_row<'a>(&'a self, row: uint) -> MatrixResult<&'a [T]> {
+    pub fn get_row<'a>(&'a self, row: uint) -> Option<&'a [T]> {
         if row >= self.height {
-            return Err(BadDimensionality)
+            return None
         }
 
-        Ok(self.elems.slice(row * self.length, row * self.length + self.length))
+        Some(self.elems.slice(row * self.length, row * self.length + self.length))
     }
 
-    pub fn get_col<'a>(&'a self, col: uint) -> MatrixResult<Vec<&'a T>> {
+    pub fn get_col<'a>(&'a self, col: uint) -> Option<Vec<&'a T>> {
         if col >= self.length {
-            return Err(BadDimensionality)
+            return None
         }
 
         let mut column: Vec<&'a T> = Vec::with_capacity(self.height);
-        for row in range_step(0u, self.height, self.length) {
-            column.push(self.elems.get(col + row));
+        for row in range(0u, self.height) {
+            column.push(self.elems.get(row * self.length + col));
         }
 
-        Ok(column)
+        Some(column)
     }
 }
 
@@ -532,7 +531,7 @@ fn matrix_new_test() {
     let x = Matrice::new(vec!(f1, f2, f3, f4), 2, 2);
     assert!(x == Ok(Matrice { length: 2, height: 2, elems: vec!(g1, g2, g3, g4) }));
     let y: MatrixResult<Matrice<Fake>> = Matrice::new(vec!(), 1, 1);
-    assert!(x == Err(BadDimensionality));
+    assert!(y == Err(BadDimensionality));
 }
 
 #[test]
@@ -543,9 +542,17 @@ fn matrix_get_row_test() {
         Ok(x) => x,
         Err(_) => fail!("Failed test.")
     };
-    assert!(x.get_row(0) == Ok(&[f1, f2]));
-    assert!(x.get_row(1) == Ok(&[f3, f4]));
-    assert!(x.get_row(2) == Err(BadDimensionality));
+    assert!(x.get_row(0) == Some(&[f1, f2]));
+    assert!(x.get_row(1) == Some(&[f3, f4]));
+    assert!(x.get_row(2) == None);
+
+    let fake_vec: Vec<Fake> = range(1, 11).map(|x| Fake::new(x)).collect();
+    let z = match Matrice::new(fake_vec, 2, 5) {
+        Ok(x) => x,
+        _ => fail!("wut")
+    };
+    let row4 = vec!(Fake::new(9), Fake::new(10));
+    assert!(z.get_row(4) == Some(row4.as_slice()));
 }
 
 #[test]
@@ -558,10 +565,24 @@ fn matrix_get_col_test() {
         Ok(x) => x,
         Err(_) => fail!("Failed test.")
     };
-    assert!(x.get_col(0) != Ok(vec!(&Fake::new(1), &Fake::new(2), &Fake::new(3))));
-    assert!(x.get_col(0) == Ok(vec!(&Fake::new(1), &Fake::new(3), &Fake::new(5))));
-    assert!(x.get_col(1) == Ok(vec!(&Fake::new(2), &Fake::new(4), &Fake::new(6))));
-    assert!(x.get_col(2) == Err(BadDimensionality));
+
+    let (f1, f2, f3, f4, f5, f6) = (Fake::new(1), Fake::new(2), 
+                                    Fake::new(3), Fake::new(4),
+                                    Fake::new(5), Fake::new(6));
+    
+    assert!(x.get_col(0) != Some(vec!(&f1, &f2, &f3)));
+    println!("{}", x.get_col(0));
+    assert!(x.get_col(0) == Some(vec!(&f1, &f3, &f5)));
+    assert!(x.get_col(1) == Some(vec!(&f2, &f4, &f6)));
+    assert!(x.get_col(2) == None);
+
+    let fake_vec: Vec<Fake> = range(1, 13).map(|x| Fake::new(x)).collect();
+    let z = match Matrice::new(fake_vec, 3, 4) {
+        Ok(x) => x,
+        _ => fail!("wut")
+    };
+    let (f8, f11) = (Fake::new(8), Fake::new(11));
+    assert!(z.get_col(1).unwrap() == vec!(&f2, &f5, &f8, &f11));
 }
  
 impl<T: Add<T, Result<T, U>>, U> Add<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
