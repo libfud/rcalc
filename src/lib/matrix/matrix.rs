@@ -531,6 +531,8 @@ fn matrix_new_test() {
 
     let x = Matrice::new(vec!(f1, f2, f3, f4), 2, 2);
     assert!(x == Ok(Matrice { length: 2, height: 2, elems: vec!(g1, g2, g3, g4) }));
+    let y: MatrixResult<Matrice<Fake>> = Matrice::new(vec!(), 1, 1);
+    assert!(x == Err(BadDimensionality));
 }
 
 #[test]
@@ -542,6 +544,24 @@ fn matrix_get_row_test() {
         Err(_) => fail!("Failed test.")
     };
     assert!(x.get_row(0) == Ok(&[f1, f2]));
+    assert!(x.get_row(1) == Ok(&[f3, f4]));
+    assert!(x.get_row(2) == Err(BadDimensionality));
+}
+
+#[test]
+fn matrix_get_col_test() {
+    let fake_vec = vec! (Fake::new(1), Fake::new(2), 
+                                    Fake::new(3), Fake::new(4),
+                                    Fake::new(5), Fake::new(6));
+    
+    let x = match Matrice::new(fake_vec.clone(), 2, 3) {
+        Ok(x) => x,
+        Err(_) => fail!("Failed test.")
+    };
+    assert!(x.get_col(0) != Ok(vec!(&Fake::new(1), &Fake::new(2), &Fake::new(3))));
+    assert!(x.get_col(0) == Ok(vec!(&Fake::new(1), &Fake::new(3), &Fake::new(5))));
+    assert!(x.get_col(1) == Ok(vec!(&Fake::new(2), &Fake::new(4), &Fake::new(6))));
+    assert!(x.get_col(2) == Err(BadDimensionality));
 }
  
 impl<T: Add<T, Result<T, U>>, U> Add<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
