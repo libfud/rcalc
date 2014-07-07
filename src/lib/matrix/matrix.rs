@@ -3,6 +3,7 @@
 
 use std::fmt;
 use std::cmp;
+use std::iter::range_step;
 
 #[cfg(use_fancy)]
 use fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
@@ -450,10 +451,6 @@ impl<T: FakeNum<T, U> + Clone, U> Matrice<T> {
         Matrice { length: 0, height: 0, elems: vec![] }
     }
 
-    pub fn new_one_row(other: Vec<T>) -> Matrice<T> {
-        Matrice { length: other.len(), height: 1, elems: other }
-    }
-
     pub fn new(other: Vec<T>, len: uint, h: uint) -> MatrixResult<Matrice<T>> {
         if len * h != other.len() {
             Err(BadDimensionality)
@@ -461,8 +458,28 @@ impl<T: FakeNum<T, U> + Clone, U> Matrice<T> {
             Ok(Matrice { length: len, height: h, elems: other })
         }
     }
-}
-        
+
+    pub fn get_row<'a>(&'a self, row: uint) -> MatrixResult<&'a [T]> {
+        if row >= self.height {
+            return Err(BadDimensionality)
+        }
+
+        Ok(self.elems.slice(row * self.length, row * self.length + self.length))
+    }
+
+    pub fn get_col<'a>(&'a self, col: uint) -> MatrixResult<Vec<&'a T>> {
+        if col >= self.length {
+            return Err(BadDimensionality)
+        }
+
+        let mut column: Vec<&'a T> = Vec::new();
+        for row in range_step(0u, self.height, self.length) {
+            column.push(self.elems.get(col + row));
+        }
+
+        Ok(column)
+    }
+}        
  
 impl<T: Add<T, Result<T, U>>, U> Add<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
     fn add(&self, other: &Matrice<T>) -> MatrixResult<Matrice<T>> {
@@ -512,6 +529,15 @@ impl<T: Mul<T, Result<T, U>>, U> Mul<Matrice<T>, MatrixResult<Matrice<T>>> for M
         }
 
         Ok(Matrice { length: self.length, height: self.height, elems: new_elems })
+/*
+        if self.length != other.height {
+            return Err(MismatchedAxes)
+        }
+        let mut new_elems = Vec::new();
+        for column in range(0, self.length) {
+            let mut resu
+            for column in range(column, other.height) {
+  */          
     }
 }
 
@@ -549,3 +575,4 @@ impl<T: Rem<T, Result<T, U>>, U> Rem<Matrice<T>, MatrixResult<Matrice<T>>> for M
         Ok(Matrice { length: self.length, height: self.height, elems: new_elems })
     }
 }
+
