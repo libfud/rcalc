@@ -491,39 +491,57 @@ impl Fake { pub fn new(x: int) -> Fake { Fake { fake: x } } }
 impl FakeNum<Fake, Fake> for Fake { }
 
 impl Add<Fake, Result<Fake, Fake>> for Fake {
-    fn add(&self, rhs: &Fake) -> Result<Fake, Fake> { 
-        Ok(Fake { fake: self.fake + rhs.fake })
-    }
+    fn add(&self, rhs: &Fake) -> Result<Fake, Fake> { Ok(Fake::new(self.fake + rhs.fake)) }
 }
 impl Sub<Fake, Result<Fake, Fake>> for Fake {
-    fn sub(&self, rhs: &Fake) -> Result<Fake, Fake> { 
-        Ok( Fake { fake: self.fake - rhs.fake })
-    }
+    fn sub(&self, rhs: &Fake) -> Result<Fake, Fake> { Ok(Fake::new(self.fake - rhs.fake)) }
 }
 impl Mul<Fake, Result<Fake, Fake>> for Fake {
-    fn mul(&self, rhs: &Fake) -> Result<Fake, Fake> { 
-        Ok( Fake { fake: self.fake * rhs.fake } )
-    }
+    fn mul(&self, rhs: &Fake) -> Result<Fake, Fake> { Ok( Fake::new(self.fake * rhs.fake)) }
 }
 impl Div<Fake, Result<Fake, Fake>> for Fake {
     fn div(&self, rhs: &Fake) -> Result<Fake, Fake> { 
-        Ok( Fake { fake: self.fake / rhs.fake })
+        if rhs.fake != 0 {
+            Ok( Fake::new(self.fake / rhs.fake))
+        } else {
+            Err(Fake::new(0))
+        }
     }
 }
 impl Rem<Fake, Result<Fake, Fake>> for Fake {
     fn rem(&self, rhs: &Fake) -> Result<Fake, Fake> { 
-        Ok( Fake { fake: self.fake % rhs.fake })
+        if rhs.fake != 0 {
+            Ok(Fake::new(self.fake / rhs.fake))
+        } else {
+            Err(Fake::new(0))
+        }
     }
 }
 
 #[test]
-fn matrix_test() {
+fn matrix_empty_test() {
+    let empty: Matrice<Fake> = Matrice::new_empty();
+    assert!(empty == Matrice { length: 0, height: 0, elems: vec!() });
+}
 
+#[test]
+fn matrix_new_test() {
     let (f1, f2, f3, f4) = (Fake::new(1), Fake::new(2), Fake::new(3),Fake::new(4));
     let (g1, g2, g3, g4) = (f1.clone(), f2.clone(), f3.clone(), f4.clone());
 
     let x = Matrice::new(vec!(f1, f2, f3, f4), 2, 2);
     assert!(x == Ok(Matrice { length: 2, height: 2, elems: vec!(g1, g2, g3, g4) }));
+}
+
+#[test]
+fn matrix_get_row_test() {
+    let (f1, f2, f3, f4) = (Fake::new(1), Fake::new(2), Fake::new(3), Fake::new(4));
+    let fake_vec = vec!(f1.clone(), f2.clone(), f3.clone(), f4.clone());
+    let x = match Matrice::new(fake_vec.clone(), 2, 2) {
+        Ok(x) => x,
+        Err(_) => fail!("Failed test.")
+    };
+    assert!(x.get_row(0) == Ok(&[f1, f2]));
 }
  
 impl<T: Add<T, Result<T, U>>, U> Add<Matrice<T>, MatrixResult<Matrice<T>>> for Matrice<T> {
