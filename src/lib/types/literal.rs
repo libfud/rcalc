@@ -4,7 +4,8 @@ extern crate num;
 extern crate matrix;
 
 use self::matrix::{Matrice, FakeNum};
-use super::{BigRational, CalcResult, BadArgType, DivByZero, Expression, ErrorKind, Environment};
+use super::{BigRational, CalcResult, BadArgType, MatrixErr,
+            DivByZero, Expression, ErrorKind, Environment};
 use std::num;
 use std::fmt;
 
@@ -73,55 +74,80 @@ impl fmt::Show for LiteralType {
 
 pub type Lit = LiteralType;
 pub type LitRes =  CalcResult<LiteralType>;
-type BR = BigRational;
-
-fn apply(a: &Lit, b: &Lit, op: |&BR, &BR| -> BR) -> LitRes {
-    match (a, b) {
-        (&BigNum(ref x), &BigNum(ref y)) => Ok(BigNum(op(x, y))),
-        _ => Err(BadArgType("Arithmetic is only defined for numbers".to_str()))
-    }
-}
-
-fn apply_div(a: &Lit, b: &Lit, op: |&BR, &BR| -> BR) -> LitRes {
-    match (a, b) {
-        (&BigNum(ref x), &BigNum(ref y)) => if y == &num::zero() {
-            Err(DivByZero)
-        } else {
-            Ok(BigNum(op(x, y)))
-        },
-        _ => Err(BadArgType("Division is only defined for numbers".to_str()))
-    }
-}
 
 impl FakeNum<Lit, ErrorKind> for Lit { }
 
 impl Add<Lit, LitRes> for Lit {
     fn add(&self, rhs: &LiteralType) -> LitRes {
-        apply(self, rhs, |a, b| a + *b)
+        match (self, rhs) {
+            (&BigNum(ref x), &BigNum(ref y)) => Ok(BigNum(x + *y)),
+            (&Matrix(ref x), &Matrix(ref y)) => match *x + *y {
+                Ok(x) => Ok(Matrix(x)),
+                Err(m) => Err(MatrixErr(m))
+            },
+            _ => Err(BadArgType(format!("Arithmetic not defined for {} {}", self, rhs)))
+        }
     }
 }
 
 impl Sub<Lit, LitRes> for Lit {
     fn sub(&self, rhs: &Lit) -> LitRes {
-        apply(self, rhs, |a, b| a - *b)
+        match (self, rhs) {
+            (&BigNum(ref x), &BigNum(ref y)) => Ok(BigNum(x - *y)),
+            (&Matrix(ref x), &Matrix(ref y)) => match *x - *y {
+                Ok(x) => Ok(Matrix(x)),
+                Err(m) => Err(MatrixErr(m))
+            },
+            _ => Err(BadArgType(format!("Arithmetic not defined for {} {}", self, rhs)))
+        }
     }
 }
 
 impl Mul<Lit, LitRes> for Lit {
     fn mul(&self, rhs: &Lit) -> LitRes {
-        apply(self, rhs, |a, b| a * *b)
+        match (self, rhs) {
+            (&BigNum(ref x), &BigNum(ref y)) => Ok(BigNum(x * *y)),
+            (&Matrix(ref x), &Matrix(ref y)) => match *x * *y {
+                Ok(x) => Ok(Matrix(x)),
+                Err(m) => Err(MatrixErr(m))
+            },
+            _ => Err(BadArgType(format!("Arithmetic not defined for {} {}", self, rhs)))
+        }
+
     }
 }
 
 impl Div<Lit, LitRes> for Lit {
     fn div(&self, rhs: &Lit) -> LitRes {
-        apply_div(self, rhs, |a, b| a / *b)
+        match (self, rhs) {
+            (&BigNum(ref x), &BigNum(ref y)) => if y == &num::zero() {
+                Err(DivByZero)
+            } else {
+                Ok(BigNum(x / *y))
+            },
+            (&Matrix(ref x), &Matrix(ref y)) => match *x / *y {
+                Ok(x) => Ok(Matrix(x)),
+                Err(m) => Err(MatrixErr(m))
+            },
+             _ => Err(BadArgType("Division is only defined for numbers".to_str()))
+        }
     }
 }
 
 impl Rem<Lit, LitRes> for Lit {
     fn rem(&self, rhs: &Lit) -> LitRes {
-        apply_div(self, rhs, |a, b| a % *b)
+        match (self, rhs) {
+            (&BigNum(ref x), &BigNum(ref y)) => if y == &num::zero() {
+                Err(DivByZero)
+            } else {
+                Ok(BigNum(x % *y))
+            },
+            (&Matrix(ref x), &Matrix(ref y)) => match *x % *y {
+                Ok(x) => Ok(Matrix(x)),
+                Err(m) => Err(MatrixErr(m))
+            },
+            _ => Err(BadArgType("Division is only defined for numbers".to_str()))
+        }
     }
 }
 

@@ -4,6 +4,31 @@
 use std::fmt;
 use std::cmp;
 
+#[cfg(use_fancy)]
+use fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
+#[cfg(not(use_fancy))]
+use not_fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, Middle, MiddleRight};
+
+#[cfg(use_fancy)]
+mod fancy {
+    pub static UpperLeft: &'static str = "⎡";
+    pub static UpperRight: &'static str = "⎤";
+    pub static LowerLeft: &'static str = "⎣";
+    pub static LowerRight: &'static str = "⎦";
+    pub static MiddleLeft: &'static str = "⎢";
+    pub static MiddleRight: &'static str = "⎥";
+}
+
+#[cfg(not(use_fancy))]
+mod not_fancy {
+    pub static UpperLeft: &'static str = "[";
+    pub static UpperRight: &'static str = "]";
+    pub static LowerLeft: &'static str = "[";
+    pub static LowerRight: &'static str = "]";
+    pub static MiddleLeft:  &'static str = "|";
+    pub static MiddleRight: &'static str = "|";
+}
+
 #[deriving(Clone)]
 pub enum MatrixErrors {
     InvalidAxis,
@@ -381,13 +406,6 @@ pub struct Matrice<T> {
 
 impl<T: fmt::Show > fmt::Show for Matrice<T> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        for row in range(0, self.height) {
-            try!(writeln!(fmt, "{} ", self.elems.slice(row * self.length, 
-                                                     row * self.length + self.length)));
-        }
-
-        try!(writeln!(fmt, ""));
-
         let mut columns: Vec<Vec<String>> = Vec::new();
         let mut col_widths: Vec<uint> = Vec::new();
 
@@ -400,16 +418,27 @@ impl<T: fmt::Show > fmt::Show for Matrice<T> {
             columns.push(col);
         }
 
-        try!(writeln!(fmt, "{}\n", columns));
-
         for row in range(0, self.height) {
-            try!(write!(fmt, "["));
+            try!(write!(fmt, "{}", if row == 0 {
+                UpperLeft
+            } else if row == self.height - 1 {
+                LowerLeft
+            } else {
+                MiddleLeft
+            }));
             for col in range(0, self.length) {
                 let len = columns.get(col).get(row).len(); // space and comma
-                try!(write!(fmt, "{a}{b},", b = columns.get(col).get(row),
-                            a = " ".repeat(col_widths.get(col) + 2 - len)));
+                try!(write!(fmt, "{a}{b}{c}", b = columns.get(col).get(row),
+                            a = " ".repeat(col_widths.get(col) + 1 - len),
+                            c = if col != self.length - 1 { "," } else { "" }));
             }
-            try!(writeln!(fmt, "]"));
+            try!(writeln!(fmt, "{}", if row == 0 {
+                UpperRight
+            } else if row == self.height - 1 {
+                LowerRight
+            } else {
+                MiddleRight
+            }));
         }                
 
         Ok(())
