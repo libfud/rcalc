@@ -377,10 +377,10 @@ pub struct Matrice<T> {
 }
 
 impl<T: fmt::Show > fmt::Show for Matrice<T> {
-    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
-        for column in range(0, self.height) {
-            println!("{} ", self.elems.slice(column * self.length, 
-                                             column * self.length + self.length));
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        for row in range(0, self.height) {
+            try!(writeln!(fmt, "{} ", self.elems.slice(row * self.length, 
+                                                     row * self.length + self.length)));
         }
         Ok(())
     }
