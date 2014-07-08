@@ -98,29 +98,130 @@ pub enum RoundId {
 impl fmt::show for RoundId {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
-            &Round => "
+            &Round => "round",
+            &Floor => "floor",
+            &Ceiling => "ceiling",
+            &Zero => "zero?",
+            &Odd => "odd?",
+            &Even => "even?",
+        }));
+        Ok(())
+    }
+}
 
-#[deriving(Show, Clone, PartialOrd, PartialEq)]
+#[deriving(Clone, PartialOrd, PartialEq)]
+pub enum Gate {
+    If,
+    And,
+    Or,
+    Not,
+    Xor
+}
+
+impl fmt::Show for Gate {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(fmt, "{}", match self {
+            &If => "if", &And => "and", &Or => "or",
+            &Not => "not", &Xor => "xor"
+        }));
+        Ok(())
+    }
+}
+
+#[deriving(Clone, PartialOrd, PartialEq)]
+pub enum ListOps {
+    List,
+    Cons,
+    Car, Cdr,
+    Cadr, Cddr,
+    Caddr, Cdddr,
+}
+
+impl fmt::Show for ListOps {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(fmt, "{}", match self {
+            &List => "list", &Cons => "cons",
+            &Car => "car", &Cdr => "cdr",
+            &Cadr => "cadr", &Cddr => "cddr",
+            &Caddr => "caddr", &Cdddr => "cdddr"
+        }));
+        Ok(())
+    }
+}
+
+#[deriving(Clone, PartialOrd, PartialEq)]
+pub enum XForms {
+    Map,
+    Reduce,
+    Filter,
+    Sort,
+    RangeList
+}
+
+impl fmt::Show for XForms {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(fmt, "{}", match self {
+            &Map => "map",
+            &Reduce => "reduce",
+            &Filter => "filter",
+            &Sort => "sort",
+            &RangeList => "range-list",
+        }));
+        Ok(())
+    }
+}
+
+#[deriving(Clone, PartialOrd, PartialEq)]
+pub enum MatrixOps {
+    MakeMatrix,
+    MatrixSet,
+    MatrixExtend,
+}
+
+
+impl fmt::Show for MatrixOps {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(fmt, "{}", match self {
+            &MakeMatrix => "make-matrix",
+            &MatrixSet => "matrix-set",
+            &MatrixExtend => "matrix-extend",
+        }));
+        Ok(())
+    }
+}
+
+#[deriving(Clone, PartialOrd, PartialEq)]
 pub enum OperatorType {
     Arithmetic(Arith),
     Transcend(Transcendental),
     Ordering(OrderEq),
-
-    Round, Floor, Ceiling, Zero, Odd, Even,
-
-    If, And, Or, Not, Xor,
-
-    Quote, List, Cons, Car, Cdr,  Cadr, Cddr, Caddr, Cdddr,
-    
-    Map, Reduce, Filter, ListLen,
-
-    Define, Lambda,
-
-    Table, RangeList, Sort, 
-
-    MakeMatrix, MatrixExtend, MatrixSet,
-
+    RoundIdent(RoundId),
+    Logic(Gate),
+    Quote, 
+    Listings(ListOps),
+    TransForms(XForms),
+    Define,
+    Lambda,
+    Table, 
+    MatrixStuff(MatrixOps),
     Help,
+}
+
+impl fmt::Show for OperatorType {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(fmt, "{}", match self {
+            &Arithmetic(ref x) | &Transcend(ref x) | 
+            &Ordering(ref x) | &RoundIdent(ref x) |
+            &Logic(ref x) | &Listings(ref x) |
+            TransForms(ref x) | &MatrixStuff(ref x) => x.to_str(),
+            Quote => "'".to_str(),
+            Define => "define".to_str(),
+            Lambda => "lambda".to_str(),
+            Table => "table".to_str(),
+            Help => "help".to_str(),
+        }));
+        Ok(())
+    }
 }
 
 impl OperatorType {
