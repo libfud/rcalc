@@ -110,7 +110,7 @@ impl<T: Num + Clone> Matrice<T> {
     }
 
     pub fn cols(&self) -> uint {
-        self.cols
+        self.columns
     }
 
     pub fn to_vec(&self) -> Vec<T> {
@@ -151,7 +151,19 @@ impl<T: Num + Clone> Matrice<T> {
 
     pub fn submatrix(&self, ofsx: uint, ofsy: uint, 
                      rows: uint, cols: uint) -> Option<Matrice<T>> {
-        if ofsx + rows > self.rows || 
+        if ofsx + cols > self.columns || ofsy + rows > self.rows {
+            return None
+        }
+
+        let mut new_elems: Vec<T> = Vec::with_capacity(rows * cols);
+        for n in range(0, rows) {
+            for m in range(0, cols) {
+                new_elems.push(self.elems.get(n + ofsy + m + ofsx).clone())
+            }
+        }
+
+        Some(Matrice { columns: cols, rows: rows, elems: new_elems })
+    }
         
 
     pub fn ident(n: uint) -> Matrice<T> {
