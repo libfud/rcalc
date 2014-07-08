@@ -1,7 +1,6 @@
 //! Operators
 
 use std::num;
-use super::literal::{Lit, LitRes};
 
 #[deriving(Show, Clone, PartialOrd, PartialEq)] 
 pub enum OperatorType {
@@ -23,7 +22,7 @@ pub enum OperatorType {
 
     Table, RangeList, Sort, 
 
-    MakeMatrix, MatrixExtend, MatrixSet, MatrixAdd,
+    MakeMatrix, MatrixExtend, MatrixSet,
 
     Help,
 }
@@ -35,29 +34,6 @@ impl OperatorType {
             Eq => |a: T, b: T| a == b, NEq => |a: T, b: T| a != b,
             GtEq => |a: T, b: T| a >= b, Gt => |a: T, b: T| a > b,
             _ => fail!("Mismatched operator types (don't use ord with nonord)")
-        }
-    }
-
-
-    pub fn to_arith(&self) -> |Lit, &Lit| -> LitRes {
-        match self {
-            &Add => |a: Lit, b: &Lit| a + *b, &Sub => |a: Lit, b: &Lit| a - *b,
-            &Mul => |a: Lit, b: &Lit| a * *b, &Div => |a: Lit, b: &Lit| a / *b,
-            &Rem => |a: Lit, b: &Lit| a % *b,
-            _ => fail!("Mismatched operator types (don't use arith with non-arithmetic")
-        }
-    }
-
-    pub fn to_arith_args<T: num::One + 
-        num::Zero>(&self) -> (uint, |Lit, &Lit| -> LitRes, || -> T ) {
-
-        match self {
-            &Add => (0, self.to_arith(), || num::zero()),
-            &Sub => (1, self.to_arith(), || num::zero()),
-            &Mul => (0, self.to_arith(), || num::one()),
-            &Div => (1, self.to_arith(), || num::one()),
-            &Rem => (1, self.to_arith(), || num::one()),
-            _ => fail!("Mistmatched operator types (don't use arith with non-arithmetic")
         }
     }
 
@@ -87,7 +63,7 @@ impl OperatorType {
             Table => "table", RangeList => "range-list", Sort => "sort",
 
             MakeMatrix => "make-matrix", MatrixExtend => "matrix-extend",
-            MatrixSet => "matrix-set", MatrixAdd => "matrix-add",
+            MatrixSet => "matrix-set",
 
             Help  => "help",
         };
@@ -130,7 +106,7 @@ impl OperatorType {
             "sort" => Some(Sort),
 
             "make-matrix" => Some(MakeMatrix), "matrix-extend" => Some(MatrixExtend),
-            "matrix-set" => Some(MatrixSet), "matrix-add" => Some(MatrixAdd),
+            "matrix-set" => Some(MatrixSet),
 
             "help" => Some(Help),
 

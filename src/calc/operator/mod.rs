@@ -65,7 +65,6 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         MakeMatrix => matrice::make_matrix(args, env),
         MatrixExtend => matrice::matrix_extend(args, env),
         MatrixSet => matrice::matrix_set(args, env),
-        MatrixAdd => matrice::matrix_add(args, env),
 
         Help => super::common::help(args),
     }

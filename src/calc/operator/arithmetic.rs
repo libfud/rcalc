@@ -12,7 +12,7 @@ pub type Args<T = ArgType> = Vec<T>;
 pub type BigR = BigRational;
 pub type Env = Environment;
 
-fn minlen_op_ident(op: OperatorType) -> (uint, |Lit, &Lit| -> LitRes,  BigR) {
+fn minlen_op_ident(op: OperatorType) -> (uint, |Lit, &Lit| -> Lit,  BigR) {
     match op {
         Add => (0, |a: Lit, b: &Lit| a + *b, num::zero()),
         Sub => (1, |a: Lit, b: &Lit| a - *b, num::zero()),
@@ -34,11 +34,12 @@ pub fn arith(args: &Args, env: &mut Env, oper: OperatorType) -> CalcResult {
     let ident = BigNum(ident);
 
     if args.len() == 1 {
-        Ok(Atom(try!(op(ident, &try!(args.get(0).desymbolize(env))))))
+        Ok(Atom(op(ident, &try!(args.get(0).desymbolize(env)))))
     } else {
-        let mut answer = try!(args.get(0).desymbolize(env));
+        let first = try!(args.get(0).desymbolize(env));
+        answer = args.tail().iter().fold(first, |a, b|, op(a, b))
         for x in args.tail().iter() {
-            answer = try!(op(answer, &try!(x.desymbolize(env))));
+            answer = op(answer, &try!(x.desymbolize(env)));
         }
         Ok(Atom(answer))
     }

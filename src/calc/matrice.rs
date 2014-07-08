@@ -108,19 +108,3 @@ pub fn matrix_set(args: &Args, env: &mut Env) -> CalcResult {
     Ok(Atom(Matrix(matrix)))
 }
 
-pub fn matrix_add(args: &Args, env: &mut Env) -> CalcResult {
-    if args.len() < 2 {
-        return Err(BadNumberOfArgs("`matrix-add' requires at least two terms".to_str()))
-    }
-
-    let (a, b) = match (try!(args.get(0).desymbolize(env)),
-                        try!(args.get(1).desymbolize(env))) {
-        (Matrix(x), Matrix(y)) => (x, y),
-        _ => return Err(BadArgType("Not matrices!".to_str()))
-    };
-
-    match a + b {
-        Ok(x) => Ok(Atom(Matrix(x))),
-        Err(m) => Err(MatrixErr(m))
-    }
-}
