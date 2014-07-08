@@ -1,6 +1,7 @@
 //! Operators
 
 use std::fmt;
+use std::from_str;
 
 #[cfg(use_fancy)]
 use fancy::{LessThanEq, GreaterThanEq};
@@ -42,6 +43,19 @@ impl fmt::Show for Arith {
     }
 }
 
+impl from_str::FromStr for Arith {
+    fn from_str(s: &str) -> Option<Arith> {
+        match s {
+            "+" => Some(Add),
+            "-" => Some(Sub),
+            "*" => Some(Mul),
+            "/" => Some(Div),
+            "%" => Some(Rem),
+            _ => None
+        }
+    }
+}           
+
 #[deriving(Clone, PartialOrd, PartialEq)]
 pub enum Transcendental {
     Log, Ln, Exp,
@@ -64,6 +78,19 @@ impl fmt::Show for Transcendental {
     }
 }
 
+impl from_str::FromStr for Transcendental {
+    fn from_str(s: &str) -> Option<Transcendental> {
+        match s {
+            "log" => Some(Log), "ln" => Some(Ln), "exp", Some(Exp),
+            "sin" => Some(Sin), "cos" => Some(Cos), "tan" => Some(Tan),
+            "asin" => Some(Asin),  "acos" => Some(ACos), "atan" => Some(ATan),
+            "sinh" => Some(SinH), "cosh" => Some(CosH), "tanh" => Some(TanH),
+            "asinh" => Some(ASinH), "acosh" => Some(ACosH), "atanh" => Some(ATanH),
+            _ => None
+        }
+    }
+}
+
 #[deriving(Clone, PartialOrd, PartialEq)]
 pub enum OrderEq {
     Eq,
@@ -82,6 +109,17 @@ impl fmt::show for OrderEq {
             &Gt => ">", &GtEq => GreaterThanEq
         }));
         Ok(())
+    }
+}
+
+impl from_str::FromStr for OrderEq {
+    fn from_str(&self) -> Option<OrderEq> {
+        match s {
+            "<" => Some(Lt), "<=" => Some(LtEq),
+            "=" => Some(Eq), "!=" => Some(NEq),
+            ">=" => Some(GtEq), ">" => Some(Gt),
+            _ => None
+        }
     }
 }
 
@@ -109,6 +147,20 @@ impl fmt::show for RoundId {
     }
 }
 
+impl from_str::FromStr for RoundId {
+    fn from_str(s: &str) -> Option<RoundId> {
+        match s {
+            "round" => Some(Round),
+            "ceiling" => Some(Ceiling),
+            "floor" => Some(Floor),
+            "zero?" => Some(Zero),
+            "odd?" => Some(Odd), 
+            "even?" => Some(Even),
+            _ => None
+        }
+    }
+}
+
 #[deriving(Clone, PartialOrd, PartialEq)]
 pub enum Gate {
     If,
@@ -121,10 +173,22 @@ pub enum Gate {
 impl fmt::Show for Gate {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
-            &If => "if", &And => "and", &Or => "or",
+            &If => "if",
+            &And => "and", &Or => "or",
             &Not => "not", &Xor => "xor"
         }));
         Ok(())
+    }
+}
+
+impl from_str::FromStr for Gate {
+    fn from_str(s: &str) -> Option<Gate> {
+        match s {
+            "if" => Some(If), "and" => Some(And),
+            "or" => Some(Or), "not" => Some(Not),
+            "xor" => Some(Xor),
+            _ => None
+        }
     }
 }
 
@@ -149,6 +213,19 @@ impl fmt::Show for ListOps {
     }
 }
 
+impl from_str::FromStr for ListOps {
+    fn from_str(s: &str) -> Option<ListOps> {
+        match s {
+            "list" => Some(List),
+            "cons" => Some(Cons), 
+            "car" => Some(Car), "cdr" => Some(Cdr),
+            "cadr" => Some(Cadr), "cddr" => Some(Cddr),
+            "caddr" => Some(Caddr), "cdddr" => Some(Cdddr),
+            _ => None,
+        }
+    }
+}
+
 #[deriving(Clone, PartialOrd, PartialEq)]
 pub enum XForms {
     Map,
@@ -156,6 +233,19 @@ pub enum XForms {
     Filter,
     Sort,
     RangeList
+}
+
+impl from_str::FromStr for XForms {
+    fn from_str(s: &str) -> Option<XForms> {
+        match s {
+            "map" => Some(Map),
+            "reduce" => Some(Reduce),
+            "filter" => Some(Filter),
+            "sort" => Some(Sort),
+            "range-list" => Some(RangeList),
+            _ => None
+        }
+    }
 }
 
 impl fmt::Show for XForms {
@@ -178,7 +268,6 @@ pub enum MatrixOps {
     MatrixExtend,
 }
 
-
 impl fmt::Show for MatrixOps {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
@@ -190,9 +279,21 @@ impl fmt::Show for MatrixOps {
     }
 }
 
+impl from_str::FromStr for MatrixOps {
+    fn from_str(s: &str) -> Option<MatrixOps> {
+        match s {
+            "make-matrix" => Some(MakeMatrix),
+            "matrix-extend" => Some(MatrixExtend),
+            "matrix-set" => Some(MatrixSet),
+            _ => None
+        }
+    }
+}
+
 #[deriving(Clone, PartialOrd, PartialEq)]
 pub enum OperatorType {
     Arithmetic(Arith),
+    Pow,
     Transcend(Transcendental),
     Ordering(OrderEq),
     RoundIdent(RoundId),
@@ -234,79 +335,16 @@ impl OperatorType {
         }
     }
 
-    pub fn op_to_str(&self) -> String {
-        let answer = match *self {
-            Add => "+", Sub => "-", Mul => "*", Div => "/", Rem => "%", Pow => "pow",
-
-            Sin => "sin", Cos => "cos", Tan => "tan", ASin => "asin", ACos => "acos",
-            ATan => "atan", SinH => "sinh", CosH => "cosh", TanH => "tanh", ASinH => "asinh",
-            ACosH => "acosh", ATanH => "atanh", Log => "log", Ln => "ln", Exp => "exp",
-
-            Lt => "<", LtEq => "<=", Eq => "=", NEq => "!", GtEq => ">=", Gt => ">",
-
-            If => "if", And => "and", Or => "or", Not => "not", Xor => "xor",
-
-            Round => "round", Ceiling => "ceiling", Floor => "floor",
-            Zero => "zero?", Even => "even?", Odd => "odd?",
-
-            Define => "define", Lambda => "lambda",
-
-            Quote => "quote", List => "list", Cons => "cons", Car => "car", 
-            Cdr => "cdr",  Cadr => "cadr", Cddr => "cddr", Caddr => "caddr",
-            Cdddr => "cdddr",
-
-            Map => "map", Reduce => "reduce", Filter => "filter", ListLen => "list-len",
-
-            Table => "table", RangeList => "range-list", Sort => "sort",
-
-            MakeMatrix => "make-matrix", MatrixExtend => "matrix-extend",
-            MatrixSet => "matrix-set",
-
-            Help  => "help",
-        };
-
-        answer.to_str()
-    }
-
     pub fn from_str(s: &str) -> Option<OperatorType> {
+        if from_str::<Arithmetic>(s).is_some() {
+            return Some(Arithmetic(
         match s {
-            "+" => Some(Add), "-" => Some(Sub), "*" => Some(Mul), "/" => Some(Div),
-            "%" => Some(Rem), "pow" => Some(Pow),
-            
-            "sin" => Some(Sin), "cos" => Some(Cos), "tan" => Some(Tan),
-            "asin" => Some(ASin), "acos" => Some(ACos), "atan" => Some(ATan),
-            "sinh" => Some(SinH), "cosh" => Some(CosH), "tanh" => Some(TanH),
-            "asinh" => Some(ASinH), "acosh" => Some(ACosH), "atanh" => Some(ATanH),
-            "log" => Some(Log), "ln" => Some(Ln), "exp" => Some(Exp),
-
-            "<" => Some(Lt), "<=" => Some(LtEq),
-            "=" => Some(Eq), "!=" => Some(NEq),
-            ">=" => Some(GtEq), ">" => Some(Gt),
-
-            "if" => Some(If), "and" => Some(And), "or" => Some(Or), "not" => Some(Not),
-            "xor" => Some(Xor),
-
-            "round" => Some(Round), "ceiling" => Some(Ceiling), "floor" => Some(Floor),
-            "zero?" => Some(Zero), "odd?" => Some(Odd), "even?" => Some(Even),
-
-            "define" => Some(Define), "lambda" => Some(Lambda),
-
-            "quote" | "'" => Some(Quote), "list" => Some(List),
-            "cons" => Some(Cons), "car" => Some(Car), "cdr" => Some(Cdr),
-            "cadr" => Some(Cadr), "cddr" => Some(Cddr),
-            "caddr" => Some(Caddr), "cdddr" => Some(Cdddr),
-
-            "map" => Some(Map), "reduce" => Some(Reduce), "filter" => Some(Filter),
-            "list-len" => Some(ListLen),
-
-            "table" => Some(Table), "range-list" => Some(RangeList),
-            "sort" => Some(Sort),
-
-            "make-matrix" => Some(MakeMatrix), "matrix-extend" => Some(MatrixExtend),
-            "matrix-set" => Some(MatrixSet),
-
+            "pow" => Some(Pow),
+            "define" => Some(Define),
+            "lambda" => Some(Lambda),
+            "quote" | "'" => Some(Quote),
+            "table" => Some(Table),
             "help" => Some(Help),
-
             _ => None
         }
     }
