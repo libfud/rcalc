@@ -60,7 +60,7 @@ pub fn handle_logic(args: &Vec<ArgType>, env: &mut Environment, log: Gate) -> Ca
     }
 }
 
-pub fn matrix_stuff(args: &Vec<ArgType>, env: &mut Environment, mop: Matrix) -> CalcResult {
+pub fn matrix_stuff(args: &Vec<ArgType>, env: &mut Environment, mop: MatrixOps) -> CalcResult {
     use self::types::operator::{MatrixSet, MatrixExtend, MakeMatrix};    
 
     match mop {

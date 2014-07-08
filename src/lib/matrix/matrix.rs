@@ -58,8 +58,8 @@ impl fmt::Show for MatrixErrors {
 
 #[deriving(Clone, PartialOrd, PartialEq)]
 pub struct Matrice<T> {
-    length: uint,
-    height: uint,
+    columns: uint,
+    rows: uint,
     elems: Vec<T>
 }
 
@@ -68,32 +68,32 @@ impl<T: fmt::Show > fmt::Show for Matrice<T> {
         let mut columns: Vec<Vec<String>> = Vec::new();
         let mut col_widths: Vec<uint> = Vec::new();
 
-        for column in range(0, self.length) {
+        for column in range(0, self.columns) {
             let mut col = Vec::new();
-            for row in range(0, self.height) {
-                col.push(self.elems.get(column + row * self.length).to_str());
+            for row in range(0, self.rows) {
+                col.push(self.elems.get(column + row * self.columns).to_str());
             }
             col_widths.push(col.iter().fold(0, |a, b| cmp::max(a, b.len())));
             columns.push(col);
         }
 
-        for row in range(0, self.height) {
+        for row in range(0, self.rows) {
             try!(write!(fmt, "{}", if row == 0 {
                 UpperLeft
-            } else if row == self.height - 1 {
+            } else if row == self.rows - 1 {
                 LowerLeft
             } else {
                 MiddleLeft
             }));
-            for col in range(0, self.length) {
+            for col in range(0, self.columns) {
                 let len = columns.get(col).get(row).len(); // space and comma
                 try!(write!(fmt, "{a}{b}{c}", b = columns.get(col).get(row),
                             a = " ".repeat(col_widths.get(col) + 1 - len),
-                            c = if col != self.length - 1 { "," } else { "" }));
+                            c = if col != self.columns - 1 { "," } else { "" }));
             }
             try!(writeln!(fmt, "{}", if row == 0 {
                 UpperRight
-            } else if row == self.height - 1 {
+            } else if row == self.rows - 1 {
                 LowerRight
             } else {
                 MiddleRight
@@ -106,26 +106,26 @@ impl<T: fmt::Show > fmt::Show for Matrice<T> {
 
 impl<T: Num + Clone> Matrice<T> {
     pub fn new_empty() -> Matrice<T> {
-        Matrice { length: 0, height: 0, elems: vec![] }
+        Matrice { columns: 0, rows: 0, elems: vec![] }
     }
 
     pub fn new(other: Vec<T>, len: uint, h: uint) -> MatrixResult<Matrice<T>> {
         if len * h != other.len() {
             Err(BadDimensionality)
         } else {
-            Ok(Matrice { length: len, height: h, elems: other })
+            Ok(Matrice { columns: len, rows: h, elems: other })
         }
     }
 
     pub fn scalar(&self, rhs: &T, op: |&T, &T| -> T) -> Matrice<T> {
         let new_elems = self.elems.iter().map(|lhs| op(lhs, rhs)).collect();
 
-        Matrice { length: self.length, height: self.height, elems: new_elems }
+        Matrice { columns: self.columns, rows: self.rows, elems: new_elems }
     }
 
     pub fn get_row<'a>(&'a self, row: uint) -> MatrixIterator<'a, T> {
         MatrixIterator { 
-            elems: self.elems.slice(row * self.length, (row + 1) * self.length),
+            elems: self.elems.slice(row * self.columns, (row + 1) * self.columns),
             jump: 1
         }
     }
@@ -133,7 +133,7 @@ impl<T: Num + Clone> Matrice<T> {
     pub fn get_col<'a>(&'a self, col: uint) -> MatrixIterator<'a, T> {
         MatrixIterator {
             elems: self.elems.slice_from(col),
-            jump: self.length
+            jump: self.columns
         }
     }
 }
@@ -159,13 +159,13 @@ impl<'a, T> Iterator<&'a T> for MatrixIterator<'a, T> {
 #[test]
 fn matrix_empty_test() {
     let empty: Matrice<int> = Matrice::new_empty();
-    assert!(empty == Matrice { length: 0, height: 0, elems: vec!() });
+    assert!(empty == Matrice { columns: 0, rows: 0, elems: vec!() });
 }
 
 #[test]
 fn matrix_new_test() {
     let x = Matrice::new(vec!(1i, 2, 3, 4), 2, 2);
-    assert!(x == Ok(Matrice { length: 2, height: 2, elems: vec!(1, 2, 3, 4) }));
+    assert!(x == Ok(Matrice { columns: 2, rows: 2, elems: vec!(1, 2, 3, 4) }));
 
     let y: MatrixResult<Matrice<int>> = Matrice::new(vec!(), 1, 1);
     assert!(y == Err(BadDimensionality));
@@ -222,7 +222,7 @@ fn matrix_get_col_test() {
 
 impl<T: Add<T, T>> Add<Matrice<T>, Matrice<T>> for Matrice<T> {
     fn add(&self, other: &Matrice<T>) -> Matrice<T> {
-        if (self.length, self.height) != (other.length, other.height) {
+        if (self.columns, self.rows) != (other.columns, other.rows) {
             fail!(MismatchedAxes.to_str())
         }
 
@@ -230,7 +230,7 @@ impl<T: Add<T, T>> Add<Matrice<T>, Matrice<T>> for Matrice<T> {
             |(lhs, rhs)| *lhs + *rhs).collect();
 
 
-        Matrice { length: self.length, height: self.height, elems: new_elems }
+        Matrice { columns: self.columns, rows: self.rows, elems: new_elems }
     }
 }
 
@@ -245,12 +245,12 @@ fn test_add() {
         Err(m) => fail!(m.to_str())
     };
 
-    assert!(lhs + rhs == Matrice { length: 2, height: 2, elems: vec!(6i, 8i, 10i, 12i) });
+    assert!(lhs + rhs == Matrice { columns: 2, rows: 2, elems: vec!(6i, 8i, 10i, 12i) });
 }
 
 impl<T: Sub<T, T>> Sub<Matrice<T>, Matrice<T>> for Matrice<T> {
     fn sub(&self, other: &Matrice<T>) -> Matrice<T> {
-        if (self.length, self.height) != (other.length, other.height) {
+        if (self.columns, self.rows) != (other.columns, other.rows) {
             fail!(MismatchedAxes.to_str())
         }
 
@@ -258,7 +258,7 @@ impl<T: Sub<T, T>> Sub<Matrice<T>, Matrice<T>> for Matrice<T> {
             |(lhs, rhs)| *lhs - *rhs).collect();
 
 
-        Matrice { length: self.length, height: self.height, elems: new_elems }
+        Matrice { columns: self.columns, rows: self.rows, elems: new_elems }
     }
 }
 
@@ -273,24 +273,24 @@ fn test_sub() {
         Err(m) => fail!(m.to_str())
     };
 
-    assert!(lhs - rhs == Matrice { length: 2, height: 2, elems: vec!(-4i, -4i, -4i, -4i) });
+    assert!(lhs - rhs == Matrice { columns: 2, rows: 2, elems: vec!(-4i, -4i, -4i, -4i) });
 }
 
 impl<T: Num + Clone> Mul<Matrice<T>, Matrice<T>> for Matrice<T> {
     fn mul(&self, other: &Matrice<T>) -> Matrice<T> {
-        if self.length != other.height {
+        if self.columns != other.rows {
             fail!(MismatchedAxes.to_str())
         }
 
-        let mut new_elems: Vec<T> = Vec::with_capacity(self.length * other.height);
-        for row in range(0, self.length) {
-            for col in range(0, self.length) {
+        let mut new_elems: Vec<T> = Vec::with_capacity(self.columns * other.rows);
+        for row in range(0, self.rows) {
+            for col in range(0, other.columns) {
                 new_elems.push(self.get_row(row).zip(other.get_col(col))
                                .map(|(lhs, rhs)| *lhs * *rhs).sum());
             }
         }
 
-        Matrice { length: self.length, height: other.height, elems: new_elems }
+        Matrice { columns: other.columns, rows: self.rows, elems: new_elems }
                 
     }
 }
@@ -309,12 +309,12 @@ fn test_mul() {
     let results = vec!((1i * 5 + 2 * 7), (1 * 6 + 2 * 8),
                        (3 * 5 + 4 * 7), (3 * 6 + 4 * 8));
 
-    assert!(lhs * rhs == Matrice { length: 2, height: 2, elems: results });
+    assert!(lhs * rhs == Matrice { columns: 2, rows: 2, elems: results });
 }
 
 impl<T: Div<T, T>> Div<Matrice<T>, Matrice<T>> for Matrice<T> {
     fn div(&self, other: &Matrice<T>) -> Matrice<T> {
-        if (self.length, self.height) != (other.length, other.height) {
+        if (self.columns, self.rows) != (other.columns, other.rows) {
             fail!(MismatchedAxes.to_str())
         }
 
@@ -322,13 +322,13 @@ impl<T: Div<T, T>> Div<Matrice<T>, Matrice<T>> for Matrice<T> {
             |(lhs, rhs)| *lhs / *rhs).collect();
 
 
-        Matrice { length: self.length, height: self.height, elems: new_elems }
+        Matrice { columns: self.columns, rows: self.rows, elems: new_elems }
     }
 }
 
 impl<T: Rem<T, T>> Rem<Matrice<T>, Matrice<T>> for Matrice<T> {
     fn rem(&self, other: &Matrice<T>) -> Matrice<T> {
-        if (self.length, self.height) != (other.length, other.height) {
+        if (self.columns, self.rows) != (other.columns, other.rows) {
             fail!(MismatchedAxes.to_str())
         }
 
@@ -336,6 +336,6 @@ impl<T: Rem<T, T>> Rem<Matrice<T>, Matrice<T>> for Matrice<T> {
             |(lhs, rhs)| *lhs % *rhs).collect();
 
 
-        Matrice { length: self.length, height: self.height, elems: new_elems }
+        Matrice { columns: self.columns, rows: self.rows, elems: new_elems }
     }
 }
