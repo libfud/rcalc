@@ -141,7 +141,7 @@ pub fn handle_operator(tokens: &mut TokenStream<Token, ErrorKind>, env: &mut Env
                        top_expr: &ExprType, op: OperatorType) -> Expr {
     match *top_expr {
         sexpr::BuiltIn(Help) => {
-            Ok(Atom(Symbol(op.op_to_str())))
+            Ok(Atom(Symbol(op.to_str())))
         },
 
         _   => match op {

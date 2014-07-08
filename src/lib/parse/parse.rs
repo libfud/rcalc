@@ -42,7 +42,7 @@ pub fn is_paren(expr: &str) -> MaybeToken<Token, ErrorKind> {
 
 pub fn is_op(expr: &str) -> MaybeToken<Token, ErrorKind> {
     let word = make_word(expr);
-    match OperatorType::from_str(word.as_slice()) {
+    match from_str::<OperatorType>(word.as_slice()) {
         Some(op)    => (Some(Ok(Operator(op))), word.len()),
         _           => (None, 0)
     }

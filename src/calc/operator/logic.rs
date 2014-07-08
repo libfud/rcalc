@@ -4,12 +4,10 @@ extern crate types;
 
 use self::types::sexpr::BuiltIn;
 use self::types::literal::{Boolean, BigNum};
-use self::types::operator::OperatorType;
-use self::types::operator;
-use super::super::{Evaluate, LiteralType, 
-                   CalcResult, Environment, NonBoolean, 
-                   BadNumberOfArgs, BadArgType};
-use super::{ArgType, Atom, SExpr, BigRational, If};
+use self::types::operator::{RoundId, Logic, If, Even};
+use super::super::{Evaluate, LiteralType, CalcResult, Environment, 
+                   NonBoolean, BadNumberOfArgs, BadArgType};
+use super::{ArgType, Atom, SExpr, BigRational};
 
 pub type Args<T = Vec<ArgType>> = T;
 pub type Env<T = Environment> = T;
@@ -39,7 +37,7 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
         match result {
             Atom(_) => return Ok(result),
             SExpr(ref x) => {
-                if x.expr_type == BuiltIn(If) {
+                if x.expr_type == BuiltIn(Logic(If)) {
                     arguments = x.args.clone();
                 } else {
                     return x.eval(env)
@@ -106,67 +104,17 @@ pub fn not(args: &Args, env: &mut Env) -> CalcResult {
     Ok(Atom(Boolean(!val)))
 }
 
-#[deriving(PartialEq)]
-pub enum NumOps {
-    Round,
-    Floor,
-    Ceiling,
-    Even,
-    Odd,
-    Zero,
-}
-
-impl NumOps {
-    pub fn builtin_to_op(builtin: OperatorType) -> NumOps {
-        match builtin {
-            operator::Round => Round,
-            operator::Floor => Floor,
-            operator::Ceiling => Ceiling,
-            operator::Even => Even,
-            operator::Odd => Odd,
-            operator::Zero => Zero,
-            _ => fail!("Don't do this")
-        }
-    }
-
-    pub fn name(self) -> String {
-        let s = match self {
-            Round => "`round'",
-            Floor => "`floor'",
-            Ceiling => "`ceiling'",
-            Even => "`even?'",
-            Odd => "`odd?'",
-            Zero => "`zero?",
-        };
-        s.to_str()
-    }
-
-    pub fn idea(self) -> String {
-        let s = match self {
-            Round => "be rounded",
-            Floor => "have their floor returned",
-            Ceiling => "have their ceiling returned",
-            Even => "be even",
-            Odd => "be odd",
-            Zero => "be zero",
-        };
-
-        s.to_str()
-    }
-}
-
-pub fn num_op(args: &Args, env: &mut Env, op: OperatorType) -> CalcResult {
+pub fn num_op(args: &Args, env: &mut Env, op: RoundId) -> CalcResult {
     use std::num;
     use super::super::num::Integer;
-
-    let op = NumOps::builtin_to_op(op);
+    use self::types::operator::{Round, Floor, Ceiling, Zero};
 
     let one: BigRational = num::one();
     let two = one + one;
     let half = one / two;
 
     if args.len() != 1 {
-        return Err(BadNumberOfArgs(format!("{} only takes one argument", op.name())))
+        return Err(BadNumberOfArgs(format!("{} only takes one argument", op)))
     }
 
     let num = match try!(args.get(0).desymbolize(env)) {
@@ -176,10 +124,15 @@ pub fn num_op(args: &Args, env: &mut Env, op: OperatorType) -> CalcResult {
 
     match op { 
         //round() doesn't work right for BigRationals.
-        Round => Ok(Atom(BigNum(if num - num.floor() >= half { num.ceil() } else { num.floor() }))),
+        Round => Ok(Atom(BigNum(if num - num.floor() >= half { 
+            num.ceil()
+        } else {
+            num.floor()
+        }))),
         Floor => Ok(Atom(BigNum(num.floor()))),
         Ceiling => Ok(Atom(BigNum(num.ceil()))),
         Zero => Ok(Atom(Boolean(num == num::zero()))),
-        _ => Ok(Atom(Boolean((op != Even) ^ (num.numer().is_even() && *num.denom() == num::one()))))
+        _ => Ok(Atom(Boolean((op != Even) ^ 
+                             (num.numer().is_even() && *num.denom() == num::one()))))
     }
 }

@@ -1,11 +1,13 @@
 //! Methods of raising an index to a given power.
 
+extern crate types;
+
 use std::num;
 use super::super::{BigNum, CalcResult, Environment, Evaluate, BadArgType,
                    BadNumberOfArgs, BadPowerRange};
 use super::{BigRational, ArgType, Atom};
 use super::trig::float_ops;
-use super::{Ln, Exp};
+use self::types::operator::{Ln, Exp};
 
 pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 2 {

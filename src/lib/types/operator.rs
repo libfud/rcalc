@@ -173,6 +173,21 @@ impl from_str::FromStr for RoundId {
     }
 }
 
+impl RoundId {
+    pub fn idea(self) -> String {
+        let s = match self {
+            Round => "be rounded",
+            Floor => "have their floor returned",
+            Ceiling => "have their ceiling returned",
+            Even => "be even",
+            Odd => "be odd",
+            Zero => "be zero",
+        };
+
+        s.to_str()
+    }
+}
+
 #[deriving(Clone, PartialOrd, PartialEq)]
 pub enum Gate {
     If,

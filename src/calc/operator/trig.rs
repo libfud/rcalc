@@ -5,13 +5,13 @@ extern crate types;
 
 use self::num::rational::Ratio;
 use self::types::operator::{Sin, Cos, Tan, ASin, ACos, ATan, SinH, CosH, TanH,
-                            ASinH, ACosH, ATanH, Log, Ln, Exp, OperatorType};
+                            ASinH, ACosH, ATanH, Log, Ln, Exp, Transcendental};
 use self::types::literal::BigNum;
 use self::types::sexpr::{Atom, ArgType};
 use super::super::{CalcResult, Environment, Evaluate, BadNumberOfArgs,
                    BigRational, BadArgType, BadFloatRange};
 
-pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: OperatorType) -> CalcResult {
+pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: Transcendental) -> CalcResult {
     if args.len() > 1 {
         return Err(BadNumberOfArgs(format!("{} takes one argument", fop)))
     }
@@ -37,7 +37,6 @@ pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: OperatorType) 
         Log => floated.log10(),
         Ln => floated.ln(),
         Exp => floated.exp(),
-        _ => fail!("That shouldn't happen")
     };
         
     match Ratio::from_float(answer) {

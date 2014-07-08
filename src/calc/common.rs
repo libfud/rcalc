@@ -183,11 +183,12 @@ function.
 
     for (key, val) in ["help", "use", "arithmetic", "+", "-", "*", "/", "pow", "sin",
                        "cos", "tan", "trig", "<", "<=", "=", ">=", ">", "if", "logic",
-                       "define", "lambda"]
+                       "define", "lambda", "≤", "≥"]
         .iter().zip([help_help, use_help, arithmetic_help, add_help, sub_help, mul_help,
                      div_help, pow_help, sin_help, cos_help, tan_help, trig_help,
-                     lt_help, lte_help, eq_help, gte_help, gt_help, condit_help, logic_help,
-                     define_help, lambda_help].iter())
+                     lt_help, lte_help.clone(), eq_help, gte_help.clone(), gt_help,
+                     condit_help, logic_help, define_help, lambda_help, 
+                     lte_help, gte_help].iter())
     {
             help_map.insert(key.to_str(), val.to_str());
     }
@@ -202,33 +203,6 @@ function.
             Some(val) => format!("{}", val),
             None => format!("Help for `{}' is not available", word)
         });
-/*
-        println!("{}", match word.as_slice() {
-            "help"              => help_help,
-            "use"               => use_help,
-            "arithmetic"        => arithmetic_help,
-            "+"|"add"           => add_help,
-            "-"|"subtraction"   => sub_help,
-            "*"|"multiply"      => mul_help,
-            "/"|"division"      => div_help,
-            "pow"|"power"       => pow_help,
-            "sin"|"sine"        => sin_help,
-            "cos"|"cosine"      => cos_help,
-            "tan"|"tangent"     => tan_help,
-            "trig"              => trig_help,
-            "<"                 => lt_help,
-            "<="                => lte_help,
-            "="                 => eq_help,
-            ">="                => gte_help,
-            ">"                 => gt_help,
-            "if"                => condit_help,
-            "logic"             => logic_help,
-            "define"            => define_help,
-            "lambda"            => lambda_help,
-            _                   => "More help is not available at this time."
-            }
-        )
-*/
     }
 
     Ok(Atom(Void))

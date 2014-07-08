@@ -165,21 +165,8 @@ pub fn rangelist(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     } else {
         1
     };
-/*
-    if a > b {
-        return Err(BadArgType("Bad range: a > b".to_str()))
-    }
-*/
+
     Ok(Atom(List(range_step(a, b, step).map(|x| BigNum(create_bigrat(x))).collect())))
 }
 
-pub fn listlen(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
-    if args.len() != 1 {
-        return Err(BadNumberOfArgs("`list-len' requires a list as an argument".to_str()))
-    }
 
-    match try!(args.get(0).desymbolize(env)) {
-        List(x) => Ok(Atom(BigNum(create_bigrat(x.len() as int)))),
-        x => return Err(BadArgType(format!("`list-len expects a list, {} is not a list!", x)))
-    }
-}
