@@ -1,14 +1,110 @@
 //! Operators
 
-use std::num;
+use std::fmt;
 
-#[deriving(Show, Clone, PartialOrd, PartialEq)] 
+#[cfg(use_fancy)]
+use fancy::{LessThanEq, GreaterThanEq};
+#[cfg(not(use_fancy)]
+use not_fancy::{LessThanEq, GreaterThanEq};
+
+#[cfg(use_fancy)]
+mod fancy {
+    static LessThanEq: &'static str = "≤";
+    static GreaterThanEq: &'static str = "≥";
+}
+
+#[cfg(not(use_fancy)]
+mod not_fancy {
+    static LessThanEq: &'static str = "<=";
+    static GreaterThanEq: &'static str = ">=";
+}
+
+#[deriving(Clone, PartialOrd, PartialEq)] 
+pub enum Arith {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Rem,
+    Pow
+}
+
+impl fmt::Show for Arith {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(fmt, "{}", match self {
+            &Add => "+",
+            &Sub => "-",
+            &Mul => "*",
+            &Div => "/",
+            &Rem => "%",
+        }));
+        Ok(())
+    }
+}
+
+#[deriving(Clone, PartialOrd, PartialEq)]
+pub enum Transcendental {
+    Log, Ln, Exp,
+    Sin, Cos, Tan,
+    ASin, ACos, ATan,
+    SinH, CosH, TanH,
+    ASinH, ACosH, ATanH
+}
+
+impl fmt::Show for Transcendental {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(fmt, "{}", match self {
+            &Log => "log", &Ln => "ln", &Exp => "exp",
+            &Sin => "sin", &Cos => "cos", &Tan => "cos",
+            &ASin => "asin", &ACos => "acos", &ATan => "atan",
+            &SinH => "sinh", &CosH => "cosh", &TanH => "tanh",
+            &ASinH => "asinh", &ACosH => "acosh", &ATanH => "atanh"
+        }));
+        Ok(())
+    }
+}
+
+#[deriving(Clone, PartialOrd, PartialEq)]
+pub enum OrderEq {
+    Eq,
+    NEq,
+    Lt,
+    LtEq,
+    Gt,
+    GtEq
+}
+
+impl fmt::show for OrderEq {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(fmt, "{}", match self {
+            &Eq => "=", &NEq => "!=",
+            &Lt => "<", &LtEq => LessThanEq,
+            &Gt => ">", &GtEq => GreaterThanEq
+        }));
+        Ok(())
+    }
+}
+
+#[deriving(Clone, PartialOrd, PartialEq)]
+pub enum RoundId {
+    Round,
+    Floor,
+    Ceiling,
+    Zero,
+    Odd,
+    Even
+}
+
+impl fmt::show for RoundId {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(fmt, "{}", match self {
+            &Round => "
+
+#[deriving(Show, Clone, PartialOrd, PartialEq)]
 pub enum OperatorType {
-    Add, Sub, Mul, Div, Rem, Pow,
-
-    Log, Ln, Exp, Sin, Cos, Tan, ASin, ACos, ATan, SinH, CosH, TanH, ASinH, ACosH, ATanH, 
-
-    Eq, NEq, Lt, LtEq, Gt, GtEq,
+    Arithmetic(Arith),
+    Transcend(Transcendental),
+    Ordering(OrderEq),
 
     Round, Floor, Ceiling, Zero, Odd, Even,
 
