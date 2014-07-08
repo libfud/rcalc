@@ -1,5 +1,5 @@
 use std::fmt;
-use super::{MatrixResult BadDimensionality, InvalidAxis, MismatchedAxes};
+use super::{MatrixResult, BadDimensionality, InvalidAxis, MismatchedAxes};
 
 #[deriving(Show, Clone, PartialOrd, PartialEq)]
 pub enum Axis {

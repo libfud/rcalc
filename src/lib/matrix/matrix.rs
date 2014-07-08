@@ -261,34 +261,62 @@ impl<T: Sub<T, T>> Sub<Matrice<T>, Matrice<T>> for Matrice<T> {
     }
 }
 
+#[test]
+fn test_sub() {
+    let lhs = match Matrice::new(vec!(1i, 2, 3, 4), 2, 2) {
+        Ok(x) => x,
+        Err(m) => fail!(m.to_str())
+    };
+    let rhs = match Matrice::new(vec!(5i, 6i, 7i, 8i), 2, 2) {
+        Ok(x) => x,
+        Err(m) => fail!(m.to_str())
+    };
+
+    assert!(lhs - rhs == Matrice { length: 2, height: 2, elems: vec!(-4i, -4i, -4i, -4i) });
+}
+
 impl<T: Num + Clone> Mul<Matrice<T>, Matrice<T>> for Matrice<T> {
     fn mul(&self, other: &Matrice<T>) -> Matrice<T> {
         use std::num;
 
+        if self.length != other.height {
+            fail!(MismatchedAxes.to_str())
+        }
+/*
         let (a, b) = match (self.length == other.height, self.height == other.height) {
             (true, _) => (self, other),
             (false, true) => (other, self),
             (false, false) => fail!(MismatchedAxes.to_str())
         };
-
+*/
         let zero: T = num::zero();
 
-        let new_elems: Vec<T> = range(0, a.length).map(|x| {
-            let prods: Vec<T> = a.get_row(x).zip(b.get_row(x)).map(|(lhs, rhs)|
+        let new_elems: Vec<T> = range(0, self.length).map(|x| {
+            let prods: Vec<T> = self.get_row(x).zip(other.get_col(x)).map(|(lhs, rhs)|
                                                                    *lhs * *rhs).collect();
             prods.iter().fold(zero.clone(), |a, b| a + *b)
         }).collect();
 
         Matrice { length: self.length, height: other.height, elems: new_elems }
-
-       /*
-        let mut new_elems = Vec::new();
-        for x in range(0, a.length) {
-            let product = in a.elems.get_row(x).zip(
-                b.elems.get_row(x)).map(|(lhs, rhs)| 
-*/
                 
     }
+}
+
+#[test]
+fn test_mul() {
+    let lhs = match Matrice::new(vec!(1i, 2, 3, 4), 2, 2) {
+        Ok(x) => x,
+        Err(m) => fail!(m.to_str())
+    };
+    let rhs = match Matrice::new(vec!(5i, 6i, 7i, 8i), 2, 2) {
+        Ok(x) => x,
+        Err(m) => fail!(m.to_str())
+    };
+
+    let results = vec!((1i * 5 + 2 * 7), (1 * 6 + 2 * 8),
+                       (3 * 5 + 4 * 7), (3 * 6 + 4 * 8));
+
+    assert!(lhs * rhs == Matrice { length: 2, height: 2, elems: results });
 }
 
 impl<T: Div<T, T>> Div<Matrice<T>, Matrice<T>> for Matrice<T> {
