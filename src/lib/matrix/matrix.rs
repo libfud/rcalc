@@ -141,14 +141,10 @@ impl<T: Num + Clone> Matrice<T> {
         use std::num;
 
         let mut elems: Vec<T> = Vec::with_capacity(n * n);
-        let zero: T = num::zero();
-        let one: T = num::one();
         for x in range(0, n) {
-            elems.push_all(range(0, n).map(|y| if y == x { 
-                one.clone()
-            } else { 
-                zero.clone()
-            }).collect());
+            for y in range(0, n) {
+                elems.push( if y == x { num::one() } else { num::zero() });
+            }
         }
         
         Matrice { rows: n, columns: n, elems: elems }
