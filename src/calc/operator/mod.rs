@@ -10,7 +10,7 @@ pub use super::literal::{cons, car, cdr, list};
 pub use self::types::operator::{OperatorType, Arithmetic, Transcend, Ordering,
                                 Pow, RoundIdent, Logic, Quote, Listings, ListOps,
                                 TransForms, XForms, Define, Lambda, Table, 
-                                Gate, MatrixStuff, Help};
+                                Gate, MatrixStuff, MatrixOps, Help};
 use super::matrice;
 
 pub mod special;
@@ -58,6 +58,16 @@ pub fn handle_logic(args: &Vec<ArgType>, env: &mut Environment, log: Gate) -> Ca
         Not => not(args, env), 
         Xor => xor(args, env),
     }
+}
+
+pub fn matrix_stuff(args: &Vec<ArgType>, env: &mut Environment, mop: Matrix) -> CalcResult {
+    use self::types::operator::{MatrixSet, MatrixExtend, MakeMatrix};    
+
+    match mop {
+        MatrixSet => matrice::matrix_set(args, env),
+        MakeMatrix => matrice::make_matrix(args, env),
+        MatrixExtend => matrice::matrix_extend(args, env),
+    }
 }        
 
 pub fn eval(op_type: OperatorType, args: &Vec<ArgType>, 
@@ -67,7 +77,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
     use self::special::{table};
     use self::logic::{ordering, num_op};
     use self::trig::float_ops;
-    use self::types::operator::{MatrixSet, MatrixExtend, MakeMatrix};
+
 
     match op_type {
         Arithmetic(op) => arith(args, env, op),
@@ -81,13 +91,8 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         Quote => Ok(Atom(Void)),
         Listings(lop) => list_ops(args, env, lop),
         TransForms(top) => transform_ops(args, env, top),
-
         Table => special::table(args, env),
-
-        MatrixStuff(MakeMatrix) => matrice::make_matrix(args, env),
-        MatrixStuff(MatrixExtend) => matrice::matrix_extend(args, env),
-        MatrixStuff(MatrixSet) => matrice::matrix_set(args, env),
-
+        MatrixStuff(mop) => matrix_stuff(args, env, mop),
         Help => super::common::help(args),
     }
 }

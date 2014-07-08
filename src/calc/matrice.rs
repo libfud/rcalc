@@ -52,26 +52,12 @@ pub fn list_to_2d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, (uint, uint)
         List(list) => {
             let mut arg_list = Vec::new();
             for x in list.move_iter() {
-                match x {
-                    List(_) => {
-                        let (sub_list, _) = try!(list_to_1d(x, env));
+                match try!(Atom(x).desymbolize(env)) {
+                    List(y) => {
+                        let (sub_list, _) = try!(list_to_1d(List(y), env));
                         length = sub_list.len();
                         arg_list.push_all(sub_list.as_slice());
                     },
-
-                    Symbol(s) => {
-                        let res = try!(env.lookup(&s));
-                        match res {
-                            List(_) => {
-                                let (sub_list, _) = try!(list_to_1d(res, env));
-                                length = sub_list.len();
-                                arg_list.push_all(sub_list.as_slice());
-                            }
-
-                            _ => return Err(BadArgType("Matrices only take numbers".to_str()))
-                        }
-                    },
-
                     _ => return Err(BadArgType("Matrices only take numbers".to_str()))
                 }
                 width += 1;
@@ -107,4 +93,3 @@ pub fn matrix_set(args: &Args, env: &mut Env) -> CalcResult {
 
     Ok(Atom(Matrix(matrix)))
 }
-
