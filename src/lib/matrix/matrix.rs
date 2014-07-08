@@ -157,9 +157,8 @@ impl<T: Num + Clone> Matrice<T> {
 
         let mut new_elems: Vec<T> = Vec::with_capacity(rows * cols);
         for n in range(ofsy, rows + ofsy) {
-            let subrow: Vec<T> = self.get_row(n).skip(ofsx).take(cols).
-                map(|x| x.clone()).collect();
-            new_elems.push_all(subrow.as_slice());
+            new_elems.extend(self.get_row(n).skip(ofsx).take(cols).
+                map(|x| x.clone()));
         }
 
         Some(Matrice { columns: cols, rows: rows, elems: new_elems })
