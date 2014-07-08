@@ -285,9 +285,12 @@ impl<T: Num + Clone> Mul<Matrice<T>, Matrice<T>> for Matrice<T> {
         let zero: T = num::zero();
 
         let new_elems: Vec<T> = range(0, self.length)
-            .map(|row| range(0, self.length).map(|col| self.get_row(row).zip(other.get_col(col))
-                                                 .map(|(lhs, rhs)| *lhs * *rhs)
-                                                 .fold(zero.clone(), |a, b| a + b))).collect();
+            .map(|row| range(0, self.length).map(|col| {
+                let row_x = self.get_row(row);
+                let col_x = other.get_col(col);
+                let prods: Vec<T> = row_x.zip(col_x).map(|(lhs, rhs)| *lhs * *rhs).collect();
+                prods.iter().fold(zero.clone(), |a, b| a + *b)
+            })).collect();
 
 /*
         let mut new_elems: Vec<T> = Vec::with_capacity(self.length * other.height);
