@@ -157,13 +157,25 @@ impl<T: Num + Clone> Matrice<T> {
 
         let mut new_elems: Vec<T> = Vec::with_capacity(rows * cols);
         for n in range(ofsy, rows + ofsy) {
-            new_elems.extend(self.get_row(n).skip(ofsx).take(cols).
-                map(|x| x.clone()));
+            new_elems.extend(self.get_row(n).skip(ofsx).take(cols).map(|x| x.clone()));
         }
 
         Some(Matrice { columns: cols, rows: rows, elems: new_elems })
     }
-        
+    
+    pub fn submatrix_ref<'a>(&'a self, ofsx: uint, 
+                             ofsy: uint, rows: uint, cols: uint) -> Option<Matrice<&'a T>> {
+        if ofsx + cols > self.columns || ofsy + rows > self.rows {
+            return None
+        }
+
+        let mut new_elems: Vec<&T> = Vec::with_capacity(rows * cols);
+        for n in range(ofsy, rows + ofsy) {
+            new_elems.extend(self.get_row(n).skip(ofsx).take(cols))
+        }
+
+        Some(Matrice { columns: cols, rows: rows, elems: new_elems })
+    }        
 
     pub fn ident(n: uint) -> Matrice<T> {
         use std::num;
@@ -175,17 +187,31 @@ impl<T: Num + Clone> Matrice<T> {
         
         Matrice { rows: n, columns: n, elems: elems }
     }
-/*
+
+    pub fn determinant_helper<'a>(submatrix: Matrice<&'a T>) -> T {
+        **submatrix.elems.get(0) * **submatrix.elems.get(3) 
+            - **submatrix.elems.get(1) * ** submatrix.elems.get(2)
+    }
+
     pub fn determinant(&self) -> Option<T> {
         if self.rows != self.columns || self.rows < 2 {
             return None
         }
 
         if self.rows == 2 {
-            
-            
+            Some(*self.elems.get(0) * *self.elems.get(3) - 
+                 *self.elems.get(1) * *self.elems.get(2))
+        } else if self.rows == 3 {
+            Some(*self.elems.get(0) * Matrice::determinant_helper(self.submatrix_ref(1, 1,
+                                                                            2, 2).unwrap()) - 
+                 *self.elems.get(1) * (*self.elems.get(4) * *self.elems.get(8) -
+                                       *self.elems.get(5) * *self.elems.get(7)) +
+                 *self.elems.get(2) * Matrice::determinant_helper(
+                     self.submatrix_ref(0, 1, 2, 2).unwrap()))
+        } else {
+            None
+        }
     }
-*/
 }
 
 pub struct MatrixIterator<'a, T> {
