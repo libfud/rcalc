@@ -3,6 +3,7 @@
 
 use std::fmt;
 use std::cmp;
+use std::iter::AdditiveIterator;
 
 #[cfg(use_fancy)]
 use fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
@@ -278,6 +279,8 @@ fn test_sub() {
 impl<T: Num + Clone> Mul<Matrice<T>, Matrice<T>> for Matrice<T> {
     fn mul(&self, other: &Matrice<T>) -> Matrice<T> {
         use std::num;
+        use std::iter;
+
 
         if self.length != other.height {
             fail!(MismatchedAxes.to_str())
@@ -285,13 +288,12 @@ impl<T: Num + Clone> Mul<Matrice<T>, Matrice<T>> for Matrice<T> {
         let zero: T = num::zero();
 
         let new_elems: Vec<T> = range(0, self.length)
-            .map(|row| range(0, self.length).map(|col| {
-                let row_x = self.get_row(row);
-                let col_x = other.get_col(col);
-                let prods: Vec<T> = row_x.zip(col_x).map(|(lhs, rhs)| *lhs * *rhs).collect();
-                prods.iter().fold(zero.clone(), |a, b| a + *b)
-            })).collect();
-
+            .map(|row| 
+                range(0, self.length).map(|col| {
+                    let row_x = self.get_row(row);
+                    let col_x = other.get_col(col);
+                    row_x.zip(col_x).map(|(a, b)| *a * *b).sum()}
+                )).collect();
 /*
         let mut new_elems: Vec<T> = Vec::with_capacity(self.length * other.height);
         for row in range(0, self.length) {
