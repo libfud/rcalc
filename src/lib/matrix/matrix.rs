@@ -3,6 +3,7 @@
 
 use std::fmt;
 use std::cmp;
+use std::num;
 use std::iter::AdditiveIterator;
 
 #[cfg(use_fancy)]
@@ -129,6 +130,32 @@ impl<T: Num + Clone> Matrice<T> {
         }
     }
 
+    pub fn append_row(mut self, other: Vec<T>) -> MatrixResult<()> {
+        if other.len() != self.columns {
+            Err(BadDimensionality)
+        } else {
+            self.rows = self.rows + 1;
+            self.elems.append(other.as_slice());
+            Ok(())
+        }
+    }
+
+    pub fn append_col(&mut self, other: Vec<T>) -> MatrixResult<()> {
+        if other.len() != self.rows {
+            Err(BadDimensionality)
+        } else {
+            let mut new_elems = Vec::new();
+            for n in range(0, self.rows) {
+                new_elems.extend(self.elems.iter().skip(n * self.columns)
+                                 .take(self.columns).map(|x| x.clone()));
+                new_elems.push(other.get(n).clone());
+            }
+            self.columns = self.columns + 1;
+            self.elems = new_elems;
+            Ok(())
+        }
+    }
+
     pub fn scalar(&self, rhs: &T, op: |&T, &T| -> T) -> Matrice<T> {
         let new_elems = self.elems.iter().map(|lhs| op(lhs, rhs)).collect();
 
@@ -163,34 +190,28 @@ impl<T: Num + Clone> Matrice<T> {
         Some(Matrice { columns: cols, rows: rows, elems: new_elems })
     }
     
-    pub fn submatrix_ref<'a>(&'a self, ofsx: uint, 
-                             ofsy: uint, rows: uint, cols: uint) -> Option<Matrice<&'a T>> {
-        if ofsx + cols > self.columns || ofsy + rows > self.rows {
+    pub fn concat_cols(&self, Other: &Matrice<T>) -> Option<Matrice<T> {
+        if self.rows != other.rows {
             return None
         }
 
-        let mut new_elems: Vec<&T> = Vec::with_capacity(rows * cols);
-        for n in range(ofsy, rows + ofsy) {
-            new_elems.extend(self.get_row(n).skip(ofsx).take(cols))
+        let mut new_elems: Vec<T> = Vec::with_capacity(self.rows * 2 * (self.columns
+                                                                        + other.columns));
+        for n in range(0, self.rows) {
+            new_elems.extend(self.get_row(n).take(self.columns).map(|x| x.clone()));
+            new_elems.extend(other.get_row(n).take(other.columns).map(|x| x.clone()));
         }
-
-        Some(Matrice { columns: cols, rows: rows, elems: new_elems })
-    }        
+        Some(Matrice { columns: self.columns + other.columns, rows: self.rows,
+                       elems: new_elems })
+    }
 
     pub fn ident(n: uint) -> Matrice<T> {
-        use std::num;
-
         let mut elems: Vec<T> = Vec::from_elem(n * n, num::zero());
         for i in range(0, n) {
             *elems.get_mut(i * n + i) = num::one();
         }
         
         Matrice { rows: n, columns: n, elems: elems }
-    }
-
-    pub fn determinant_helper<'a>(submatrix: Matrice<&'a T>) -> T {
-        **submatrix.elems.get(0) * **submatrix.elems.get(3) 
-            - **submatrix.elems.get(1) * ** submatrix.elems.get(2)
     }
 
     pub fn determinant(&self) -> Option<T> {
@@ -201,15 +222,21 @@ impl<T: Num + Clone> Matrice<T> {
         if self.rows == 2 {
             Some(*self.elems.get(0) * *self.elems.get(3) - 
                  *self.elems.get(1) * *self.elems.get(2))
-        } else if self.rows == 3 {
-            Some(*self.elems.get(0) * Matrice::determinant_helper(self.submatrix_ref(1, 1,
-                                                                            2, 2).unwrap()) - 
-                 *self.elems.get(1) * (*self.elems.get(4) * *self.elems.get(8) -
-                                       *self.elems.get(5) * *self.elems.get(7)) +
-                 *self.elems.get(2) * Matrice::determinant_helper(
-                     self.submatrix_ref(0, 1, 2, 2).unwrap()))
         } else {
-            None
+            let one: T = num::one();
+            let mut sum: T = num::zero();
+            for n in range(0, self.columns) {
+            for n in self.get_row(0) {
+                let next = *n * self.submatrix(1, 1, self.rows - 1,
+                                   self.columns - 1).unwrap().determinant();
+
+                sum = if *n % one + one == num::zero() {
+                    next
+                } else {
+                    -next
+                }
+            }
+            Some(sum)
         }
     }
 }
