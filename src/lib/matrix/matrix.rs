@@ -105,6 +105,18 @@ impl<T: fmt::Show > fmt::Show for Matrice<T> {
 }
 
 impl<T: Num + Clone> Matrice<T> {
+    pub fn rows(&self) -> uint {
+        self.rows
+    }
+
+    pub fn cols(&self) -> uint {
+        self.cols
+    }
+
+    pub fn to_vec(&self) -> Vec<T> {
+        self.elems.clone()
+    }
+
     pub fn new_empty() -> Matrice<T> {
         Matrice { columns: 0, rows: 0, elems: vec![] }
     }
@@ -137,18 +149,32 @@ impl<T: Num + Clone> Matrice<T> {
         }
     }
 
+    pub fn submatrix(&self, ofsx: uint, ofsy: uint, 
+                     rows: uint, cols: uint) -> Option<Matrice<T>> {
+        if ofsx + rows > self.rows || 
+        
+
     pub fn ident(n: uint) -> Matrice<T> {
         use std::num;
 
-        let mut elems: Vec<T> = Vec::with_capacity(n * n);
-        for x in range(0, n) {
-            for y in range(0, n) {
-                elems.push( if y == x { num::one() } else { num::zero() });
-            }
+        let mut elems: Vec<T> = Vec::from_elem(n * n, num::zero());
+        for i in range(0, n) {
+            *elems.get_mut(i * n + i) = num::one();
         }
         
         Matrice { rows: n, columns: n, elems: elems }
     }
+/*
+    pub fn determinant(&self) -> Option<T> {
+        if self.rows != self.columns || self.rows < 2 {
+            return None
+        }
+
+        if self.rows == 2 {
+            
+            
+    }
+*/
 }
 
 pub struct MatrixIterator<'a, T> {
@@ -235,8 +261,21 @@ fn matrix_get_col_test() {
 
 #[test]
 fn ident_test() {
-    let x: Matrice<int> = Matrice::ident(1);
+    let mut x: Matrice<int> = Matrice::ident(1);
     assert!(x == Matrice { rows: 1, columns: 1, elems: vec!(1i) });
+
+    x = Matrice::ident(2);
+    assert!(x == Matrice { rows: 2, columns: 2, elems: vec!(1i, 0, 0, 1) });
+
+    x = Matrice::ident(3);
+    assert!(x == Matrice { rows: 3, columns: 3, elems: vec!(1, 0, 0, 
+                                                            0, 1, 0,
+                                                            0, 0, 1) });
+    x = Matrice::ident(4);
+    assert!(x == Matrice { rows: 4, columns: 4, elems: vec!(1, 0, 0, 0,
+                                                            0, 1, 0, 0,
+                                                            0, 0, 1, 0,
+                                                            0, 0, 0, 1) });
 }
 
 impl<T: Add<T, T>> Add<Matrice<T>, Matrice<T>> for Matrice<T> {
