@@ -4,20 +4,20 @@ use std::fmt;
 use std::from_str;
 
 #[cfg(use_fancy)]
-use fancy::{LessThanEq, GreaterThanEq};
-#[cfg(not(use_fancy)]
-use not_fancy::{LessThanEq, GreaterThanEq};
+use self::fancy::{LessThanEq, GreaterThanEq};
+#[cfg(not(use_fancy))]
+use self::not_fancy::{LessThanEq, GreaterThanEq};
 
 #[cfg(use_fancy)]
 mod fancy {
-    static LessThanEq: &'static str = "≤";
-    static GreaterThanEq: &'static str = "≥";
+    pub static LessThanEq: &'static str = "≤";
+    pub static GreaterThanEq: &'static str = "≥";
 }
 
-#[cfg(not(use_fancy)]
+#[cfg(not(use_fancy))]
 mod not_fancy {
-    static LessThanEq: &'static str = "<=";
-    static GreaterThanEq: &'static str = ">=";
+    pub static LessThanEq: &'static str = "<=";
+    pub static GreaterThanEq: &'static str = ">=";
 }
 
 #[deriving(Clone, PartialOrd, PartialEq)] 
@@ -27,7 +27,6 @@ pub enum Arith {
     Mul,
     Div,
     Rem,
-    Pow
 }
 
 impl fmt::Show for Arith {
@@ -81,9 +80,9 @@ impl fmt::Show for Transcendental {
 impl from_str::FromStr for Transcendental {
     fn from_str(s: &str) -> Option<Transcendental> {
         match s {
-            "log" => Some(Log), "ln" => Some(Ln), "exp", Some(Exp),
+            "log" => Some(Log), "ln" => Some(Ln), "exp" => Some(Exp),
             "sin" => Some(Sin), "cos" => Some(Cos), "tan" => Some(Tan),
-            "asin" => Some(Asin),  "acos" => Some(ACos), "atan" => Some(ATan),
+            "asin" => Some(ASin),  "acos" => Some(ACos), "atan" => Some(ATan),
             "sinh" => Some(SinH), "cosh" => Some(CosH), "tanh" => Some(TanH),
             "asinh" => Some(ASinH), "acosh" => Some(ACosH), "atanh" => Some(ATanH),
             _ => None
@@ -101,7 +100,7 @@ pub enum OrderEq {
     GtEq
 }
 
-impl fmt::show for OrderEq {
+impl fmt::Show for OrderEq {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
             &Eq => "=", &NEq => "!=",
@@ -113,13 +112,26 @@ impl fmt::show for OrderEq {
 }
 
 impl from_str::FromStr for OrderEq {
-    fn from_str(&self) -> Option<OrderEq> {
+    fn from_str(s: &str) -> Option<OrderEq> {
         match s {
             "<" => Some(Lt), "<=" => Some(LtEq),
             "=" => Some(Eq), "!=" => Some(NEq),
             ">=" => Some(GtEq), ">" => Some(Gt),
             _ => None
         }
+    }
+}
+
+impl OrderEq {
+    pub fn to_ord<T: PartialOrd + PartialEq>(self) -> |T, T| -> bool {
+        match self {
+            Eq => |a: T, b: T| a == b,
+            NEq => |a: T, b: T| a != b,
+            Lt => |a: T, b: T| a < b,
+            LtEq => |a: T, b: T| a <= b,
+            Gt => |a: T, b: T| a > b,
+            GtEq => |a: T, b: T| a >= b,
+         }
     }
 }
 
@@ -133,7 +145,7 @@ pub enum RoundId {
     Even
 }
 
-impl fmt::show for RoundId {
+impl fmt::Show for RoundId {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
             &Round => "round",
@@ -311,33 +323,62 @@ pub enum OperatorType {
 impl fmt::Show for OperatorType {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
-            &Arithmetic(ref x) | &Transcend(ref x) | 
-            &Ordering(ref x) | &RoundIdent(ref x) |
-            &Logic(ref x) | &Listings(ref x) |
-            TransForms(ref x) | &MatrixStuff(ref x) => x.to_str(),
-            Quote => "'".to_str(),
-            Define => "define".to_str(),
-            Lambda => "lambda".to_str(),
-            Table => "table".to_str(),
-            Help => "help".to_str(),
+            &Arithmetic(ref x) => x.to_str(),
+            &Transcend(ref x) => x.to_str(),
+            &Ordering(ref x) => x.to_str(),
+            &RoundIdent(ref x) => x.to_str(),
+            &Logic(ref x) => x.to_str(),
+            &Listings(ref x) => x.to_str(),
+            &TransForms(ref x) => x.to_str(),
+            &MatrixStuff(ref x) => x.to_str(),
+            &Pow => "pow".to_str(),
+            &Quote => "'".to_str(),
+            &Define => "define".to_str(),
+            &Lambda => "lambda".to_str(),
+            &Table => "table".to_str(),
+            &Help => "help".to_str(),
         }));
         Ok(())
     }
 }
 
-impl OperatorType {
-    pub fn to_ord<T: PartialOrd + PartialEq>(self) -> |T, T| -> bool {
-        match self {
-            Lt => |a: T, b: T| a < b, LtEq => |a: T, b: T| a <= b,
-            Eq => |a: T, b: T| a == b, NEq => |a: T, b: T| a != b,
-            GtEq => |a: T, b: T| a >= b, Gt => |a: T, b: T| a > b,
-            _ => fail!("Mismatched operator types (don't use ord with nonord)")
+impl from_str::FromStr for OperatorType {
+    fn from_str(s: &str) -> Option<OperatorType> {
+        match from_str::<Arith>(s) {
+            Some(x) => return Some(Arithmetic(x)),
+            None => { }
         }
-    }
 
-    pub fn from_str(s: &str) -> Option<OperatorType> {
-        if from_str::<Arithmetic>(s).is_some() {
-            return Some(Arithmetic(
+        match from_str::<Transcendental>(s) {
+            Some(x) => return Some(Transcend(x)),
+            None => { }
+        }
+
+        match from_str::<OrderEq>(s) {
+            Some(x) => return Some(Ordering(x)),
+            None => { }
+        }
+        
+        match from_str::<Gate>(s) {
+            Some(x) => return Some(Logic(x)),
+            None => { }
+        }
+        
+        match from_str::<ListOps>(s) {
+            Some(x) => return Some(Listings(x)),
+            None => { }
+        }
+
+        match from_str::<XForms>(s) {
+            Some(x) => return Some(TransForms(x)),
+            None => { }
+        }
+
+        match from_str::<MatrixOps>(s) {
+            Some(x) => return Some(MatrixStuff(x)),
+            None => { }
+        }
+    
         match s {
             "pow" => Some(Pow),
             "define" => Some(Define),
@@ -349,4 +390,3 @@ impl OperatorType {
         }
     }
 }
-

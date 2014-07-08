@@ -26,7 +26,7 @@ impl Expression {
                 symbols = symbols.append(f.as_slice());
             }
             BuiltIn(ref op) => {
-                symbols = symbols.append(op.op_to_str().append(" ").as_slice());
+                symbols = symbols.append(op.to_str().append(" ").as_slice());
             }
         }
         for argument in self.args.iter() {
