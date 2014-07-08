@@ -136,6 +136,23 @@ impl<T: Num + Clone> Matrice<T> {
             jump: self.columns
         }
     }
+
+    pub fn ident(n: uint) -> Matrice<T> {
+        use std::num;
+
+        let mut elems: Vec<T> = Vec::with_capacity(n * n);
+        let zero: T = num::zero();
+        let one: T = num::one();
+        for x in range(0, n) {
+            elems.push_all(range(0, n).map(|y| if y == x { 
+                one.clone()
+            } else { 
+                zero.clone()
+            }).collect());
+        }
+        
+        Matrice { rows: n, columns: n, elems: elems }
+    }
 }
 
 pub struct MatrixIterator<'a, T> {
@@ -218,6 +235,12 @@ fn matrix_get_col_test() {
 
     let zcol1: Vec<int> = z.get_col(1).map(|x| x.clone()).collect();
     assert!(zcol1 == vec!(2, 5, 8, 11));
+}
+
+#[test]
+fn ident_test() {
+    let x: Matrice<int> = Matrice::ident(1);
+    assert!(x == Matrice { rows: 1, columns: 1, elems: vec!(1i) });
 }
 
 impl<T: Add<T, T>> Add<Matrice<T>, Matrice<T>> for Matrice<T> {
@@ -337,5 +360,13 @@ impl<T: Rem<T, T>> Rem<Matrice<T>, Matrice<T>> for Matrice<T> {
 
 
         Matrice { columns: self.columns, rows: self.rows, elems: new_elems }
+    }
+}
+
+impl<T: Num + Clone> Neg<Matrice<T>> for Matrice<T> {
+    fn neg(&self) -> Matrice<T> {
+        use std::num;
+        let one: T = num::one();
+        self.scalar(&-one, |a, b| *a * *b)
     }
 }

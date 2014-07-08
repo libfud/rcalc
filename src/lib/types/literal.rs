@@ -100,6 +100,7 @@ impl Neg<Lit> for Lit {
     fn neg(&self) -> Lit {
         match self {
             &BigNum(ref x) => BigNum(-x),
+            &Matrix(ref x) => Matrix(-x),
             _ => fail!("Can't negate something that isn't a number!".to_str())
         }
     }
