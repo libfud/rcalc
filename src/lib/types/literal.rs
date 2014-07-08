@@ -105,6 +105,18 @@ impl Neg<Lit> for Lit {
     }
 }
 
+fn apply<T: Add<T, T> + Sub<T, T> + Mul<T, T> + Div<T, T> + Rem<T, T>>(
+    lhs: &Lit, rhs: &Lit, op: |T, &T| -> T) -> Lit {
+ 
+    match (lhs, rhs) {
+        (&BigNum(ref x), &BigNum(ref y)) => BigNum(op(x, y)),
+        (&Matrix(ref x), &Matrix(ref y)) => Matrix(op(x, y)),
+        (&Matrix(ref x), &BigNum(_)) => Matrix(x.scalar(rhs, op))
+        (&BigNum(_), &Matrix(ref x)) => Matrix(x.scalar(self, op)),
+        _ => fail!(format!("Arithmetic not defined for {} {}", self, rhs))
+    }
+}
+
 impl Add<Lit, Lit> for Lit {
     fn add(&self, rhs: &LiteralType) -> Lit {
         match (self, rhs) {
