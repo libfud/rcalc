@@ -156,10 +156,10 @@ impl<T: Num + Clone> Matrice<T> {
         }
 
         let mut new_elems: Vec<T> = Vec::with_capacity(rows * cols);
-        for n in range(0, rows) {
-            for m in range(0, cols) {
-                new_elems.push(self.elems.get(n + ofsy + m + ofsx).clone())
-            }
+        for n in range(ofsy, rows + ofsy) {
+            let subrow: Vec<T> = self.get_row(n).skip(ofsx).take(cols).
+                map(|x| x.clone()).collect();
+            new_elems.push_all(subrow.as_slice());
         }
 
         Some(Matrice { columns: cols, rows: rows, elems: new_elems })
@@ -269,6 +269,31 @@ fn matrix_get_col_test() {
 
     let zcol1: Vec<int> = z.get_col(1).map(|x| x.clone()).collect();
     assert!(zcol1 == vec!(2, 5, 8, 11));
+}
+
+#[test]
+fn submatrix_test() {
+    let x: Matrice<int> = Matrice::ident(5);
+    /* (1, 0, 0, 0, 0) *
+     * (0, 1, 0, 0, 0) *
+     * (0, 0, 1, 0, 0) *
+     * (0, 0, 0, 1, 0) *
+     * (0, 0, 0, 0, 1) */
+
+    assert!(x.submatrix(0, 0, 1, 1) == Some(Matrice { rows: 1, columns: 1,
+                                                     elems: vec!(1) }));
+    assert!(x.submatrix(0, 0, 1, 2) == Some(Matrice { rows: 1, columns: 2,
+                                                      elems: vec!(1, 0)}));
+    assert!(x.submatrix(0, 0, 1, 5) == Some(Matrice { rows: 1, columns: 5,
+                                                      elems: vec!(1, 0, 0, 0, 0)}));
+    assert!(x.submatrix(0, 1, 1, 5) == Some(Matrice { rows: 1, columns: 5,
+                                                      elems: vec!(0, 1, 0, 0, 0)}));
+    assert!(x.submatrix(1, 1, 1, 4) == Some(Matrice { rows: 1, columns: 4,
+                                                      elems: vec!(1, 0, 0, 0)}));
+    assert!(x.submatrix(1, 1, 3, 3) == Some(Matrice { rows: 3, columns: 3,
+                                                      elems: vec!(1, 0, 0,
+                                                                  0, 1, 0,
+                                                                  0, 0, 1)}));
 }
 
 #[test]
