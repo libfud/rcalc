@@ -335,10 +335,16 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         for row in range(0, self.rows) {
             for column in range(0, self.cols()) {
                 let submatrix = match (row, column) {
-                    (0, 0) => self.submatrix(1, 1, subr, subc).unwrap(),
-                    (subr, 0) => self.submatrix(1, 0, subr, subc).unwrap(),
-                    (0, subc) => self.submatrix(0, 1, subr, subc).unwrap(),
-                    (subr, subc) => self.submatrix(0, 0, subr, subc).unwrap(),                    
+                    (   0,    0) => self.submatrix(1, 1, subr, subc).unwrap(),
+                    (subr,    0) => self.submatrix(1, 0, subr, subc).unwrap(),
+                    (   0, subc) => self.submatrix(0, 1, subr, subc).unwrap(),
+                    (subr, subc) => self.submatrix(0, 0, subr, subc).unwrap(),
+                    (0, n) => {
+                        let a = (n + 1);
+                        let l_matrix = self.submatrix(0, 1, subr, n).unwrap();
+                        let r_matrix = self.submatrix(a, 1, subr, subc - a).unwrap();
+                        l_matrix.concat_cols(&r_matrix).unwrap()
+                    }
         
 
     /// Returns Some(Matrice<T>) if the Matrix has an inverse.
