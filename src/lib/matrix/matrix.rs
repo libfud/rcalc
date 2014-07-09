@@ -250,7 +250,7 @@ impl<T: Num + Clone> Matrice<T> {
                     let a = self.submatrix(n - 1, 1, self.rows - 1, n).unwrap();
                     /* the submatrix that is in the lower right corner, taking up
                      * the number of columns from n to the number of columns in a row */
-                    let b = self.submatrix(n, 1, self.rows - 1, 
+                    let b = self.submatrix(n + 1, 1, self.rows - 1, 
                                            self.columns - (n + 1)).unwrap();
                     /* concatenate them and find their determinant */
                     a.concat_cols(&b).unwrap().determinant().unwrap()
@@ -258,7 +258,7 @@ impl<T: Num + Clone> Matrice<T> {
 
                 /* If n is even, add the product; if n is odd, subtract the product */
                 sum = if n % 2 == 0 {
-                    sum + (*elem *next)
+                    sum + (*elem * next)
                 } else {
                     sum - (*elem * next)
                 }

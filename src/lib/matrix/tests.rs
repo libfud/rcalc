@@ -120,19 +120,47 @@ fn ident_test() {
 }
 
 #[test]
+fn concat_cols_test() {
+    let a: Matrice<int> = Matrice { columns: 1, rows: 2, elems: vec!(4, 2) };
+    let b: Matrice<int> = Matrice { columns: 1, rows: 2, elems: vec!(5, 7) };
+
+    assert!(a.concat_cols(&b) == Some(Matrice { columns: 2, rows: 2,
+                                                elems: vec!(4, 5,
+                                                            2, 7)}));
+}
+
+#[test]
 fn deterimant_test() {
     let a: Matrice<int> = Matrice { columns: 2, rows: 2, elems: vec!(4, 6, 3, 8) };
     assert!(a.determinant() == Some(14));
 
     let b: Matrice<int> = Matrice { columns: 2, rows: 3, elems: vec!(5, 7, 9, 11, 13, 15) };
     assert!(b.determinant() == None);
+
+    let c: Matrice<int> = Matrice { columns: 3, rows: 3, elems: vec!(1, 2, 3,
+                                                                     4, 5, 6,
+                                                                     7, 8, 9)};
+
+    assert!(c.determinant() == Some(0));
     
     let x: Matrice<int> = Matrice { columns: 3, rows: 3, elems: vec!(6,  1, 1,
                                                                      4, -2, 5,
                                                                      2,  8, 7)};
 
-    fail!(x.determinant().to_str())
-    //assert!(x.determinant() == Some(-306));
+    assert!(x.determinant() == Some(-306));
+
+    let y: Matrice<int> = Matrice { columns: 4, rows: 4, elems: vec!( 1,  2,  3,  4,
+                                                                      5,  6,  7,  8,
+                                                                      9, 10, 11, 12,
+                                                                     13, 14, 15, 16)};
+    assert!(y.determinant() == Some(0));
+
+    let z: Matrice<int> = Matrice { columns: 4, rows: 4, elems: vec!(  6,   1,   1,   9,
+                                                                       4,  -2,   5,  22,
+                                                                       2,   8,   7,  11,
+                                                                     -13, -17, -15, 100)};
+    fail!(z.determinant().to_str())
+    //assert!(y.determinant() == Some(-41247));
 }
 
 #[test]
