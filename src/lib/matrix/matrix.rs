@@ -335,43 +335,58 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         for row in range(0, self.rows) {
             for column in range(0, self.cols()) {
                 let submatrix = match (row, column) {
-                    /* Top left element's matrix */
+                    /* Top left element's matrix. Displaced (1, 1) */
                     (   0,    0) => self.submatrix(1, 1, subr, subc).unwrap(),
-                    /* Bottom left element's matrix */
+                    /* Bottom left element's matrix. Displaced by 
+                     * one column and no rows.*/
                     (subr,    0) => self.submatrix(1, 0, subr, subc).unwrap(),
-                    /* Top right element's matrix */
+                    /* Top right element's matrix. Displaced by one row
+                     * and 0 columns*/
                     (   0, subc) => self.submatrix(0, 1, subr, subc).unwrap(),
-                    /* Bottom right element's matrix */
+                    /* Bottom right element's matrix. Displaced by no rows
+                     * and no columns. */
                     (subr, subc) => self.submatrix(0, 0, subr, subc).unwrap(),
                     /* The concatenation of the two submatrices below any element
-                     * between the first element and last elements on the first row */
+                     * between the first element and last elements on the first row.
+                     * Both have 1 row of displacement.*/
                     (   0,    m) => {
                         let a = m + 1;
+                        /* The left matrix has no columnar displacement. */
                         let l_matrix = self.submatrix(0, 1, subr,        m).unwrap();
+                        /* The right matrix is displaced by `a' columns. */
                         let r_matrix = self.submatrix(a, 1, subr, subc - m).unwrap();
                         l_matrix.concat_cols(&r_matrix).unwrap()
                     }
                     /* The concatenation of the two submatrices above any element
-                     * betwen the first and last element on the last row */
+                     * betwen the first and last element on the last row.
+                     * Both have no row displacement.*/
                     (subr, m) => {
                         let a = m + 1;
+                        /* The left matrix has no columnar displacement. */
                         let l_matrix = self.submatrix(0, 0, subr,        m).unwrap();
+                        /* The right matrix is displaced by `a' columns. */
                         let r_matrix = self.submatrix(a, 0, subr, subc - m).unwrap();
                         l_matrix.concat_cols(&r_matrix).unwrap()
                     }
                     /* The concatenation of the two matrices above and below any
-                     * element between the first and last element on the first column */
+                     * element between the first and last element on the first column.
+                     * Both have one column of displacement. */
                     (n, 0) => {
                         let b = n + 1;
+                        /* The top matrix has no rows of displacement. */
                         let top_matrix = self.submatrix(1, 0,        n, subc).unwrap();
+                        /* The bottom matrix has b rows of displacement. */
                         let bot_matrix = self.submatrix(1, b, subr - n, subc).unwrap();
                         top_matrix.concat_rows(&bot_matrix).unwrap()
                     }
                     /* The concatenation of the two matrices above and below any
-                     * element between the first and laste element on the last column */
+                     * element between the first and last element on the last column.
+                     * Both have no columnar displacement. */
                     (n, subc) => {
                         let b = n + 1;
+                        /* The top matrix has no rows of displacement. */
                         let top_matrix = self.submatrix(0, 0,        n, subc).unwrap();
+                        /* The bottom matrix has b rows of displacement. */
                         let bot_matrix = self.submatrix(0, b, subr - n, subc).unwrap();
                         top_matrix.concat_rows(&bot_matrix).unwrap()
                     }
