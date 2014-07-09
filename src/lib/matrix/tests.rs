@@ -190,9 +190,9 @@ fn deterimant_test() {
 fn transpose_test() {
     let x: Matrice<int>  = Matrice { columns: 3, rows: 2, elems: vec!(1, 3, 7,
                                                                       9, 4, 6)};
-    assert_eq!(x.transpose(), Some(Matrice { columns: 2, rows: 3, elems: vec!(1, 9,
-                                                                              3, 4,
-                                                                              7, 6)}));
+    assert_eq!(x.transpose(), Matrice { columns: 2, rows: 3, elems: vec!(1, 9,
+                                                                         3, 4,
+                                                                         7, 6)});
 }
 
 #[test]

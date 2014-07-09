@@ -214,6 +214,21 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
                        elems: new_elems })
     }
 
+    pub fn concat_rows(&self, other: &Matrice<T>) -> Option<Matrice<T>> {
+        if self.columns != other.columns {
+            return None
+        }
+
+        let mut new_elems: Vec<T> = Vec::with_capacity(self.cols() * 2 * 
+                                                       (self.rows + other.rows));
+        new_elems.push_all(self.elems.as_slice());
+        new_elems.push_all(other.elems.as_slice());
+        
+        Some(Matrice { columns: self.columns, rows: self.rows + other.rows,
+                       elems: new_elems })
+    }        
+
+    /// Return an identity matrix of rows & columns n.
     pub fn ident(n: uint) -> Matrice<T> {
         let mut elems: Vec<T> = Vec::from_elem(n * n, num::zero());
         for i in range(0, n) {
@@ -223,6 +238,7 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         Matrice { rows: n, columns: n, elems: elems }
     }
 
+    /// If the Matrix is square, returns its determinant, otherwise None.
     pub fn determinant(&self) -> Option<T> {
         if self.rows != self.columns || self.rows == 0 {
             return None
@@ -282,7 +298,8 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         }
     }
 
-    pub fn transpose(&self) -> Option<Matrice<T>> {
+    /// Returns a new 
+    pub fn transpose(&self) -> Matrice<T> {
         if !self.dim_ok() {
             fail!(BadDimensionality.to_str())
         }
@@ -292,18 +309,11 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
             new_elems.extend(self.get_col(column).map(|x| x.clone()));
         }
 
-        Some(Matrice { rows: self.columns, columns: self.rows, elems: new_elems })
+        Matrice { rows: self.columns, columns: self.rows, elems: new_elems }
     }
 
-    pub fn inverse(&self) -> Option<Matrice<T>> {
-        if self.rows != self.columns || !self.dim_ok() || self.rows == 0 {
-            return None
-        }
-
-        if self.rows == 1 {
-            num::one / *self.elems.get(0)
-        }
-
+    /// Returns a matrix of minors.
+    pub fn minors(&self) -> Option<Matrice<T>> {
         /* Get a matrix of determinants like so:
          * | a b c |  1. for a: | e f |
          * | d e f |            | h i |
@@ -316,8 +326,35 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
          *
          *            5. for e: | a c |
          *                      | g i | */
+        if self.rows != self.columns || !self.dim_ok() || self.rows == 0 {
+            return None
+        }
+
+        let mut minors: Vec<T> = Vec::with_capacity(self.rows * self.rows);
+        let (subr, subc) = (self.rows - 1, self.columns - 1);
+        for row in range(0, self.rows) {
+            for column in range(0, self.cols()) {
+                let submatrix = match (row, column) {
+                    (0, 0) => self.submatrix(1, 1, subr, subc).unwrap(),
+                    (subr, 0) => self.submatrix(1, 0, subr, subc).unwrap(),
+                    (0, subc) => self.submatrix(0, 1, subr, subc).unwrap(),
+                    (subr, subc) => self.submatrix(0, 0, subr, subc).unwrap(),                    
+        
+
+    /// Returns Some(Matrice<T>) if the Matrix has an inverse.
+    pub fn inverse(&self) -> Option<Matrice<T>> {
+        if self.rows != self.columns || !self.dim_ok() || self.rows == 0 {
+            return None
+        }
+
+        if self.rows == 1 {
+            num::one / *self.elems.get(0)
+        }
          
-        for x in range(0, rows)
+        let minors = match self.minors() {
+            Some(x) => x,
+            None => return None
+        };
 }
 
 pub struct MatrixIterator<'a, T> {
