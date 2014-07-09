@@ -199,7 +199,7 @@ fn transpose_test() {
 fn inverse_test() {
     let x: Matrice<f64> = Matrice { columns: 2, rows: 2, elems: vec!(1., 2., 3., 4.)};
     assert_eq!(x.inverse(), Some(Matrice { columns: 2, rows: 2, 
-                                           elems: vec!(-2., 1., 1.5, -1.)}));
+                                           elems: vec!(-2., 1., 1.5, -0.5)}));
 }
                                            
 

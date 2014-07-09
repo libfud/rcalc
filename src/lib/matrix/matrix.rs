@@ -188,6 +188,10 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
     pub fn submatrix(&self, ofsx: uint, ofsy: uint, 
                      rows: uint, cols: uint) -> Option<Matrice<T>> {
         if ofsx + cols > self.columns || ofsy + rows > self.rows {
+            println!("{} + {} = {}. Columns = {}. {} + {} = {}. Rows = {}",
+                     ofsx, cols, ofsx + cols, self.columns,
+                     ofsy, rows, ofsy + rows, self.rows);
+            println!("Returning none from submatrix");
             return None
         }
 
@@ -330,52 +334,40 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
             return None
         }
 
-        println!("Input:\n{}", self);
-
         let mut minors: Vec<T> = Vec::with_capacity(self.rows * self.rows);
         let (subr, subc) = (self.rows - 1, self.columns - 1);
         for row in range(0, self.rows) {
-            println!("row {}", row);
             for column in range(0, self.cols()) {
-                println!("column {}", column);
                 let submatrix = {
-                    let a = column + 1; //columns
-                    let b = row + 1; //rows
+                    let col_a = column + 1; //columns
+                    let row_b = row + 1; //rows
                     /* Top left matrix is displaced 0 rows and 0 columns.
                      * It can extend n rows down, and m columns across. */
-                    println!("Calling unwrap on UL matrix!");
                     let topl_matrix = self.submatrix(0, 0, row, column).unwrap();
-                    println!("UL matrix:\n{},", topl_matrix);
+
 
                     /* Top right matrix is displaced by 0 rows and a columns.
-                     * It can extend n rows down and columns - 1 - m columns
+                     * It can extend n rows down and subc - column
                      * across. */
-                    println!("Calling unwrap on UR matrix!");
-                    let topr_matrix = self.submatrix(b, 0, row, subc - column).unwrap();
-                    println!("UR matrix:\n{}", topr_matrix);
+                    let topr_matrix = self.submatrix(col_a, 0, row, subc - column).unwrap();
+
 
                     /* Bottom left matrix is displaced by 0 columns and b rows.
-                     * It can extend subr - n rows down and m columns across. */
-                    println!("Calling unwrap on LL matrix!");
-                    let botl_matrix = self.submatrix(0, b, subr - row, column).unwrap();
-                    println!("LL matrix:\n{}", botl_matrix);
+                     * It can extend subr - n rows down and `column' columns across. */
+                    let botl_matrix = self.submatrix(0, row_b, subr - row, column).unwrap();
+
 
                     /* Bottom right matrix is displaced by a columns and b rows.
                      * It can extend subr - n rows down and subc - m columns
                      * across */
-                    println!("Calling unwrap on LR matrix!");
-                    let botr_matrix = self.submatrix(a, b, subr - row, subc - column).unwrap();
-                    println!("LR matrix:\n{}", botr_matrix);
+                    let botr_matrix = self.submatrix(col_a, row_b, 
+                                                     subr - row, subc - column).unwrap();
 
-                    println!("Calling unwrap on concatenating upper/lower matrices");
+
                     let l_matrix = topl_matrix.concat_rows(&botl_matrix).unwrap();
-                    println!("Left matrix:\n{}", l_matrix);
                     let r_matrix = topr_matrix.concat_rows(&botr_matrix).unwrap();
-                    println!("Right matrix:\n{}", r_matrix);
-                    println!("Concatenating the left and right matrices");
                     l_matrix.concat_cols(&r_matrix).unwrap()
                 };  
-                println!("Pushing\n{}", submatrix);
                 minors.push(match submatrix.determinant() {
                     Some(x) => x,
                     None => return None
@@ -398,19 +390,37 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
                                    elems: vec!(one / *self.elems.get(0))})
         }
          
-        let minors: Vec<T> = match self.minors() {
-            Some(x) => x.elems,
+        let minors = match self.minors() {
+            Some(x) => x,
             None => return None
         };
-        
+
         let determinant: T = range(0, self.columns).map(|n| {
             if n % 2 == 0 {
-                *self.elems.get(n) * *minors.get(n)
+                *self.elems.get(n) * *minors.elems.get(n)
             } else {
-                -(*self.elems.get(n) * *minors.get(n))
+                -(*self.elems.get(n) * *minors.elems.get(n))
             }
         }).sum();
 
+        let mut cofactors_v: Vec<T> = Vec::with_capacity(minors.rows * minors.rows);
+        for row in range(0, minors.rows) {
+            let checker = if row % 2 == 0 {
+                true
+            } else {
+                false
+            };
+            for x in range(0, minors.columns) {
+                cofactors_v.push(if checker^(x % 2 != 0) {
+                    minors.elems.get(row * minors.cols() + x).clone()
+                } else {
+                    -*minors.elems.get(row * minors.cols() + x)
+                });
+            }
+        }
+        let cofactors = Matrice { rows: minors.rows, columns: minors.columns,
+                                  elems: cofactors_v };
+/*
         let cofactors: Matrice<T> = Matrice { 
             rows: self.rows, columns: self.columns, elems:
             range(0, minors.len())
@@ -420,6 +430,7 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
                     -*minors.get(x)
                 }).collect()
         };
+*/
         
         Some(cofactors.transpose().scalar(&determinant, |a, b| *a / *b))
     }
