@@ -339,12 +339,28 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
                     (subr,    0) => self.submatrix(1, 0, subr, subc).unwrap(),
                     (   0, subc) => self.submatrix(0, 1, subr, subc).unwrap(),
                     (subr, subc) => self.submatrix(0, 0, subr, subc).unwrap(),
-                    (0, n) => {
+                    (   0,    n) => {
                         let a = (n + 1);
                         let l_matrix = self.submatrix(0, 1, subr, n).unwrap();
                         let r_matrix = self.submatrix(a, 1, subr, subc - a).unwrap();
                         l_matrix.concat_cols(&r_matrix).unwrap()
                     }
+                    (subr, n) => {
+                        let a = (n + 1);
+                        let l_matrix = self.submatrix(0, 0, subr, n).unwrap();
+                        let r_matrix = self.submatrix(a, 0, subr, subc - a).unwrap();
+                        l_matrix.concat_cols(&r_matrix).unwrap()
+                    }
+                    (m, 0) => {
+                        let b = (m + 1);
+                        let top_matrix = self.submatrix(1, 0, m, subc).unwrap();
+                        let bot_matrix = self.submatrix(1, b, subr - b, subc).unwrap();
+                        top_matrix.concat_rows(&bot_matrix).unwrap()
+                    }
+                    (m, n) => {
+                        let a = (n + 1);
+                        let b = (m + 1);
+                        
         
 
     /// Returns Some(Matrice<T>) if the Matrix has an inverse.
