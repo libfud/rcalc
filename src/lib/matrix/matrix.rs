@@ -119,6 +119,14 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         self.elems.clone()
     }
 
+    pub fn real_len(&self) -> uint {
+        self.elems.len()
+    }
+
+    pub fn dim_ok(&self) -> bool {
+        self.rows * self.columns == self.elems.len()
+    }
+
     pub fn new_empty() -> Matrice<T> {
         Matrice { columns: 0, rows: 0, elems: vec![] }
     }
@@ -216,8 +224,7 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
     }
 
     pub fn determinant(&self) -> Option<T> {
-        println!("Input:\n{}", self);
-        if self.rows != self.columns {
+        if self.rows != self.columns || self.rows == 0 {
             return None
         }
 
@@ -231,16 +238,13 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
              *    |c d|    *
              * (ad) - (bc) *
              *             */
-            let answer = (*self.elems.get(0) * *self.elems.get(3)) - 
-                          (*self.elems.get(1) * *self.elems.get(2));
-            println!("Input matrix:\n{}\nOutput: {}", self, answer);
-            Some(answer)
+            Some((*self.elems.get(0) * *self.elems.get(3)) - 
+                 (*self.elems.get(1) * *self.elems.get(2)))
         } else {
             let mut sum: T = num::zero();
             for n in range(0, self.columns) { 
                 /* Get the element at the top row at the nth position, starting from 0 */
                 let elem = self.elems.get(n); 
-                println!("{}\n At {}, elem is {}", self, n, elem);
                 
                 let next = if n == 0 {
                     /* the submatrix that is in the lower right corner extending
@@ -256,19 +260,14 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
                     /* the submatrix that is in the lower left corner, taking up
                      * n columns */
                     let a = self.submatrix(0, 1, self.rows - 1, n).unwrap();
-                    println!("{},\nsubmatrix a:\n{}", self, a);
 
                     /* the submatrix that is in the lower right corner, taking up
                      * the number of columns from n to the number of columns in a row */
 
                     let b = self.submatrix(n + 1, 1, self.rows - 1, 
                                            self.columns - (n + 1)).unwrap();
-                    println!("submatrix b: \n{}", b);
 
-                    /* concatenate them annd find their determinant */
-                    println!("matrix ab: \n{}", a.concat_cols(&b).unwrap());
-                    println!("{}\nab determinant: {}", self, 
-                             a.concat_cols(&b).unwrap().determinant().unwrap());
+                    /* concatenate them and find their determinant */
                     a.concat_cols(&b).unwrap().determinant().unwrap()
                 };
 
@@ -278,12 +277,47 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
                 } else {
                     sum - (*elem * next)
                 };
-                println!("At {}, sum = {}", n, sum);
             }
-            println!("In\n{}\nOutput: {}",self, sum);
             Some(sum)
         }
     }
+
+    pub fn transpose(&self) -> Option<Matrice<T>> {
+        if !self.dim_ok() {
+            fail!(BadDimensionality.to_str())
+        }
+
+        let mut new_elems = Vec::with_capacity(self.real_len());
+        for column in range(0, self.columns) {
+            new_elems.extend(self.get_col(column).map(|x| x.clone()));
+        }
+
+        Some(Matrice { rows: self.columns, columns: self.rows, elems: new_elems })
+    }
+
+    pub fn inverse(&self) -> Option<Matrice<T>> {
+        if self.rows != self.columns || !self.dim_ok() || self.rows == 0 {
+            return None
+        }
+
+        if self.rows == 1 {
+            num::one / *self.elems.get(0)
+        }
+
+        /* Get a matrix of determinants like so:
+         * | a b c |  1. for a: | e f |
+         * | d e f |            | h i |
+         * | g h i |
+         *            2. for b: | d f |
+         *                      | g i |
+         *            ...
+         *            4. for d: | b c |
+         *                      | h i |
+         *
+         *            5. for e: | a c |
+         *                      | g i | */
+         
+        for x in range(0, rows)
 }
 
 pub struct MatrixIterator<'a, T> {
