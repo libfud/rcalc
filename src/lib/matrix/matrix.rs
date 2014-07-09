@@ -345,45 +345,61 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
                     (subr, subc) => self.submatrix(0, 0, subr, subc).unwrap(),
                     /* The concatenation of the two submatrices below any element
                      * between the first element and last elements on the first row */
-                    (   0,    n) => {
-                        let a = (n + 1);
-                        let l_matrix = self.submatrix(0, 1, subr,        n).unwrap();
-                        let r_matrix = self.submatrix(a, 1, subr, subc - a).unwrap();
+                    (   0,    m) => {
+                        let a = m + 1;
+                        let l_matrix = self.submatrix(0, 1, subr,        m).unwrap();
+                        let r_matrix = self.submatrix(a, 1, subr, subc - m).unwrap();
                         l_matrix.concat_cols(&r_matrix).unwrap()
                     }
                     /* The concatenation of the two submatrices above any element
                      * betwen the first and last element on the last row */
-                    (subr, n) => {
-                        let a = (n + 1);
-                        let l_matrix = self.submatrix(0, 0, subr,        n).unwrap();
-                        let r_matrix = self.submatrix(a, 0, subr, subc - a).unwrap();
+                    (subr, m) => {
+                        let a = m + 1;
+                        let l_matrix = self.submatrix(0, 0, subr,        m).unwrap();
+                        let r_matrix = self.submatrix(a, 0, subr, subc - m).unwrap();
                         l_matrix.concat_cols(&r_matrix).unwrap()
                     }
                     /* The concatenation of the two matrices above and below any
                      * element between the first and last element on the first column */
-                    (m, 0) => {
-                        let b = (m + 1);
-                        let top_matrix = self.submatrix(1, 0,        m, subc).unwrap();
-                        let bot_matrix = self.submatrix(1, b, subr - b, subc).unwrap();
+                    (n, 0) => {
+                        let b = n + 1;
+                        let top_matrix = self.submatrix(1, 0,        n, subc).unwrap();
+                        let bot_matrix = self.submatrix(1, b, subr - n, subc).unwrap();
                         top_matrix.concat_rows(&bot_matrix).unwrap()
                     }
                     /* The concatenation of the two matrices above and below any
                      * element between the first and laste element on the last column */
-                    (m, subc) => {
-                        let b = (m + 1);
-                        let top_matrix = self.submatrix(0, 0,        m, subc).unwrap();
-                        let bot_matrix = self.submatrix(0, b, subr - b, subc).unwrap();
+                    (n, subc) => {
+                        let b = n + 1;
+                        let top_matrix = self.submatrix(0, 0,        n, subc).unwrap();
+                        let bot_matrix = self.submatrix(0, b, subr - n, subc).unwrap();
                         top_matrix.concat_rows(&bot_matrix).unwrap()
                     }
                     /* The concatenation of the four matrices to the UL, LL, UR, and LR
                      * for any element inside the matrix */
-                    (m, n) => {
-                        let a = (n + 1);
-                        let b = (m + 1);
-                        let topl_matrix = self.submatrix(0, 0, m, n).unwrap();
-                        let topr_matrix = self.submatrix(a, 0, m, n).unwrap();
-                        let botl_matrix = self.submatrix(
-                        
+                    (n, m) => {
+                        let a = m + 1; //columns
+                        let b = n + 1; //rows
+                        /* Top left matrix is displaced 0 rows and 0 columns.
+                         * It can extend n rows down, and m columns across. */
+                        let topl_matrix = self.submatrix(0, 0,        n,        m).unwrap();
+                        /* Top right matrix is displaced by 0 rows and a columns.
+                         * It can extend n rows down and columns - 1 - m columns
+                         * across. */
+                        let topr_matrix = self.submatrix(b, 0,        m, subc - n).unwrap();
+                        /* Bottom left matrix is displaced by 0 columns and b rows.
+                         * It can extend subr - n rows down and m columns across. */
+                        let botl_matrix = self.submatrix(0, b, subr - n,        m).unwrap();
+                        /* Bottom right matrix is displaced by a columns and b rows.
+                         * It can extend subr - n rows down and subc - m columns
+                         * across */
+                        let botr_matrix = self.submatrix(a, b, subr - n, subc - b).unwrap();
+
+                        let l_matrix = topl_matrix.concat_rows(&botl_matrix).unwrap();
+                        let r_matrix = topr_matrix.concat_rows(&botr_matrix).unwrap();
+                        l_matrix.concat_cols(&r_matrix).unwrap()
+                    }
+                };
         
 
     /// Returns Some(Matrice<T>) if the Matrix has an inverse.
