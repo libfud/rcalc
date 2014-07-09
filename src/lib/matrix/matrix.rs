@@ -12,7 +12,6 @@ use fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRigh
 use not_fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
 
 pub mod tensor;
-#[test]
 mod tests;
 
 #[cfg(use_fancy)]
@@ -406,14 +405,16 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
 
         for row in range(0, minors.rows) {
             for x in range(0, minors.columns) {
+                let i = row * self.cols() + x;
                 if (row % 2 == 0)^(x % 2 == 0) {
-                    let i = row * self.cols() + x;
-                    *minors.elems.get_mut(i) = -*minors.elems.get(i);
+                    *minors.elems.get_mut(i) = *minors.elems.get(i) / -determinant
+                } else {
+                    *minors.elems.get_mut(i) = *minors.elems.get(i) / determinant
                 }
             }
         }
         
-        Some(minors.transpose().scalar(&determinant, |a, b| *a / *b))
+        Some(minors.transpose())
     }
 }
 
