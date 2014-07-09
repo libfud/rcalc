@@ -390,7 +390,7 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
                                    elems: vec!(one / *self.elems.get(0))})
         }
          
-        let minors = match self.minors() {
+        let mut minors = match self.minors() {
             Some(x) => x,
             None => return None
         };
@@ -403,36 +403,16 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
             }
         }).sum();
 
-        let mut cofactors_v: Vec<T> = Vec::with_capacity(minors.rows * minors.rows);
         for row in range(0, minors.rows) {
-            let checker = if row % 2 == 0 {
-                true
-            } else {
-                false
-            };
             for x in range(0, minors.columns) {
-                cofactors_v.push(if checker^(x % 2 != 0) {
-                    minors.elems.get(row * minors.cols() + x).clone()
-                } else {
-                    -*minors.elems.get(row * minors.cols() + x)
-                });
+                if (row % 2 == 0)^(x % 2 == 0) {
+//                    let temp = -*minors.elems.get(row * minors.cols() + x);
+                    *minors.elems.get_mut(row * self.cols() + x) = -*minors.elems.get(row * self.cols() + x);
+                }
             }
         }
-        let cofactors = Matrice { rows: minors.rows, columns: minors.columns,
-                                  elems: cofactors_v };
-/*
-        let cofactors: Matrice<T> = Matrice { 
-            rows: self.rows, columns: self.columns, elems:
-            range(0, minors.len())
-                .map(|x| if x % 2 == 0 {
-                    minors.get(x).clone()
-                } else {
-                    -*minors.get(x)
-                }).collect()
-        };
-*/
         
-        Some(cofactors.transpose().scalar(&determinant, |a, b| *a / *b))
+        Some(minors.transpose().scalar(&determinant, |a, b| *a / *b))
     }
 }
 
