@@ -106,7 +106,7 @@ impl<T: fmt::Show > fmt::Show for Matrice<T> {
     }
 }
 
-impl<T: Num + Clone> Matrice<T> {
+impl<T: Num + Clone + fmt::Show> Matrice<T> {
     pub fn rows(&self) -> uint {
         self.rows
     }
@@ -216,8 +216,13 @@ impl<T: Num + Clone> Matrice<T> {
     }
 
     pub fn determinant(&self) -> Option<T> {
-        if self.rows != self.columns || self.rows < 2 {
+        println!("Input:\n{}", self);
+        if self.rows != self.columns {
             return None
+        }
+
+        if self.rows == 1 {
+            return Some(self.elems.get(0).clone())
         }
 
         if self.rows == 2 {
@@ -226,13 +231,16 @@ impl<T: Num + Clone> Matrice<T> {
              *    |c d|    *
              * (ad) - (bc) *
              *             */
-            Some((*self.elems.get(0) * *self.elems.get(3)) - 
-                 (*self.elems.get(1) * *self.elems.get(2)))
+            let answer = (*self.elems.get(0) * *self.elems.get(3)) - 
+                          (*self.elems.get(1) * *self.elems.get(2));
+            println!("Input matrix:\n{}\nOutput: {}", self, answer);
+            Some(answer)
         } else {
             let mut sum: T = num::zero();
             for n in range(0, self.columns) { 
                 /* Get the element at the top row at the nth position, starting from 0 */
                 let elem = self.elems.get(n); 
+                println!("{}\n At {}, elem is {}", self, n, elem);
                 
                 let next = if n == 0 {
                     /* the submatrix that is in the lower right corner extending
@@ -247,12 +255,20 @@ impl<T: Num + Clone> Matrice<T> {
                 } else {
                     /* the submatrix that is in the lower left corner, taking up
                      * n columns */
-                    let a = self.submatrix(n - 1, 1, self.rows - 1, n).unwrap();
+                    let a = self.submatrix(0, 1, self.rows - 1, n).unwrap();
+                    println!("{},\nsubmatrix a:\n{}", self, a);
+
                     /* the submatrix that is in the lower right corner, taking up
                      * the number of columns from n to the number of columns in a row */
+
                     let b = self.submatrix(n + 1, 1, self.rows - 1, 
                                            self.columns - (n + 1)).unwrap();
-                    /* concatenate them and find their determinant */
+                    println!("submatrix b: \n{}", b);
+
+                    /* concatenate them annd find their determinant */
+                    println!("matrix ab: \n{}", a.concat_cols(&b).unwrap());
+                    println!("{}\nab determinant: {}", self, 
+                             a.concat_cols(&b).unwrap().determinant().unwrap());
                     a.concat_cols(&b).unwrap().determinant().unwrap()
                 };
 
@@ -261,8 +277,10 @@ impl<T: Num + Clone> Matrice<T> {
                     sum + (*elem * next)
                 } else {
                     sum - (*elem * next)
-                }
+                };
+                println!("At {}, sum = {}", n, sum);
             }
+            println!("In\n{}\nOutput: {}",self, sum);
             Some(sum)
         }
     }
@@ -314,7 +332,7 @@ impl<T: Sub<T, T>> Sub<Matrice<T>, Matrice<T>> for Matrice<T> {
     }
 }
 
-impl<T: Num + Clone> Mul<Matrice<T>, Matrice<T>> for Matrice<T> {
+impl<T: Num + Clone + fmt::Show> Mul<Matrice<T>, Matrice<T>> for Matrice<T> {
     fn mul(&self, other: &Matrice<T>) -> Matrice<T> {
         if self.columns != other.rows {
             fail!(MismatchedAxes.to_str())
@@ -361,7 +379,7 @@ impl<T: Rem<T, T>> Rem<Matrice<T>, Matrice<T>> for Matrice<T> {
     }
 }
 
-impl<T: Num + Clone> Neg<Matrice<T>> for Matrice<T> {
+impl<T: Num + Clone + fmt::Show> Neg<Matrice<T>> for Matrice<T> {
     fn neg(&self) -> Matrice<T> {
         use std::num;
         let one: T = num::one();

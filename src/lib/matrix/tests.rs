@@ -131,6 +131,10 @@ fn concat_cols_test() {
 
 #[test]
 fn deterimant_test() {
+
+    let one: Matrice<int> = Matrice { columns: 1, rows: 1, elems: vec!(3) };
+    assert_eq!(one.determinant(), Some(3));
+
     let a: Matrice<int> = Matrice { columns: 2, rows: 2, elems: vec!(4, 6, 3, 8) };
     assert!(a.determinant() == Some(14));
 
@@ -146,8 +150,13 @@ fn deterimant_test() {
     let x: Matrice<int> = Matrice { columns: 3, rows: 3, elems: vec!(6,  1, 1,
                                                                      4, -2, 5,
                                                                      2,  8, 7)};
+    assert_eq!(x.determinant(), Some(-306));
 
-    assert!(x.determinant() == Some(-306));
+    let d: Matrice<int> = Matrice { columns: 4, rows: 4, elems: vec!(4, 5, 6, 7,
+                                                                     3, 2, 1, 5,
+                                                                     7, 8, 9, 4,
+                                                                     2, 2, 3, 1)};
+    assert_eq!(d.determinant(), Some(-57));
 
     let y: Matrice<int> = Matrice { columns: 4, rows: 4, elems: vec!( 1,  2,  3,  4,
                                                                       5,  6,  7,  8,
@@ -159,8 +168,22 @@ fn deterimant_test() {
                                                                        4,  -2,   5,  22,
                                                                        2,   8,   7,  11,
                                                                      -13, -17, -15, 100)};
-    fail!(z.determinant().to_str())
-    //assert!(y.determinant() == Some(-41247));
+    assert_eq!(z.determinant(), Some(-41247));
+
+    let r: Matrice<int> = Matrice { columns: 5, rows: 5, elems: vec!(  1,  0, 0,  0,  0,
+                                                                       0,  1, 0,  0, -1,
+                                                                       0,  3, 0, -3, -2,
+                                                                       0,  0, 2, -1,  0,
+                                                                       1, -1, 0,  1,  0)};
+    assert_eq!(r.determinant(), Some(-4));
+
+    let q: Matrice<int> = Matrice { columns: 6, rows: 6, elems: vec!(  1,  0,  0,  1, -2,  1,
+                                                                       0, -2,  1,  0,  0,  2,
+                                                                      -1, -3,  0,  0,  1, -3,
+                                                                      -4,  2,  1,  0,  0,  0,
+                                                                       0,  0,  2,  1,  1,  1,
+                                                                      -1,  5, -1, -1,  0,  0)};
+    assert_eq!(q.determinant(), Some(-40));
 }
 
 #[test]
