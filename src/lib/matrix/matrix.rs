@@ -190,7 +190,7 @@ impl<T: Num + Clone> Matrice<T> {
         Some(Matrice { columns: cols, rows: rows, elems: new_elems })
     }
     
-    pub fn concat_cols(&self, Other: &Matrice<T>) -> Option<Matrice<T> {
+    pub fn concat_cols(&self, other: &Matrice<T>) -> Option<Matrice<T>> {
         if self.rows != other.rows {
             return None
         }
@@ -215,6 +215,8 @@ impl<T: Num + Clone> Matrice<T> {
     }
 
     pub fn determinant(&self) -> Option<T> {
+        println!("columns: {}, rows: {}, length: {}", self.columns, 
+                 self.rows, self.elems.len());
         if self.rows != self.columns || self.rows < 2 {
             return None
         }
@@ -223,17 +225,36 @@ impl<T: Num + Clone> Matrice<T> {
             Some(*self.elems.get(0) * *self.elems.get(3) - 
                  *self.elems.get(1) * *self.elems.get(2))
         } else {
-            let one: T = num::one();
             let mut sum: T = num::zero();
             for n in range(0, self.columns) {
-            for n in self.get_row(0) {
-                let next = *n * self.submatrix(1, 1, self.rows - 1,
-                                   self.columns - 1).unwrap().determinant();
+                let elem = self.elems.get(n);
 
-                sum = if *n % one + one == num::zero() {
-                    next
+                let next = if n == 0 {
+                    self.submatrix(1, 1, self.rows - 1, self.columns - 1).unwrap()
+                        .determinant().unwrap()
+                } else if n == self.columns - 1 {
+                    self.submatrix(0, 1, self.rows - 1, self.columns - 1).unwrap()
+                        .determinant().unwrap()
                 } else {
-                    -next
+                    let a = match self.submatrix(n - 1, 1, self.rows - 1, n) {
+                        Some(x) => x,
+                        None => fail!("My math for a is wrong")
+                    };
+                    let b = match self.submatrix(n, 1, self.rows - 1, self.columns - (n + 1)) {
+                        Some(x) => x,
+                        None => fail!("My math for b is wrong")
+                    };
+                    if (a.rows, a.columns) != (b.rows, b.columns) {
+                        fail!(format!("a cols: {}, a rows: {}, b cols: {}, b rows: {}",
+                                      a.columns, a.rows, b.columns, b.rows))
+                    }
+                    a.concat_cols(&b).unwrap().determinant().unwrap()
+                };
+
+                sum = if n % 2 == 0 {
+                    sum + *elem *next
+                } else {
+                    sum - *elem * next
                 }
             }
             Some(sum)
@@ -324,6 +345,17 @@ fn matrix_get_col_test() {
 }
 
 #[test]
+fn test_append_col() {
+    let x: Matrice<int> = Matrice { columns: 3, rows: 3, elems: vec!(6,  1, 1,
+                                                                     4, -2, 5,
+                                                                     2, 8, 7)};
+    let y = x.submatrix(0, 1, 2, 1).unwrap();
+    let z = x.submatrix(2, 1, 2, 1).unwrap();
+    assert!(y.concat_cols(&z) == Some( Matrice { columns: 2, rows: 2 , elems: vec!(4, 5,
+                                                                                  2, 7)}));
+}
+
+#[test]
 fn submatrix_test() {
     let x: Matrice<int> = Matrice::ident(5);
     /* (1, 0, 0, 0, 0) *
@@ -365,6 +397,16 @@ fn ident_test() {
                                                             0, 1, 0, 0,
                                                             0, 0, 1, 0,
                                                             0, 0, 0, 1) });
+}
+
+#[test]
+fn deterimant_test() {
+    let x: Matrice<int> = Matrice { columns: 3, rows: 3, elems: vec!(6,  1, 1,
+                                                                     4, -2, 5,
+                                                                     2,  8, 7)};
+
+    fail!(x.determinant().to_str())
+    //assert!(x.determinant() == Some(-306));
 }
 
 impl<T: Add<T, T>> Add<Matrice<T>, Matrice<T>> for Matrice<T> {
