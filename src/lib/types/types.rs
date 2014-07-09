@@ -1,4 +1,4 @@
-#![crate_id = "types"]
+#![crate_name = "types"]
 #![crate_type = "lib"]
 #![feature(default_type_params)]
 

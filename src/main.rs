@@ -1,4 +1,4 @@
-#![crate_id = "rcalc"]
+#![crate_name = "rcalc"]
 #![crate_type = "bin"]
 #![feature(default_type_params, globs, macro_rules)]
 

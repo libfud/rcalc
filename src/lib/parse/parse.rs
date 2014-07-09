@@ -1,4 +1,4 @@
-#![crate_id = "parse"]
+#![crate_name = "parse"]
 #![crate_type = "lib"]
 #![feature(default_type_params)]
 

@@ -1,4 +1,4 @@
-#![crate_id = "matrix"]
+#![crate_name = "matrix"]
 #![crate_type = "lib"]
 
 use std::fmt;
