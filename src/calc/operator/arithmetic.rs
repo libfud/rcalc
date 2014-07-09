@@ -4,7 +4,8 @@ extern crate types;
 
 use std::num;
 use self::types::operator::{Add, Sub, Mul, Div, Rem, Arith};
-use super::super::{CalcResult, Environment, BadNumberOfArgs, Evaluate};
+use self::types::literal::Matrix;
+use super::super::{CalcResult, Environment, BadNumberOfArgs, BadArgType, Evaluate};
 use super::super::{BigNum};
 use super::{BigRational, ArgType, Atom, Lit};
 
@@ -35,6 +36,13 @@ pub fn arith(args: &Args, env: &mut Env, oper: Arith) -> CalcResult {
     if args.len() == 1 {
         match oper {
             Sub => Ok(Atom(-try!(args.get(0).desymbolize(env)))),
+            Div => match try!(args.get(0).desymbolize(env)) {
+                Matrix(x) => match x.inverse() {
+                        Some(inverted) => Ok(Atom(Matrix(inverted))),
+                        None => Err(BadArgType("Inversion failed".to_str()))
+                },
+                x => Ok(Atom(op(ident, &x)))
+            },                    
             _ => Ok(Atom(op(ident, &try!(args.get(0).desymbolize(env)))))
         }
     } else {

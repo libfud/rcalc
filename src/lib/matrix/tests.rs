@@ -200,6 +200,15 @@ fn inverse_test() {
     let x: Matrice<f64> = Matrice { columns: 2, rows: 2, elems: vec!(1., 2., 3., 4.)};
     assert_eq!(x.inverse(), Some(Matrice { columns: 2, rows: 2, 
                                            elems: vec!(-2., 1., 1.5, -0.5)}));
+    let y: Matrice<f64> = Matrice { columns: 3, rows: 3, elems: vec!(1., 2., 3.,
+                                                                     5., 4., 6.,
+                                                                     7., 8., 9.)};
+    assert_eq!(y.inverse(), Some(Matrice { columns: 3, rows: 3,
+                                           elems: vec!(-4./6.,  2./6.,     0.,
+                                                       -1./6., -4./6.,  3./6.,
+                                                        4./6.,  2./6., -2./6.)}));
+    assert_eq!(y.determinant(), Some(18.));
+    assert_eq!(y.inverse().unwrap().determinant(), Some(1./18.));
 }
                                            
 
@@ -246,4 +255,14 @@ fn test_mul() {
                        (3 * 5 + 4 * 7), (3 * 6 + 4 * 8));
 
     assert!(lhs * rhs == Matrice { columns: 2, rows: 2, elems: results });
+}
+
+#[test]
+fn test_div() {
+    let lhs: Matrice<f64> = Matrice { columns: 2, rows: 2, elems: vec!(1., 2., 3., 4.)};
+    let rhs: Matrice<f64> = Matrice { columns: 2, rows: 2, elems: vec!(9., 8., 7., 4.)};
+
+    let res = lhs / rhs;
+    assert_eq!(res, Matrice { columns: 2, rows: 2, elems:
+                                   vec!(5./10., -5./10., 8./10., -6./10.)});
 }

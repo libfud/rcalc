@@ -12,6 +12,7 @@ use fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRigh
 use not_fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
 
 pub mod tensor;
+#[test]
 mod tests;
 
 #[cfg(use_fancy)]
@@ -406,8 +407,8 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         for row in range(0, minors.rows) {
             for x in range(0, minors.columns) {
                 if (row % 2 == 0)^(x % 2 == 0) {
-//                    let temp = -*minors.elems.get(row * minors.cols() + x);
-                    *minors.elems.get_mut(row * self.cols() + x) = -*minors.elems.get(row * self.cols() + x);
+                    let i = row * self.cols() + x;
+                    *minors.elems.get_mut(i) = -*minors.elems.get(i);
                 }
             }
         }
@@ -481,20 +482,17 @@ impl<T: Num + Clone + fmt::Show> Mul<Matrice<T>, Matrice<T>> for Matrice<T> {
     }
 }
 
-impl<T: Div<T, T>> Div<Matrice<T>, Matrice<T>> for Matrice<T> {
+impl<T: Num + Clone + fmt::Show> Div<Matrice<T>, Matrice<T>> for Matrice<T> {
     fn div(&self, other: &Matrice<T>) -> Matrice<T> {
-        if (self.columns, self.rows) != (other.columns, other.rows) {
-            fail!(MismatchedAxes.to_str())
-        }
+        let inverse = match other.inverse() {
+            Some(x) => x,
+            None => fail!("rhs does not have an inverse!".to_str())
+        };
 
-        let new_elems: Vec<T> = self.elems.iter().zip(other.elems.iter()).map(
-            |(lhs, rhs)| *lhs / *rhs).collect();
-
-
-        Matrice { columns: self.columns, rows: self.rows, elems: new_elems }
+        *self * inverse
     }
 }
-
+/*
 impl<T: Rem<T, T>> Rem<Matrice<T>, Matrice<T>> for Matrice<T> {
     fn rem(&self, other: &Matrice<T>) -> Matrice<T> {
         if (self.columns, self.rows) != (other.columns, other.rows) {
@@ -508,7 +506,7 @@ impl<T: Rem<T, T>> Rem<Matrice<T>, Matrice<T>> for Matrice<T> {
         Matrice { columns: self.columns, rows: self.rows, elems: new_elems }
     }
 }
-
+*/
 impl<T: Num + Clone + fmt::Show> Neg<Matrice<T>> for Matrice<T> {
     fn neg(&self) -> Matrice<T> {
         use std::num;

@@ -157,7 +157,6 @@ impl Rem<Lit, Lit> for Lit {
     fn rem(&self, rhs: &Lit) -> Lit {
         match (self, rhs) {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x % *y),
-            (&Matrix(ref x), &Matrix(ref y)) => Matrix(*x % *y),
             (&Matrix(ref x), &BigNum(_)) => Matrix(x.scalar(rhs, |a, b| a % *b)),
             _ => fail!("Rem is only defined for numbers".to_str())
         }
