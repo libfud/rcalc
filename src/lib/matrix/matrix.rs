@@ -335,31 +335,54 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         for row in range(0, self.rows) {
             for column in range(0, self.cols()) {
                 let submatrix = match (row, column) {
+                    /* Top left element's matrix */
                     (   0,    0) => self.submatrix(1, 1, subr, subc).unwrap(),
+                    /* Bottom left element's matrix */
                     (subr,    0) => self.submatrix(1, 0, subr, subc).unwrap(),
+                    /* Top right element's matrix */
                     (   0, subc) => self.submatrix(0, 1, subr, subc).unwrap(),
+                    /* Bottom right element's matrix */
                     (subr, subc) => self.submatrix(0, 0, subr, subc).unwrap(),
+                    /* The concatenation of the two submatrices below any element
+                     * between the first element and last elements on the first row */
                     (   0,    n) => {
                         let a = (n + 1);
-                        let l_matrix = self.submatrix(0, 1, subr, n).unwrap();
+                        let l_matrix = self.submatrix(0, 1, subr,        n).unwrap();
                         let r_matrix = self.submatrix(a, 1, subr, subc - a).unwrap();
                         l_matrix.concat_cols(&r_matrix).unwrap()
                     }
+                    /* The concatenation of the two submatrices above any element
+                     * betwen the first and last element on the last row */
                     (subr, n) => {
                         let a = (n + 1);
-                        let l_matrix = self.submatrix(0, 0, subr, n).unwrap();
+                        let l_matrix = self.submatrix(0, 0, subr,        n).unwrap();
                         let r_matrix = self.submatrix(a, 0, subr, subc - a).unwrap();
                         l_matrix.concat_cols(&r_matrix).unwrap()
                     }
+                    /* The concatenation of the two matrices above and below any
+                     * element between the first and last element on the first column */
                     (m, 0) => {
                         let b = (m + 1);
-                        let top_matrix = self.submatrix(1, 0, m, subc).unwrap();
+                        let top_matrix = self.submatrix(1, 0,        m, subc).unwrap();
                         let bot_matrix = self.submatrix(1, b, subr - b, subc).unwrap();
                         top_matrix.concat_rows(&bot_matrix).unwrap()
                     }
+                    /* The concatenation of the two matrices above and below any
+                     * element between the first and laste element on the last column */
+                    (m, subc) => {
+                        let b = (m + 1);
+                        let top_matrix = self.submatrix(0, 0,        m, subc).unwrap();
+                        let bot_matrix = self.submatrix(0, b, subr - b, subc).unwrap();
+                        top_matrix.concat_rows(&bot_matrix).unwrap()
+                    }
+                    /* The concatenation of the four matrices to the UL, LL, UR, and LR
+                     * for any element inside the matrix */
                     (m, n) => {
                         let a = (n + 1);
                         let b = (m + 1);
+                        let topl_matrix = self.submatrix(0, 0, m, n).unwrap();
+                        let topr_matrix = self.submatrix(a, 0, m, n).unwrap();
+                        let botl_matrix = self.submatrix(
                         
         
 
