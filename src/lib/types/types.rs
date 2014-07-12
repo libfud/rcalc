@@ -36,14 +36,14 @@ impl ErrorKind {
     pub fn to_symbol(self) -> String {
         match self {
             BadArgType(x) => x.clone(),
-            BadExpr => "Malformed expression".to_str(),
+            BadExpr => "Malformed expression".to_string(),
             BadToken(x) => x.clone(),
-            BadPowerRange => "Exponent too large for builtin `pow'!".to_str(),
-            BadFloatRange => "Number too large or precise for `exp' and `log'".to_str(),
-            MatrixErr(x) => x.to_str(),
+            BadPowerRange => "Exponent too large for builtin `pow'!".to_string(),
+            BadFloatRange => "Number too large or precise for `exp' and `log'".to_string(),
+            MatrixErr(x) => x.to_string(),
             BadNumberOfArgs(x) => x.clone(),
-            DivByZero => "Attempted division by zero!".to_str(),
-            NonBoolean => "Non boolean condition".to_str(),
+            DivByZero => "Attempted division by zero!".to_string(),
+            NonBoolean => "Non boolean condition".to_string(),
             UnboundArg(x) => format!("Error: Unbound variable `{}'", x),
         }
     }
@@ -53,14 +53,14 @@ impl fmt::Show for ErrorKind {
     fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
         let res = match self {
             &BadArgType(ref x) => x.clone(),
-            &BadExpr => "Malformed expression".to_str(),
+            &BadExpr => "Malformed expression".to_string(),
             &BadToken(ref x) => x.clone(),
-            &BadPowerRange => "Exponent too large for builtin `pow'!".to_str(),
-            &BadFloatRange => "Number too large or precise for `exp' and `log'".to_str(),
-            &MatrixErr(ref x) => x.to_str(),
+            &BadPowerRange => "Exponent too large for builtin `pow'!".to_string(),
+            &BadFloatRange => "Number too large or precise for `exp' and `log'".to_string(),
+            &MatrixErr(ref x) => x.to_string(),
             &BadNumberOfArgs(ref x) => x.clone(),
-            &DivByZero => "Attempted division by zero!".to_str(),
-            &NonBoolean => "Non boolean condition".to_str(),
+            &DivByZero => "Attempted division by zero!".to_string(),
+            &NonBoolean => "Non boolean condition".to_string(),
             &UnboundArg(ref x) => format!("Error: Unbound variable `{}'", x),
         };
         print!("{}", res);

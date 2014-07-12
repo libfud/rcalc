@@ -18,7 +18,7 @@ pub fn list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
 pub fn cons(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 2 {
-        return Err(BadNumberOfArgs("Wrong number of arguments to `cons'".to_str()))
+        return Err(BadNumberOfArgs("Wrong number of arguments to `cons'".to_string()))
     }
 
     let car = try!(args.get(0).arg_to_literal(env));
@@ -32,31 +32,31 @@ pub fn cons(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
 pub fn car(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 1 {
-        return Err(BadNumberOfArgs("Wrong number of arguments to `car'".to_str()))
+        return Err(BadNumberOfArgs("Wrong number of arguments to `car'".to_string()))
     }
 
     match try!(args.get(0).desymbolize(env)) {
         List(x) => {
             if x.len() < 1 {
-                Err(BadArgType("Empty list!".to_str()))
+                Err(BadArgType("Empty list!".to_string()))
             } else {
                 Ok(Atom(x.get(0).clone()))
             }
         },
-        _ => Err(BadArgType("Wrong type for `car'".to_str()))
+        _ => Err(BadArgType("Wrong type for `car'".to_string()))
     }
 }
 
 pub fn cdr(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 1 {
-        return Err(BadNumberOfArgs("Wrong number of arguments to `cdr'".to_str()))
+        return Err(BadNumberOfArgs("Wrong number of arguments to `cdr'".to_string()))
     }
 
     match try!(args.get(0).desymbolize(env)) {
         List(x) => match x.len() {
-            0 => Err(BadArgType("List too short!".to_str())),
+            0 => Err(BadArgType("List too short!".to_string())),
             _ => Ok(Atom(List(x.tail().to_owned())))
         },
-        _ => Err(BadArgType("Wrong type for `cdr'".to_str()))
+        _ => Err(BadArgType("Wrong type for `cdr'".to_string()))
     }
 }

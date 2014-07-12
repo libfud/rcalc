@@ -10,7 +10,7 @@ use std::{iter, cmp};
 pub fn range_getter(arg: LiteralType) -> CalcResult<int> {
     match arg {
         BigNum(x) => Ok(x.to_integer().to_int().unwrap()),
-        _ => Err(BadArgType("Range and step must be integers!".to_str()))
+        _ => Err(BadArgType("Range and step must be integers!".to_string()))
     }
 }
 
@@ -41,12 +41,12 @@ pub fn make_table(list: Vec<LiteralType>, name: &String, func: Expression, fun_s
 
 pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {    
     if args.len() != 2 {
-        return Err(BadNumberOfArgs("`table' takes a function and a list".to_str()))
+        return Err(BadNumberOfArgs("`table' takes a function and a list".to_string()))
     }
 
     let (name, func) = try!(proc_getter(args, env));
     if name.len() != 1 {
-        return Err(BadArgType("Only single variables are supported currently".to_str()))
+        return Err(BadArgType("Only single variables are supported currently".to_string()))
     }
     let name = name.get(0);
 
@@ -57,7 +57,7 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     
     let list = match try!(args.get(1).desymbolize(env)) {
         List(x) => x,
-        _ => return Err(BadArgType("`table' takes a list as its second argument.".to_str()))
+        _ => return Err(BadArgType("`table' takes a list as its second argument.".to_string()))
     };
 
     let (table, name_len, fn_len) = make_table(list, name, func, fun_str, env);
@@ -124,7 +124,7 @@ pub fn merge<T: PartialOrd>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
 pub fn merge_sort<T: PartialOrd + Clone>(array: Vec<T>, 
                                          min_size: uint) -> CalcResult<Vec<T>> {
     if min_size < 1 {
-        return Err(BadArgType("0 is an invalid minimum size!".to_str()))
+        return Err(BadArgType("0 is an invalid minimum size!".to_string()))
     }
 
     let length = array.len();
@@ -144,12 +144,12 @@ pub fn merge_sort<T: PartialOrd + Clone>(array: Vec<T>,
         
 pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 1 {
-        return Err(BadNumberOfArgs("Sort takes one and only one list".to_str()))
+        return Err(BadNumberOfArgs("Sort takes one and only one list".to_string()))
     }
 
     let list = match try!(args.get(0).arg_to_literal(env)) {
         List(x) => x.clone(),
-        _ => return Err(BadArgType("Cannot sort items which aren't in a list!".to_str()))
+        _ => return Err(BadArgType("Cannot sort items which aren't in a list!".to_string()))
     };
 
     let answer = try!(merge_sort(list, 100));

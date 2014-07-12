@@ -39,7 +39,7 @@ pub fn arith(args: &Args, env: &mut Env, oper: Arith) -> CalcResult {
             Div => match try!(args.get(0).desymbolize(env)) {
                 Matrix(x) => match x.inverse() {
                         Some(inverted) => Ok(Atom(Matrix(inverted))),
-                        None => Err(BadArgType("Inversion failed".to_str()))
+                        None => Err(BadArgType("Inversion failed".to_string()))
                 },
                 x => Ok(Atom(op(ident, &x)))
             },                    

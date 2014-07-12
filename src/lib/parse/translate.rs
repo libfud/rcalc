@@ -35,7 +35,7 @@ pub fn begin_expr(tokens: &mut TokenStream<Token, ErrorKind>) -> CalcResult<()> 
 pub fn strip<T>(t: Option<CalcResult<T>>) -> CalcResult<T> {
     match t {
         Some(x) => x,
-	None => Err(BadToken("Expected a token but found nothing!".to_str()))
+	None => Err(BadToken("Expected a token but found nothing!".to_string()))
     }
 }
 
@@ -71,8 +71,8 @@ pub fn lambda(tokens: &mut TokenStream<Token, ErrorKind>,
         },
         Variable(x) => Atom(Symbol(x)),
         Literal(x) => Atom(x),
-        Operator(_) => return Err(BadToken("Invalid body for lambda!".to_str())),
-        RParen => return Err(BadToken("unexpected rparen!".to_str()))
+        Operator(_) => return Err(BadToken("Invalid body for lambda!".to_string())),
+        RParen => return Err(BadToken("unexpected rparen!".to_string()))
     };
 
     if try!(strip(tokens.peek())) != RParen {
@@ -87,7 +87,7 @@ pub fn expr_accumulator(tokens: &mut TokenStream<Token, ErrorKind>,
                         env: &mut Env) -> CalcResult<Vec<ArgType>> {
     use sexpr::Function;
 
-    let dummy_expr_type = Function("dummy".to_str());
+    let dummy_expr_type = Function("dummy".to_string());
     let dumm_expr = try!(make_expr(dummy_expr_type, tokens, env));
     match tokens.rev(1) {
         Ok(()) => { },
@@ -104,7 +104,7 @@ pub fn define(tokens: &mut TokenStream<Token, ErrorKind>, env: &mut Env) -> Calc
         get_symbols(tokens)).move_iter().map(|x| Symbol(x)).collect();
 
     if symbols.len() < 1 {
-        return Err(BadArgType("Bad number of symbols".to_str()))
+        return Err(BadArgType("Bad number of symbols".to_string()))
     }
 
     let body = match try!(strip(tokens.next())) {
@@ -122,9 +122,9 @@ pub fn define(tokens: &mut TokenStream<Token, ErrorKind>, env: &mut Env) -> Calc
                 let list = try!(list_it(tokens, env));
                 vec!(Atom(List(list)))
             },    
-            _ => return Err(BadToken("Invalid body for define!".to_str())),
+            _ => return Err(BadToken("Invalid body for define!".to_string())),
         },
-        RParen => return Err(BadToken("unexpected rparen!".to_str()))
+        RParen => return Err(BadToken("unexpected rparen!".to_string()))
     };
 
     if try!(strip(tokens.peek())) == RParen {
@@ -141,7 +141,7 @@ pub fn handle_operator(tokens: &mut TokenStream<Token, ErrorKind>, env: &mut Env
                        top_expr: &ExprType, op: OperatorType) -> Expr {
     match *top_expr {
         sexpr::BuiltIn(Help) => {
-            Ok(Atom(Symbol(op.to_str())))
+            Ok(Atom(Symbol(op.to_string())))
         },
 
         _   => match op {
@@ -194,7 +194,7 @@ pub fn list_it(tokens: &mut TokenStream<Token, ErrorKind>,
         let token = try!(strip(tokens.next()));
         match token {
             LParen => {
-                return Err(BadToken("Sorry, gotta pull this feature for now".to_str()))
+                return Err(BadToken("Sorry, gotta pull this feature for now".to_string()))
             }
             Literal(lit_ty) => lit_vec.push(lit_ty),
             Variable(x) => lit_vec.push(try!(env.lookup(&x))),
@@ -234,7 +234,7 @@ pub fn make_expr(etype: ExprType, tokens: &mut TokenStream<Token, ErrorKind>,
 pub fn top_translate(tokens: &mut TokenStream<Token, ErrorKind>, env: &mut Env) -> Expr {
     let expr = try!(translate(tokens, env));
     if tokens.next().is_some() {
-        Err(BadToken("Error: found tokens after end of sexpr".to_str()))
+        Err(BadToken("Error: found tokens after end of sexpr".to_string()))
     } else {
         Ok(expr)
     }

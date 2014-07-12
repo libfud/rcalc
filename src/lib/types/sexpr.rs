@@ -26,12 +26,12 @@ impl Expression {
                 symbols = symbols.append(f.as_slice());
             }
             BuiltIn(ref op) => {
-                symbols = symbols.append(op.to_str().append(" ").as_slice());
+                symbols = symbols.append(op.to_string().append(" ").as_slice());
             }
         }
         for argument in self.args.iter() {
             let arg = match argument {
-                &Atom(ref x) => x.to_str(),
+                &Atom(ref x) => x.to_string(),
                 &SExpr(ref x) => x.to_symbol(env),
             };
             symbols = symbols.append(arg.as_slice());

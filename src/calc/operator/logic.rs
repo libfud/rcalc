@@ -52,7 +52,7 @@ pub type LitTy = LiteralType;
 
 pub fn ordering(args: &Vec<ArgType>, env: &mut Env, comp: |LitTy, LitTy| -> bool) -> CalcResult {
     if args.len() != 2 {
-        return Err(BadNumberOfArgs("Ordering requires two arguments".to_str()))
+        return Err(BadNumberOfArgs("Ordering requires two arguments".to_string()))
     }
 
 
@@ -73,7 +73,7 @@ pub fn and_or(args: &Args, env: &mut Env, short: bool) -> CalcResult {
 
 pub fn xor(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() < 2 {
-        return Err(BadNumberOfArgs("`xor' requires at least two arguments".to_str()))
+        return Err(BadNumberOfArgs("`xor' requires at least two arguments".to_string()))
     }
 
     let mut result = match try!(args.get(0).desymbolize(env)) {
@@ -93,7 +93,7 @@ pub fn xor(args: &Args, env: &mut Env) -> CalcResult {
 
 pub fn not(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() != 1 {
-        return Err(BadNumberOfArgs("Not only takes one argument".to_str()))
+        return Err(BadNumberOfArgs("Not only takes one argument".to_string()))
     }
 
     let val = match try!(args.get(0).desymbolize(env)) {

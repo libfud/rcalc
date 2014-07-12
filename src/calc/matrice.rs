@@ -14,16 +14,14 @@ type Args<T = ArgType> = Vec<T>;
 
 pub fn make_matrix(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() > 1  {
-        return Err(BadNumberOfArgs("`make-matrix' takes at most one argument".to_str()))
+        return Err(BadNumberOfArgs("`make-matrix' takes at most one argument".to_string()))
     }
 
     let matrix_res: Result<Matrice<Lit>, MatrixErrors> = if args.len() == 0 {
-        let empty: Vec<Lit> = Vec::new();
-        let wat: Result<Matrice<Lit>, MatrixErrors> = Matrice::new(empty, 0, 0);
-        wat
+        Ok(Matrice::new())
     } else {
         let (elems, (x, y)) = try!(list_to_2d(try!(args.get(0).desymbolize(env)), env));
-        Matrice::new(elems, x, y) 
+        Matrice::from_vec(elems, x, y) 
     };
 
     let matrix = match matrix_res {
@@ -41,7 +39,7 @@ pub fn list_to_1d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, uint)> {
             Ok((list, len))
         }
         Symbol(ref s) => list_to_1d(try!(env.lookup(s)), env),
-        _ =>  Err(BadArgType("Elements to extend a matrix must be given in a list".to_str()))
+        _ =>  Err(BadArgType("Elements to extend a matrix must be given in a list".to_string()))
     }
 }
 
@@ -58,24 +56,24 @@ pub fn list_to_2d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, (uint, uint)
                         length = sub_list.len();
                         arg_list.push_all(sub_list.as_slice());
                     },
-                    _ => return Err(BadArgType("Matrices only take numbers".to_str()))
+                    _ => return Err(BadArgType("Matrices only take numbers".to_string()))
                 }
                 width += 1;
             }
             Ok((arg_list, (length, width)))
         }
-        _ =>  Err(BadArgType("Elements to extend a matrix must be given in a list".to_str()))
+        _ =>  Err(BadArgType("Elements to extend a matrix must be given in a list".to_string()))
     }
 }
 
 pub fn matrix_extend(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() != 3 {
-        return Err(BadNumberOfArgs("`matrix-extend' takes three arguments".to_str()))
+        return Err(BadNumberOfArgs("`matrix-extend' takes three arguments".to_string()))
     }
 
     let mut matrix = match try!(args.get(0).desymbolize(env)) {
         Matrix(x) => x.clone(),
-        _ => return Err(BadArgType("Not a matrix".to_str()))
+        _ => return Err(BadArgType("Not a matrix".to_string()))
     };
 
     Ok(Atom(Matrix(matrix)))
@@ -83,12 +81,12 @@ pub fn matrix_extend(args: &Args, env: &mut Env) -> CalcResult {
 
 pub fn matrix_set(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() != 3 {
-        return Err(BadNumberOfArgs("`matrix-set' takes three arguments".to_str()))
+        return Err(BadNumberOfArgs("`matrix-set' takes three arguments".to_string()))
     }
 
     let mut matrix = match try!(args.get(0).desymbolize(env)) {
         Matrix(x) => x.clone(),
-        _ => return Err(BadArgType("Not a matrix".to_str()))
+        _ => return Err(BadArgType("Not a matrix".to_string()))
     };
 
     Ok(Atom(Matrix(matrix)))

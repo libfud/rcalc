@@ -190,7 +190,7 @@ function.
                      condit_help, logic_help, define_help, lambda_help, 
                      lte_help, gte_help].iter())
     {
-            help_map.insert(key.to_str(), val.to_str());
+            help_map.insert(key.to_string(), val.to_string());
     }
                                                        
 

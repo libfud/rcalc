@@ -11,13 +11,13 @@ use self::types::operator::{Ln, Exp};
 
 pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 2 {
-        return Err(BadNumberOfArgs("`pow' takes two arguments".to_str()))
+        return Err(BadNumberOfArgs("`pow' takes two arguments".to_string()))
     } 
 
     let (base, exponent) = match (try!(args.get(0).desymbolize(env)),
                                   try!(args.get(1).desymbolize(env))) {
         (BigNum(x), BigNum(y)) => (x, y),
-        _ => return Err(BadArgType("Only numbers can be raised to a power".to_str()))
+        _ => return Err(BadArgType("Only numbers can be raised to a power".to_string()))
     };
 
     Ok(Atom(BigNum(try!(pow(&base, &exponent, env)))))

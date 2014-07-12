@@ -26,13 +26,13 @@ pub fn create_bigrat(x: int) -> BigRational {
 /// Map can handle mapping a function to each element of one or more lists.
 pub fn map(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 2 {
-        return Err(BadNumberOfArgs("`map' takes at least two arguments".to_str()))
+        return Err(BadNumberOfArgs("`map' takes at least two arguments".to_string()))
     }
 
     let (names, func) = try!(proc_getter(args, env));
 
     if names.len() == 0 || names.len() != args.tail().len() {
-        return Err(BadArgType("Wrong number of arguments for lists supplied".to_str()))
+        return Err(BadArgType("Wrong number of arguments for lists supplied".to_string()))
     }
 
     let mut list_vec: Vec<Vec<LiteralType>> = Vec::new();
@@ -52,7 +52,7 @@ pub fn map(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         let mut temp: Vec<LiteralType> = Vec::new();
         for y in range(0u, names.len()) {
             if list_vec.get(y).len() != len {
-                return Err(BadArgType("Mismatched lengths!".to_str()))
+                return Err(BadArgType("Mismatched lengths!".to_string()))
             }
             temp.push(list_vec.as_slice()[y].get(x).clone());
         }
@@ -69,13 +69,13 @@ pub fn map(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
 pub fn reduce(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 3 {
-        return Err(BadNumberOfArgs("`reduce' takes at least three arguments".to_str()))
+        return Err(BadNumberOfArgs("`reduce' takes at least three arguments".to_string()))
     }
 
     let (names, fun) = try!(proc_getter(args, env));
 
     let (x, y) = if names.len() != 2 {
-        return Err(BadArgType("Expected 2 names".to_str()))
+        return Err(BadArgType("Expected 2 names".to_string()))
     } else {
         (names.get(0).clone(), names.get(1).clone())
     };
@@ -84,7 +84,7 @@ pub fn reduce(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
     let list = match try!(args.get(2).desymbolize(env)) {
         List(x) => x.clone(),
-        _ => return Err(BadArgType("Invalid type for reduce".to_str()))
+        _ => return Err(BadArgType("Invalid type for reduce".to_string()))
     };
 
     Ok(Atom(try!(reduce_helper(x, y, &initval, list.as_slice(), env, &fun))))
@@ -97,7 +97,7 @@ pub fn reduce_helper(x: String, y: String, initval: &LitTy, list: &[LitTy],
                      env: &mut Env, fun: &Expression) -> CalcResult<LitTy> {
 
     if list.len() == 0 {
-        return Err(BadArgType("Cannot fold empty lists!".to_str()))
+        return Err(BadArgType("Cannot fold empty lists!".to_string()))
     }
     
     let mut child_env = Environment::new_frame(env);
@@ -119,18 +119,18 @@ pub fn reduce_helper(x: String, y: String, initval: &LitTy, list: &[LitTy],
 
 pub fn filter(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 2 {
-        return Err(BadNumberOfArgs("`filter' takes at least three arguments".to_str()))
+        return Err(BadNumberOfArgs("`filter' takes at least three arguments".to_string()))
     }
 
     let (names, func) = try!(proc_getter(args, env));
 
     if names.len() != 1 {
-        return Err(BadArgType("Expected 1 name for predicate".to_str()))
+        return Err(BadArgType("Expected 1 name for predicate".to_string()))
     }
 
     let list = match try!(args.get(1).desymbolize(env)) {
         List(x) => x.clone(),
-        _ => return Err(BadArgType("Invalid type for filter".to_str()))
+        _ => return Err(BadArgType("Invalid type for filter".to_string()))
     };
 
     let mut child_env = Environment::new_frame(env);
@@ -143,7 +143,7 @@ pub fn filter(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         match try!(func.eval(&mut child_env)) {
             Atom(Boolean(true)) => new_list.push(item.clone()),
             Atom(Boolean(false)) => { },
-            _ => return Err(BadArgType("Invalid predicate type!".to_str()))
+            _ => return Err(BadArgType("Invalid predicate type!".to_string()))
         }
     }
 
@@ -154,7 +154,7 @@ pub fn rangelist(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 2 || args.len() > 3 {
         return Err(BadNumberOfArgs(
             "`rangelist' requires a beginning and end, and optionally takes step."
-                .to_str()))
+                .to_string()))
     }
 
     let (a, b) = (try!(range_getter(try!(args.get(0).desymbolize(env)))),

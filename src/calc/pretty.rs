@@ -15,7 +15,7 @@ pub fn pretty_print(result: &CalcResult, env: &Environment) -> String {
     };
 
     if success == Void {
-        return "".to_str()
+        return "".to_string()
     }
 
     pretty(&success, env)
@@ -25,10 +25,10 @@ pub fn pretty(arg: &LiteralType, env: &Environment) -> String {
     let s = match arg {
         &Symbol(ref s) => match env.lookup(s) {
             Ok(x) => pretty(&x, env),
-            Err(_) => s.to_str()
+            Err(_) => s.to_string()
         },
-        &Void => "".to_str(),
-        x => x.to_str()
+        &Void => "".to_string(),
+        x => x.to_string()
     };
     s.append(" ")
 }

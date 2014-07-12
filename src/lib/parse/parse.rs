@@ -29,7 +29,7 @@ pub enum Token {
 pub fn make_word(expr: &str) -> String {
     let word = expr.words().next().unwrap();
     word.slice(0, word.find(|c: char| c == ')'
-               || c == '(').unwrap_or(word.len())).to_str()
+               || c == '(').unwrap_or(word.len())).to_string()
 }
 
 pub fn is_paren(expr: &str) -> MaybeToken<Token, ErrorKind> {
@@ -61,7 +61,7 @@ pub fn is_var(expr: &str) -> MaybeToken<Token, ErrorKind> {
     let word = make_word(expr);
     let c = word.as_slice().chars().next().unwrap();
     if c.is_alphabetic() {
-        (Some(Ok(Variable(word.to_str()))), word.len())
+        (Some(Ok(Variable(word.to_string()))), word.len())
     } else {
         (None, 0)
     }
@@ -90,18 +90,18 @@ pub fn str_to_rational(word: &str) -> CalcResult<BigRational> {
     match number_type {
         Fraction    => match from_str::<BigRational>(word) {
             Some(x) => Ok(x),
-            None => Err(BadArgType("Bad numeric encoding".to_str()))
+            None => Err(BadArgType("Bad numeric encoding".to_string()))
         },
 
         NonFraction => {
             let floated =  match from_str::<f64>(word) {
                 Some(x) => x,
-                None => return Err(BadArgType("Bad numeric encoding".to_str()))
+                None => return Err(BadArgType("Bad numeric encoding".to_string()))
             };
             Ok(Ratio::from_float(floated).unwrap())
         },
 
-        Invalid     => Err(BadArgType("Bad numeric encoding".to_str()))
+        Invalid     => Err(BadArgType("Bad numeric encoding".to_string()))
     }
 }
 
@@ -129,7 +129,7 @@ pub fn get_num_encoding(num_str: &str) -> NumEncoding {
 
 pub fn parse(s: &str, env: &mut Environment) -> CalcResult {
     let rules = vec!(is_paren, is_op, is_bool, is_var, is_number);
-    let mut tokens = TokenStream::new(s.to_str(), rules, /*Token, */
-                                      BadToken("Unrecognized token".to_str()));
+    let mut tokens = TokenStream::new(s.to_string(), rules, /*Token, */
+                                      BadToken("Unrecognized token".to_string()));
     top_translate(&mut tokens, env)
 }

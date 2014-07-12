@@ -44,7 +44,7 @@ pub mod r_readline {
         unsafe {
             let ret_str = CString::new(readline(c_buf.as_ptr()), true);
             if ret_str.is_not_null() {
-                ret_str.as_str().map(|ret_str| ret_str.to_str())
+                ret_str.as_str().map(|ret_str| ret_str.to_string())
             } else {
                 None
             }
@@ -94,7 +94,7 @@ fn main() {
 
     loop {
         let expr = match rust_readline(">>> ") {
-            Some(val)   => { val.to_str() }
+            Some(val)   => { val.to_string() }
             None        => { continue }
         };
         rust_add_history(expr.as_slice());

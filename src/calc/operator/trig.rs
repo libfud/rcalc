@@ -18,7 +18,7 @@ pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: Transcendental
 
     let floated = match try!(args.get(0).desymbolize(env)) {
         BigNum(ref x)   => try!(rational_to_f64(x)),
-        _  => return Err(BadArgType("Only numbers can use trigonometric functions".to_str()))
+        _  => return Err(BadArgType("Only numbers can use trigonometric functions".to_string()))
     };
 
     let answer = match fop {

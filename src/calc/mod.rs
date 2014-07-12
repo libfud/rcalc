@@ -33,7 +33,7 @@ pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     
     let name_and_vars = match try!(args.get(0).desymbolize(env)) {
         List(ref x) => if x.len() == 0 {
-            return Err(BadArgType("Name required for definitions".to_str()))
+            return Err(BadArgType("Name required for definitions".to_string()))
         } else {
             x.clone()
         },
@@ -42,7 +42,7 @@ pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
     let name = match name_and_vars.get(0) {
         &Symbol(ref x) => x.clone(),
-        _ => return Err(BadArgType("Names can only be symbols!".to_str()))
+        _ => return Err(BadArgType("Names can only be symbols!".to_string()))
     };
 
     let vars = if name_and_vars.len() == 1 {
@@ -52,7 +52,7 @@ pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         for arg in name_and_vars.tail().iter() {
             match arg {
                 &Symbol(ref x) => string_vec.push(x.clone()),
-                _ => return Err(BadArgType("Variables can only be symbols".to_str()))
+                _ => return Err(BadArgType("Variables can only be symbols".to_string()))
             }
         }
         string_vec

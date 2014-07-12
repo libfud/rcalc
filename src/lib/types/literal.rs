@@ -41,7 +41,7 @@ impl<'a> fmt::Show for WithEnv<'a> {
             },
             &Symbol(ref s) => print!("{} {}", s, match self.env.lookup(s) {
                 Ok(x) => format!("= {}", x),
-                Err(m) => m.to_str(),
+                Err(m) => m.to_string(),
             }),
             &Void => print!("")
         }
@@ -101,7 +101,7 @@ impl Neg<Lit> for Lit {
         match self {
             &BigNum(ref x) => BigNum(-x),
             &Matrix(ref x) => Matrix(-x),
-            _ => fail!("Can't negate something that isn't a number!".to_str())
+            _ => fail!("Can't negate something that isn't a number!".to_string())
         }
     }
 }
@@ -148,7 +148,7 @@ impl Div<Lit, Lit> for Lit {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x / *y),
             (&Matrix(ref x), &Matrix(ref y)) => Matrix(*x / *y),
             (&Matrix(ref x), &BigNum(_)) => Matrix(x.scalar(rhs, |a, b| a / *b)),
-             _ => fail!("Division is only defined for numbers".to_str())
+             _ => fail!("Division is only defined for numbers".to_string())
         }
     }
 }
@@ -158,7 +158,7 @@ impl Rem<Lit, Lit> for Lit {
         match (self, rhs) {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x % *y),
             (&Matrix(ref x), &BigNum(_)) => Matrix(x.scalar(rhs, |a, b| a % *b)),
-            _ => fail!("Rem is only defined for numbers".to_str())
+            _ => fail!("Rem is only defined for numbers".to_string())
         }
     }
 }

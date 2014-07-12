@@ -184,7 +184,7 @@ impl RoundId {
             Zero => "be zero",
         };
 
-        s.to_str()
+        s.to_string()
     }
 }
 
@@ -338,20 +338,20 @@ pub enum OperatorType {
 impl fmt::Show for OperatorType {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
-            &Arithmetic(ref x) => x.to_str(),
-            &Transcend(ref x) => x.to_str(),
-            &Ordering(ref x) => x.to_str(),
-            &RoundIdent(ref x) => x.to_str(),
-            &Logic(ref x) => x.to_str(),
-            &Listings(ref x) => x.to_str(),
-            &TransForms(ref x) => x.to_str(),
-            &MatrixStuff(ref x) => x.to_str(),
-            &Pow => "pow".to_str(),
-            &Quote => "'".to_str(),
-            &Define => "define".to_str(),
-            &Lambda => "lambda".to_str(),
-            &Table => "table".to_str(),
-            &Help => "help".to_str(),
+            &Arithmetic(ref x) => x.to_string(),
+            &Transcend(ref x) => x.to_string(),
+            &Ordering(ref x) => x.to_string(),
+            &RoundIdent(ref x) => x.to_string(),
+            &Logic(ref x) => x.to_string(),
+            &Listings(ref x) => x.to_string(),
+            &TransForms(ref x) => x.to_string(),
+            &MatrixStuff(ref x) => x.to_string(),
+            &Pow => "pow".to_string(),
+            &Quote => "'".to_string(),
+            &Define => "define".to_string(),
+            &Lambda => "lambda".to_string(),
+            &Table => "table".to_string(),
+            &Help => "help".to_string(),
         }));
         Ok(())
     }

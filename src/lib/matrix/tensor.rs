@@ -250,7 +250,7 @@ impl<T: Clone + Num, U> Tensor<T> {
 impl<T: Add<T, T>> Add<Tensor<T>, Tensor<T>> for Tensor<T> {
     fn add(&self, other: &Tensor<T>) -> Tensor<T> {
         if self.dimensionality != other.dimensionality {
-            fail!(MismatchedAxes.to_str())
+            fail!(MismatchedAxes.to_string())
         }
 
         let new_elems: Vec<T> = self.elems.iter().zip(other.elems.iter()).map(
@@ -263,7 +263,7 @@ impl<T: Add<T, T>> Add<Tensor<T>, Tensor<T>> for Tensor<T> {
 impl<T: Sub<T, T>> Sub<Tensor<T>, Tensor<T>> for Tensor<T> {
     fn sub(&self, other: &Tensor<T>) -> Tensor<T> {
         if self.dimensionality != other.dimensionality {
-            fail!(MismatchedAxes.to_str())
+            fail!(MismatchedAxes.to_string())
         }
 
         let new_elems: Vec<T> = self.elems.iter().zip(other.elems.iter()).map(
@@ -276,7 +276,7 @@ impl<T: Sub<T, T>> Sub<Tensor<T>, Tensor<T>> for Tensor<T> {
 impl<T: Mul<T, T>> Mul<Tensor<T>, Tensor<T>> for Tensor<T> {
     fn mul(&self, other: &Tensor<T>) -> Tensor<T> {
         if self.dimensionality != other.dimensionality {
-            fail!(MismatchedAxes.to_str())
+            fail!(MismatchedAxes.to_string())
         }
 
         let new_elems: Vec<T> = self.elems.iter().zip(other.elems.iter()).map(
@@ -289,7 +289,7 @@ impl<T: Mul<T, T>> Mul<Tensor<T>, Tensor<T>> for Tensor<T> {
 impl<T: Div<T, T>> Div<Tensor<T>, Tensor<T>> for Tensor<T> {
     fn div(&self, other: &Tensor<T>) -> Tensor<T> {
         if self.dimensionality != other.dimensionality {
-            fail!(MismatchedAxes.to_str())
+            fail!(MismatchedAxes.to_string())
         }
 
         let new_elems: Vec<T> = self.elems.iter().zip(other.elems.iter()).map(
@@ -302,7 +302,7 @@ impl<T: Div<T, T>> Div<Tensor<T>, Tensor<T>> for Tensor<T> {
 impl<T: Rem<T, T>> Rem<Tensor<T>, Tensor<T>> for Tensor<T> {
     fn rem(&self, other: &Tensor<T>) -> Tensor<T> {
         if self.dimensionality != other.dimensionality {
-            fail!(MismatchedAxes.to_str())
+            fail!(MismatchedAxes.to_string())
         }
 
         let new_elems: Vec<T> = self.elems.iter().zip(other.elems.iter()).map(
