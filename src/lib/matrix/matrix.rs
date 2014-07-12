@@ -375,7 +375,9 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
             (*vec.get(a) * *vec.get(d)) - (*vec.get(b) * *vec.get(c))
         }
 
-
+        /* Push the adjacent columns determinant. If there are more columns,
+         * advance col_b by one, and push that determinant. Then advance 
+         * col_a by one. */
         loop {
             determs_vec.push(cross_prod(self.elems, row_m + column_a, row_m + column_b,
                                         row_n + column_a, row_n + column_b));
