@@ -363,15 +363,32 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
          * 2n - 3 possible submatrices of height 2 and with either
          * adjacent columns or columns separated by one column.
          * n = 2 has 1, n = 3 has 3, n = 4 has 5, and so on. */
-        let mut bottom_matrices = Vec::with_capacity(2 * n - 3);
+        let mut determs_vec = Vec::with_capacity(2 * self.rows - 3);
         
         /* We're going to "crab-walk" across the bottom two rows. */
-        let mut column_a = 0;
-        let mut column_b = 1;
-        let row_m = self.rows - 2;
-        let row_n = self.rows - 1;
-        while column_a < self.columns - 2 {
-            
+        let mut col_a = 0;
+        let mut col_b = 1;
+        let row_m = (self.rows - 2) * self.columns;
+        let row_n = (self.rows - 1) * self.columns;
+
+        fn cross_prod(vec: &Vec<T>, a: uint, b: uint, c: uint, d: uint) -> T {
+            (*vec.get(a) * *vec.get(d)) - (*vec.get(b) * *vec.get(c))
+        }
+
+
+        loop {
+            determs_vec.push(cross_prod(self.elems, row_m + column_a, row_m + column_b,
+                                        row_n + column_a, row_n + column_b));
+            if col_a == self.columns - 2 {
+                break
+            }
+            col_b += 1;
+
+            determs_vec.push(cross_prod(self.elems, row_m + column_a, row_m + column_b,
+                                        row_n + column_a, row_n + column_b));
+
+            col_a += 1;
+        }
 
     }
 
