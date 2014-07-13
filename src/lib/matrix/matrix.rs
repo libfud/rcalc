@@ -5,6 +5,7 @@ use std::fmt;
 use std::cmp;
 use std::num;
 use std::iter::AdditiveIterator;
+use std::collections::hashmap::HashMap;
 
 #[cfg(use_fancy)]
 use fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
@@ -257,68 +258,167 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
     pub fn determinant(&self) -> Option<T> {
         if self.rows != self.columns || self.rows == 0 {
             return None
-        }
-
-        if self.rows == 1 {
+        } else if self.rows == 1 {
             return Some(self.elems.get(0).clone())
-        }
-
-        if self.rows == 2 {
-            /*             *
-             *    |a b|    *
+        } else if self.rows == 2 {
+            /*    |a b|    *
              *    |c d|    *
-             * (ad) - (bc) *
-             *             */
-            Some((*self.elems.get(0) * *self.elems.get(3)) - 
-                 (*self.elems.get(1) * *self.elems.get(2)))
-        } else {
-            let mut sum: T = num::zero();
-            for n in range(0, self.columns) { 
-                /* Get the element at the top row at the nth position, starting from 0 */
-                let elem = self.elems.get(n); 
+             * (ad) - (bc) */
+            return Some((*self.elems.get(0) * *self.elems.get(3)) - 
+                        (*self.elems.get(1) * *self.elems.get(2)))
+        } 
+
+        let mut sum: T = num::zero();
+        for n in range(0, self.columns) { 
+            /* Get the element at the top row at the nth position, starting from 0 */
+            let elem = self.elems.get(n); 
                 
-                let next = if n == 0 {
-                    /* the submatrix that is in the lower right corner extending
-                     * diagonally to element 0 */
-                    self.submatrix(1, 1, self.rows - 1, self.columns - 1).unwrap()
-                        .determinant().unwrap()
-                } else if n == self.columns - 1 {
-                    /* the submatrix that is in the lower left corner extending
-                     * diagonally to the last element in the first row */ 
-                    self.submatrix(0, 1, self.rows - 1, self.columns - 1).unwrap()
-                        .determinant().unwrap()
-                } else {
-                    /* the submatrix that is in the lower left corner, taking up
-                     * n columns */
-                    let a = self.submatrix(0, 1, self.rows - 1, n).unwrap();
+            let next = if n == 0 {
+                /* the submatrix that is in the lower right corner extending
+                 * diagonally to element 0 */
+                self.submatrix(1, 1, self.rows - 1, self.columns - 1).unwrap()
+                    .determinant().unwrap()
+            } else if n == self.columns - 1 {
+                /* the submatrix that is in the lower left corner extending
+                 * diagonally to the last element in the first row */ 
+                self.submatrix(0, 1, self.rows - 1, self.columns - 1).unwrap()
+                    .determinant().unwrap()
+            } else {
+                self.decross(1, n + 1).determinant().unwrap()
+            };
 
-                    /* the submatrix that is in the lower right corner, taking up
-                     * the number of columns from n to the number of columns in a row */
-
-                    let b = self.submatrix(n + 1, 1, self.rows - 1, 
-                                           self.columns - (n + 1)).unwrap();
-
-                    /* concatenate them and find their determinant */
-                    a.concat_cols(&b).unwrap().determinant().unwrap()
-                };
-
-                /* If n is even, add the product; if n is odd, subtract the product */
-                sum = if n % 2 == 0 {
-                    sum + (*elem * next)
-                } else {
-                    sum - (*elem * next)
-                };
-            }
-            Some(sum)
+            /* If n is even, add the product; if n is odd, subtract the product */
+            sum = if n % 2 == 0 {
+                sum + (*elem * next)
+            } else {
+                sum - (*elem * next)
+            };
         }
+        Some(sum)
+    }
+
+    pub fn bottoms_up(&self) -> Option<T> {
+        if self.rows != self.columns || self.rows == 0 {
+            return None
+        } else if self.rows == 1 {
+            return Some(self.elems.get(0).clone())
+        } else if self.rows == 2 {
+            return Some((*self.elems.get(0) * *self.elems.get(3)) -
+                        (*self.elems.get(1) * *self.elems.get(2)))
+        }
+
+        let mut det_table: HashMap<Vec<uint>, T> = HashMap::new();
+        let mut col_a = self.columns * (self.rows - 3);
+        let mut col_b = col_a + 1;
+        let stop = self.columns * (self.rows - 2) - 1;
+        loop {
+            let a = col_a + self.columns;
+            let b = col_b + self.columns;
+            let c = col_a + 2 * self.columns;
+            let d = col_b + 2 * self.columns;
+            let det = (*self.elems.get(a) * *self.elems.get(d)) -
+                       (*self.elems.get(b) * *self.elems.get(c));
+
+            det_table.insert(vec!(col_a, col_b), det);
+            if col_b == stop && col_a + 1 == col_b {
+                break
+            } else if col_b == stop {
+                col_a += 1;
+                col_b = col_a + 1;
+            } else {
+                col_b += 1;
+            }
+        }
+
+        if self.rows == 3 {
+            let answer = *self.elems.get(0) * *det_table.find(&vec!(1, 2)).unwrap() -
+                *self.elems.get(1) * *det_table.find(&vec!(0, 2)).unwrap() +
+                *self.elems.get(2) * *det_table.find(&vec!(0, 1)).unwrap();
+
+            return Some(answer)
+        }
+
+        let mut row_from_bottom = 4u;
+        for _ in range(0, self.rows - 3) { 
+            println!("Working on the {}th row from the bottom", row_from_bottom);
+            println!("(As in the {}th row,)", self.rows - row_from_bottom + 1);
+            println!("{}", det_table);
+
+            let mut temp_table: HashMap<Vec<uint>, T> = HashMap::new();
+            for n in range(0u, self.columns) {
+                println!("Starting from {}", n);
+                for m in range(0u, self.columns) {
+                    let indices: Vec<uint> = range(0, self.columns)
+                        .filter_map(|x| if x != m && x != n {
+                            Some((self.rows - row_from_bottom) * self.columns + x)
+                        } else { None }).take(row_from_bottom).collect();
+
+
+                    println!("\nFiltering element: {}", m);
+                    let elem = (self.rows - row_from_bottom) * self.columns + m;
+                    let factor = self.elems.get((self.rows - row_from_bottom) +
+                                                self.columns + elem);
+
+//                    let indices: Vec<uint> = range(n, n + row_from_bottom - 1)
+//                        .map(|x| (self.rows - row_from_bottom) * self.columns + x).collect();
+                    
+                    let key: Vec<uint> = indices.iter().filter_map(|&x| if x != elem {
+                        Some(x + self.columns)} else { None }).collect();
+
+                    println!("Indices: {}", indices);
+                    println!("Key: {}", key);
+
+                    match det_table.find(&key) {
+                        Some(val) => {
+                            temp_table.insert(indices.clone(), *val * *factor);
+                        },
+                        None => { }
+                    }
+                }
+            }
+            det_table = temp_table;
+            row_from_bottom += 1;
+        }
+
+        println!("{}", det_table);
+
+        return Some(self.elems.get(0).clone())
+    }        
+
+    pub fn decross(&self, omit_row: uint, omit_col: uint) -> Matrice<T> {
+        let mut new_elems: Vec<T> = Vec::new();
+        for row in range(0, self.rows) {
+            if row + 1 == omit_row {
+                continue
+            }
+            for col in range(0, self.columns) {
+                if col + 1 == omit_col {
+                    continue
+                } 
+                new_elems.push(self.elems.get(row * self.columns + col).clone());
+            }
+        }
+
+        let new_rows = if omit_row == 0 || omit_row > self.rows {
+            self.rows
+        } else {
+            self.rows - 1
+        };
+        
+        let new_cols = if omit_col == 0 || omit_col > self.columns {
+            self.columns
+        } else {
+            self.columns - 1
+        };
+
+        Matrice { rows: new_rows, columns: new_cols, elems: new_elems }
     }
 
     /// Passing zero as an argument for row and column returns the same
     /// matrix. Passing arguments greater than the number of rows & columns
     /// also returns the same matrix.
-    pub fn sans_row_col<'a>(&self, omit_row: uint, omit_col: uint) -> Matrice<&'a T> {
+    pub fn sans_row_col<'a>(&'a self, omit_row: uint, omit_col: uint) -> Matrice<&'a T> {
         let mut new_elems: Vec<&'a T> = Vec::new();
-
         for row in range(0, self.rows) {
             if row + 1 == omit_row {
                 continue
@@ -331,13 +431,13 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
             }
         }
 
-        let new_rows = if omit_row == 0 || omit_row > self.rows + 1 {
+        let new_rows = if omit_row == 0 || omit_row > self.rows {
             self.rows
         } else {
             self.rows - 1
         };
         
-        let new_cols = if omit_col == 0 || omit_col > self.columns + 1 {
+        let new_cols = if omit_col == 0 || omit_col > self.columns {
             self.columns
         } else {
             self.columns - 1
@@ -345,55 +445,6 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
 
         Matrice { rows: new_rows, columns: new_cols, elems: new_elems }
     }
-
-    pub fn alt_dtrmnt(&self) -> Option<Matrice<T>> {
-        if self.columns != self.rows {
-            return None
-        }
-
-        if self.columns == 1 {
-            return Some(self.elems.get(0).clone())
-        } else if self.columns == 2 {
-            return Some((*self.elems.get(0) * *self.elems.get(3)) -
-                 (*self.elems.get(1) * *self.elems.get(2)))
-        }
-
-        /* Create a vector of the various combinations of 2x2 matrices
-         * for the bottom row. A square matrix of height n >= 2 has
-         * 2n - 3 possible submatrices of height 2 and with either
-         * adjacent columns or columns separated by one column.
-         * n = 2 has 1, n = 3 has 3, n = 4 has 5, and so on. */
-        let mut determs_vec = Vec::with_capacity(2 * self.rows - 3);
-        
-        /* We're going to "crab-walk" across the bottom two rows. */
-        let mut col_a = 0;
-        let mut col_b = 1;
-        let row_m = (self.rows - 2) * self.columns;
-        let row_n = (self.rows - 1) * self.columns;
-
-        fn cross_prod(vec: &Vec<T>, a: uint, b: uint, c: uint, d: uint) -> T {
-            (*vec.get(a) * *vec.get(d)) - (*vec.get(b) * *vec.get(c))
-        }
-
-        /* Push the adjacent columns determinant. If there are more columns,
-         * advance col_b by one, and push that determinant. Then advance 
-         * col_a by one. */
-        loop {
-            determs_vec.push(cross_prod(self.elems, row_m + column_a, row_m + column_b,
-                                        row_n + column_a, row_n + column_b));
-            if col_a == self.columns - 2 {
-                break
-            }
-            col_b += 1;
-
-            determs_vec.push(cross_prod(self.elems, row_m + column_a, row_m + column_b,
-                                        row_n + column_a, row_n + column_b));
-
-            col_a += 1;
-        }
-
-    }
-
 
     /// Returns a new 
     pub fn transpose(&self) -> Matrice<T> {
@@ -424,39 +475,9 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         }
 
         let mut minors: Vec<T> = Vec::with_capacity(self.rows * self.rows);
-        let (subr, subc) = (self.rows - 1, self.columns - 1);
         for row in range(0, self.rows) {
             for column in range(0, self.cols()) {
-                let submatrix = {
-                    let col_a = column + 1; //columns
-                    let row_b = row + 1; //rows
-                    /* Top left matrix is displaced 0 rows and 0 columns.
-                     * It can extend n rows down, and m columns across. */
-                    let topl_matrix = self.submatrix(0, 0, row, column).unwrap();
-
-
-                    /* Top right matrix is displaced by 0 rows and a columns.
-                     * It can extend n rows down and subc - column
-                     * across. */
-                    let topr_matrix = self.submatrix(col_a, 0, row, subc - column).unwrap();
-
-
-                    /* Bottom left matrix is displaced by 0 columns and b rows.
-                     * It can extend subr - n rows down and `column' columns across. */
-                    let botl_matrix = self.submatrix(0, row_b, subr - row, column).unwrap();
-
-
-                    /* Bottom right matrix is displaced by a columns and b rows.
-                     * It can extend subr - n rows down and subc - m columns
-                     * across */
-                    let botr_matrix = self.submatrix(col_a, row_b, 
-                                                     subr - row, subc - column).unwrap();
-
-
-                    let l_matrix = topl_matrix.concat_rows(&botl_matrix).unwrap();
-                    let r_matrix = topr_matrix.concat_rows(&botr_matrix).unwrap();
-                    l_matrix.concat_cols(&r_matrix).unwrap()
-                };  
+                let submatrix = self.decross(row + 1, column + 1);
                 minors.push(match submatrix.determinant() {
                     Some(x) => x,
                     None => return None
