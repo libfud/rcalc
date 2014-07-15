@@ -369,14 +369,23 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         let mut lower: Vec<T> = Vec::with_capacity(self.rows * self.rows);
 
         for row in range(0, self.rows) {
+            println!("Starting on row {}. There will be {} iterations for this row.",
+                     row, self.rows - row - 1);
             //divisor moves diagonally
             let divisor = self.elems.get(row * self.columns + row);
             println!("Divisor: {}", divisor);
 
             for next_row in range(row + 1, self.rows) {
+                println!("Working on row {}", next_row);
                 let n_row = next_row * self.columns;
-                let lower_elt = *upper.elems.get(n_row) / *divisor;
-                println!("{} / {}", upper.elems.get(n_row), divisor);
+
+                let lower_elt = match Matrice::get_pivot(upper.get_row(next_row)) {
+                    Some((x, _)) => x / *divisor,
+                    None => return None
+                };
+//                let lower_elt = *upper.elems.get(n_row) / *divisor;
+                println!("{} / {} = lower_elt, {}", upper.elems.get(n_row), divisor,
+                         lower_elt);
 
                 let new_row: Vec<T> = upper.get_row(next_row).zip(
                     upper.get_row(row))
@@ -391,6 +400,7 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
 
 
             if row + 1 == self.rows {
+                println!("Because this is the last row, range doesn't handle it right");
                 let divisor = match Matrice::get_pivot(upper.get_row(row - 1)) {
                     Some((x, _)) => x,
                     None => return None
@@ -412,10 +422,11 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
                 }
                 lower.push(lower_elt);
             }
-            println!("{}", upper);
+
+            println!("Upper triangular matrix currently has form\n{}", upper);
         }
 
-        println!("{}", lower);
+        println!("Lower elements currently are {}", lower);
 
         let mut ldu: Matrice<T> = Matrice::ident(self.rows);
 
@@ -428,8 +439,8 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
             sum = sum * *upper.elems.get(row * self.rows + row);
         }
 
-        println!("{}", ldu);
-        println!("{}", ldu * upper);
+        println!("Lower unit triangle is \n{}", ldu);
+        println!("Upper triangle is \n{}", ldu * upper);
 
         Some(sum)
     }

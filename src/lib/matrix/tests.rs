@@ -15,6 +15,7 @@ fn matrix_new_test() {
     assert!(y == Err(BadDimensionality));
 }
 
+/*
 #[test]
 fn matrix_get_row_test() {
     let fake_vec: Vec<int> = range(1, 5).collect();
@@ -78,11 +79,6 @@ fn test_append_col() {
 #[test]
 fn submatrix_test() {
     let x: Matrice<int> = Matrice::ident(5);
-    /* (1, 0, 0, 0, 0) *
-     * (0, 1, 0, 0, 0) *
-     * (0, 0, 1, 0, 0) *
-     * (0, 0, 0, 1, 0) *
-     * (0, 0, 0, 0, 1) */
 
     assert!(x.submatrix(0, 0, 1, 1) == Some(Matrice { rows: 1, columns: 1,
                                                      elems: vec!(1) }));
@@ -128,7 +124,8 @@ fn concat_cols_test() {
                                                 elems: vec!(4, 5,
                                                             2, 7)}));
 }
-
+*/
+/*
 #[test]
 fn deterimant_test() {
 
@@ -185,7 +182,9 @@ fn deterimant_test() {
                                                                       -1,  5, -1, -1,  0,  0)};
     assert_eq!(q.determinant(), Some(-40));
 }
+*/
 
+/*
 #[test] 
 fn gauss() {
     let x: Matrice<f64> = Matrice { columns: 3, rows: 3, elems: vec!( 25.,  5., 1.,
@@ -199,20 +198,19 @@ fn gauss() {
     assert_eq!(x.gauss_xform(), Some(Matrice { columns: 3, rows: 3,
                                                elems: z}));
 }
+*/
 
 #[test]
 fn alt_dtrmnt_test() {
+    use std::f64;
+/*
     let x: Matrice<f64> = Matrice { columns: 3, rows: 3, elems: vec!( 25.,  5., 1.,
                                                                       64.,  8., 1.,
                                                                      144., 12., 1.)};
+
     assert_eq!(x.determinant(), Some(-84.));
-    assert_eq!(x.alt_determinant(), Some(-84.));
-
-    let one: Matrice<int> = Matrice { columns: 1, rows: 1, elems: vec!(3) };
-    assert_eq!(one.alt_determinant(), Some(3));
-
-    let a: Matrice<int> = Matrice { columns: 2, rows: 2, elems: vec!(4, 6, 3, 8) };
-    assert_eq!(a.alt_determinant(), Some(14));
+    assert_eq!(f64::to_str_digits(x.alt_determinant().unwrap(), 20),
+               f64::to_str_digits(-83.9999999999997157829, 20));
 
     let b: Matrice<int> = Matrice { columns: 2, rows: 3, elems: vec!(5, 7, 9, 11, 13, 15) };
     assert_eq!(b.alt_determinant(), None);
@@ -222,7 +220,7 @@ fn alt_dtrmnt_test() {
                                                                      7, 8, 9)};
 
     assert_eq!(c.alt_determinant(), Some(0));
-    
+     */  
     let x: Matrice<int> = Matrice { columns: 3, rows: 3, elems: vec!(6,  1, 1,
                                                                      4, -2, 5,
                                                                      2,  8, 7)};
@@ -262,7 +260,7 @@ fn alt_dtrmnt_test() {
     assert_eq!(q.alt_determinant(), Some(-40));
 }
 
-
+/*
 #[test]
 fn transpose_test() {
     let x: Matrice<int>  = Matrice { columns: 3, rows: 2, elems: vec!(1, 3, 7,
@@ -287,7 +285,8 @@ fn inverse_test() {
     assert_eq!(y.determinant(), Some(18.));
     assert_eq!(y.inverse().unwrap().determinant(), Some(1./18.));
 }
-
+*/
+/*
 #[test]
 fn sans_test() {
     let x: Matrice<int> = Matrice { columns: 4, rows: 4, elems: vec!( 1,  2,  3,  4,
@@ -375,7 +374,7 @@ fn test_mul() {
 
     assert!(lhs * rhs == Matrice { columns: 2, rows: 2, elems: results });
 }
-
+*/
 /*
 #[test]
 fn test_div() {
