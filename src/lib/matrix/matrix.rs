@@ -306,6 +306,19 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         }
     }
 
+    pub fn set_row(&mut self, old_row: uint, new_row: Vec<T>) -> MatrixResult<()> {
+        if old_row > self.rows {
+            return Err(BadDimensionality)
+        }
+
+        for (elt, new) in range(old_row * self.columns,
+                                (old_row + 1) * self.columns).zip(new_row.iter()) {
+            *self.elems.get_mut(elt) = new.clone()
+        }
+
+        Ok(())
+    }
+/*
     pub fn gauss_xform(&self) -> Option<Matrice<T>> {
         if self.rows != self.columns || self.rows == 0 {
             return None
@@ -339,7 +352,7 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
 
         Some(degaussed)
     }
-
+*/
     pub fn alt_determinant(&self) -> Option<T> {
         if self.rows != self.columns || self.rows == 0 {
             return None
@@ -350,49 +363,75 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
                         (*self.elems.get(1) * *self.elems.get(2)))
         }
 
-        let mut mutant = self.clone();
+        println!("{}", self);
 
-        let mut det: T = num::one();
-        let mut upper = mutant.clone();
-        let mut lower: Matrice<T> = Matrice::ident(self.rows);
+        let mut upper = self.clone();
+        let mut lower: Vec<T> = Vec::with_capacity(self.rows * self.rows);
 
         for row in range(0, self.rows) {
-            let elt_d = row * self.columns + row;
+            //divisor moves diagonally
+            let divisor = self.elems.get(row * self.columns + row);
+            println!("Divisor: {}", divisor);
 
-            let (_, p_row) = match Matrice::get_pivot(mutant.get_col(row)) {
-                Some((p, r)) => (p, r),
-                None => return None
-            };
+            for next_row in range(row + 1, self.rows) {
+                let n_row = next_row * self.columns;
+                let lower_elt = *upper.elems.get(n_row) / *divisor;
+                println!("{} / {}", upper.elems.get(n_row), divisor);
 
-            mutant.swap_rows(row, cmp::max(row, p_row));
+                let new_row: Vec<T> = upper.get_row(next_row).zip(
+                    upper.get_row(row))
+                    .map(|(x, y)| *x - (*y * lower_elt)).collect();
 
-            for n_row in range(row + 1, self.rows) {
-                let elt_c = n_row * self.columns + row;
-
-                for col in range(row + 1, self.columns) {
-                    let elt_a = n_row * self.columns + col;
-                    let elt_b = row * self.columns + col;
-                    let l_elt = *mutant.elems.get(elt_b) / *mutant.elems.get(elt_d);
-
-                    *upper.elems.get_mut(elt_a) = 
-                        *mutant.elems.get(elt_a) - *mutant.elems.get(elt_c) * l_elt;
+                match upper.set_row(next_row, new_row) {
+                    Ok(_) => { },
+                    Err(_) => return None
                 }
-                for col in range(0, row + 1) {
-                    let elt_a = n_row * self.columns + col;
-                    let elt_b = row * self.columns + col;
-                    let l_elt = *mutant.elems.get(elt_b) / *mutant.elems.get(elt_d);
-                    *lower.elems.get_mut(elt_a) = l_elt;
-                }
-
-                *upper.elems.get_mut(elt_c) = num::zero();
+                lower.push(lower_elt);
             }
-            det = det * *upper.elems.get(row * self.rows + row);
+
+
+            if row + 1 == self.rows {
+                let divisor = match Matrice::get_pivot(upper.get_row(row - 1)) {
+                    Some((x, _)) => x,
+                    None => return None
+                };
+                println!("Actual divisor: {}", divisor);
+
+                let lower_elt = match Matrice::get_pivot(upper.get_row(row)) {
+                    Some((x, _)) => x / divisor,
+                    None => return None
+                };
+                println!("{}", Matrice::get_pivot(upper.get_row(row)));
+                println!("Lower element: {}", lower_elt);
+                let new_row: Vec<T> = upper.get_row(row).zip(upper.get_row(row - 1))
+                    .map(|(x, y)| *x - (*y * lower_elt)).collect();
+
+                match upper.set_row(row, new_row) {
+                    Ok(_) => { },
+                    Err(_) => return None
+                }
+                lower.push(lower_elt);
+            }
+            println!("{}", upper);
         }
 
-        println!("{}", upper);
         println!("{}", lower);
 
-        Some(det)
+        let mut ldu: Matrice<T> = Matrice::ident(self.rows);
+
+        let mut sum: T = num::one();
+        for row in range(0, self.rows) {
+            for col in range(0, row) {
+                *ldu.elems.get_mut(row * self.columns + col) = 
+                    lower.get(row + col * row - 1).clone();
+            }
+            sum = sum * *upper.elems.get(row * self.rows + row);
+        }
+
+        println!("{}", ldu);
+        println!("{}", ldu * upper);
+
+        Some(sum)
     }
 
     pub fn decross(&self, omit_row: uint, omit_col: uint) -> Matrice<T> {
