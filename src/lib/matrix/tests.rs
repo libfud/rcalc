@@ -2,23 +2,23 @@ use super::{Matrice, MatrixResult, BadDimensionality};
 
 #[test]
 fn matrix_empty_test() {
-    let empty: Matrice<int> = Matrice::new_empty();
+    let empty: Matrice<int> = Matrice::new();
     assert!(empty == Matrice { columns: 0, rows: 0, elems: vec!() });
 }
 
 #[test]
 fn matrix_new_test() {
-    let x = Matrice::new(vec!(1i, 2, 3, 4), 2, 2);
+    let x = Matrice::from_vec(vec!(1i, 2, 3, 4), 2, 2);
     assert!(x == Ok(Matrice { columns: 2, rows: 2, elems: vec!(1, 2, 3, 4) }));
 
-    let y: MatrixResult<Matrice<int>> = Matrice::new(vec!(), 1, 1);
+    let y: MatrixResult<Matrice<int>> = Matrice::from_vec(vec!(), 1, 1);
     assert!(y == Err(BadDimensionality));
 }
 
 #[test]
 fn matrix_get_row_test() {
     let fake_vec: Vec<int> = range(1, 5).collect();
-    let x = match Matrice::new(fake_vec, 2, 2) {
+    let x = match Matrice::from_vec(fake_vec, 2, 2) {
         Ok(x) => x,
         Err(_) => fail!("Failed test.")
     };
@@ -30,7 +30,7 @@ fn matrix_get_row_test() {
     assert!(row_1 == vec!(3, 4));
 
     let fake_vec: Vec<int> = range(1, 11).collect();
-    let z = match Matrice::new(fake_vec, 2, 5) {
+    let z = match Matrice::from_vec(fake_vec, 2, 5) {
         Ok(x) => x,
         _ => fail!("wut")
     };
@@ -43,19 +43,19 @@ fn matrix_get_row_test() {
 fn matrix_get_col_test() {
     let fake_vec: Vec<int> = range(1, 7).collect();
     
-    let x = match Matrice::new(fake_vec.clone(), 2, 3) {
+    let x = match Matrice::from_vec(fake_vec.clone(), 2, 3) {
         Ok(x) => x,
         Err(_) => fail!("Failed test.")
     };
     
     let col_0: Vec<int> = x.get_col(0).map(|x| x.clone()).collect();
-    assert!(col_0 == vec!(1, 3, 5));
+    assert!(col_0 == vec!(1i, 3, 5));
 
     let col_1: Vec<int> = x.get_col(1).map(|x| x.clone()).collect();
-    assert!(col_1 == vec!(2, 4, 6));
+    assert!(col_1 == vec!(2i, 4, 6));
 
     let fake_vec: Vec<int> = range(1, 13).collect();
-    let z = match Matrice::new(fake_vec, 3, 4) {
+    let z = match Matrice::from_vec(fake_vec, 3, 4) {
         Ok(x) => x,
         _ => fail!("wut")
     };
@@ -186,6 +186,83 @@ fn deterimant_test() {
     assert_eq!(q.determinant(), Some(-40));
 }
 
+#[test] 
+fn gauss() {
+    let x: Matrice<f64> = Matrice { columns: 3, rows: 3, elems: vec!( 25.,  5., 1.,
+                                                                      64.,  8., 1.,
+                                                                     144., 12., 1.)};
+    //I despise f64
+    let z: Vec<f64> = vec!(25f64, 5f64,  1f64,
+                           0f64,  -4.80000000000000071054, -1.560000000000000005329,
+                           0f64,  0f64,   0.69999999999999928946);
+
+    assert_eq!(x.gauss_xform(), Some(Matrice { columns: 3, rows: 3,
+                                               elems: z}));
+}
+
+#[test]
+fn alt_dtrmnt_test() {
+    let x: Matrice<f64> = Matrice { columns: 3, rows: 3, elems: vec!( 25.,  5., 1.,
+                                                                      64.,  8., 1.,
+                                                                     144., 12., 1.)};
+    assert_eq!(x.determinant(), Some(-84.));
+    assert_eq!(x.alt_determinant(), Some(-84.));
+
+    let one: Matrice<int> = Matrice { columns: 1, rows: 1, elems: vec!(3) };
+    assert_eq!(one.alt_determinant(), Some(3));
+
+    let a: Matrice<int> = Matrice { columns: 2, rows: 2, elems: vec!(4, 6, 3, 8) };
+    assert_eq!(a.alt_determinant(), Some(14));
+
+    let b: Matrice<int> = Matrice { columns: 2, rows: 3, elems: vec!(5, 7, 9, 11, 13, 15) };
+    assert_eq!(b.alt_determinant(), None);
+
+    let c: Matrice<int> = Matrice { columns: 3, rows: 3, elems: vec!(1, 2, 3,
+                                                                     4, 5, 6,
+                                                                     7, 8, 9)};
+
+    assert_eq!(c.alt_determinant(), Some(0));
+    
+    let x: Matrice<int> = Matrice { columns: 3, rows: 3, elems: vec!(6,  1, 1,
+                                                                     4, -2, 5,
+                                                                     2,  8, 7)};
+    assert_eq!(x.alt_determinant(), Some(-306));
+
+    let d: Matrice<int> = Matrice { columns: 4, rows: 4, elems: vec!(4, 5, 6, 7,
+                                                                     3, 2, 1, 5,
+                                                                     7, 8, 9, 4,
+                                                                     2, 2, 3, 1)};
+    assert_eq!(d.alt_determinant(), Some(-57));
+
+    let y: Matrice<int> = Matrice { columns: 4, rows: 4, elems: vec!( 1,  2,  3,  4,
+                                                                      5,  6,  7,  8,
+                                                                      9, 10, 11, 12,
+                                                                     13, 14, 15, 16)};
+    assert!(y.alt_determinant() == Some(0));
+
+    let z: Matrice<int> = Matrice { columns: 4, rows: 4, elems: vec!(  6,   1,   1,   9,
+                                                                       4,  -2,   5,  22,
+                                                                       2,   8,   7,  11,
+                                                                     -13, -17, -15, 100)};
+    assert_eq!(z.alt_determinant(), Some(-41247));
+
+    let r: Matrice<int> = Matrice { columns: 5, rows: 5, elems: vec!(  1,  0, 0,  0,  0,
+                                                                       0,  1, 0,  0, -1,
+                                                                       0,  3, 0, -3, -2,
+                                                                       0,  0, 2, -1,  0,
+                                                                       1, -1, 0,  1,  0)};
+    assert_eq!(r.alt_determinant(), Some(-4));
+
+    let q: Matrice<int> = Matrice { columns: 6, rows: 6, elems: vec!(  1,  0,  0,  1, -2,  1,
+                                                                       0, -2,  1,  0,  0,  2,
+                                                                      -1, -3,  0,  0,  1, -3,
+                                                                      -4,  2,  1,  0,  0,  0,
+                                                                       0,  0,  2,  1,  1,  1,
+                                                                      -1,  5, -1, -1,  0,  0)};
+    assert_eq!(q.alt_determinant(), Some(-40));
+}
+
+
 #[test]
 fn transpose_test() {
     let x: Matrice<int>  = Matrice { columns: 3, rows: 2, elems: vec!(1, 3, 7,
@@ -210,17 +287,59 @@ fn inverse_test() {
     assert_eq!(y.determinant(), Some(18.));
     assert_eq!(y.inverse().unwrap().determinant(), Some(1./18.));
 }
-                                           
+
+#[test]
+fn sans_test() {
+    let x: Matrice<int> = Matrice { columns: 4, rows: 4, elems: vec!( 1,  2,  3,  4,
+                                                                      5,  6,  7,  8,
+                                                                      9, 10, 11, 12,
+                                                                     13, 14, 15, 16) };
+
+    let ints_vec: Vec<int> = range(1, 17).map(|x| x).collect();
+    let ref_ints: Vec<&int> = ints_vec.iter().map(|x| x).collect();
+
+    assert_eq!(x.sans_row_col(0, 0), Matrice { columns: 4, rows: 4, elems: ref_ints.clone()});
+    assert_eq!(x.sans_row_col(5, 5), Matrice { columns: 4, rows: 4, elems: ref_ints});
+
+    let ints_vec = vec!( 5,  6,  7,  8,
+                         9, 10, 11, 12,
+                        13, 14, 15, 16);
+    let ref_ints: Vec<&int> = ints_vec.iter().map(|x| x).collect();
+
+    assert_eq!(x.sans_row_col(1, 0), Matrice { columns: 4, rows: 3, elems: ref_ints});
+
+    let ints_vec = vec!( 2,  3,  4,
+                         6,  7,  8,
+                        10, 11, 12,
+                        14, 15, 16);
+    let ref_ints: Vec<&int> = ints_vec.iter().map(|x| x).collect();
+
+    assert_eq!(x.sans_row_col(0, 1), Matrice { columns: 3, rows: 4, elems: ref_ints});
+
+    let ints_vec = vec!( 1,  3,  4,
+                         9, 11, 12,
+                        13, 15, 16);
+    let ref_ints: Vec<&int> = ints_vec.iter().map(|x| x).collect();
+
+    assert_eq!(x.sans_row_col(2, 2), Matrice { columns: 3, rows: 3, elems: ref_ints});
+
+    let ints_vec = vec!(1,  2,  3,
+                        5,  6,  7,
+                        9, 10, 11);
+    let ref_ints: Vec<&int> = ints_vec.iter().map(|x| x).collect();
+    
+    assert_eq!(x.sans_row_col(4, 4), Matrice { columns: 3, rows: 3, elems: ref_ints});
+}
 
 #[test]
 fn test_add() {
-    let lhs = match Matrice::new(vec!(1i, 2, 3, 4), 2, 2) {
+    let lhs = match Matrice::from_vec(vec!(1i, 2, 3, 4), 2, 2) {
         Ok(x) => x,
-        Err(m) => fail!(m.to_str())
+        Err(m) => fail!(m.to_string())
     };
-    let rhs = match Matrice::new(vec!(5i, 6i, 7i, 8i), 2, 2) {
+    let rhs = match Matrice::from_vec(vec!(5i, 6i, 7i, 8i), 2, 2) {
         Ok(x) => x,
-        Err(m) => fail!(m.to_str())
+        Err(m) => fail!(m.to_string())
     };
 
     assert!(lhs + rhs == Matrice { columns: 2, rows: 2, elems: vec!(6i, 8i, 10i, 12i) });
@@ -228,13 +347,13 @@ fn test_add() {
 
 #[test]
 fn test_sub() {
-    let lhs = match Matrice::new(vec!(1i, 2, 3, 4), 2, 2) {
+    let lhs = match Matrice::from_vec(vec!(1i, 2, 3, 4), 2, 2) {
         Ok(x) => x,
-        Err(m) => fail!(m.to_str())
+        Err(m) => fail!(m.to_string())
     };
-    let rhs = match Matrice::new(vec!(5i, 6i, 7i, 8i), 2, 2) {
+    let rhs = match Matrice::from_vec(vec!(5i, 6i, 7i, 8i), 2, 2) {
         Ok(x) => x,
-        Err(m) => fail!(m.to_str())
+        Err(m) => fail!(m.to_string())
     };
 
     assert!(lhs - rhs == Matrice { columns: 2, rows: 2, elems: vec!(-4i, -4i, -4i, -4i) });
@@ -242,13 +361,13 @@ fn test_sub() {
 
 #[test]
 fn test_mul() {
-    let lhs = match Matrice::new(vec!(1i, 2, 3, 4), 2, 2) {
+    let lhs = match Matrice::from_vec(vec!(1i, 2, 3, 4), 2, 2) {
         Ok(x) => x,
-        Err(m) => fail!(m.to_str())
+        Err(m) => fail!(m.to_string())
     };
-    let rhs = match Matrice::new(vec!(5i, 6i, 7i, 8i), 2, 2) {
+    let rhs = match Matrice::from_vec(vec!(5i, 6i, 7i, 8i), 2, 2) {
         Ok(x) => x,
-        Err(m) => fail!(m.to_str())
+        Err(m) => fail!(m.to_string())
     };
 
     let results = vec!((1i * 5 + 2 * 7), (1 * 6 + 2 * 8),
@@ -257,6 +376,7 @@ fn test_mul() {
     assert!(lhs * rhs == Matrice { columns: 2, rows: 2, elems: results });
 }
 
+/*
 #[test]
 fn test_div() {
     let lhs: Matrice<f64> = Matrice { columns: 2, rows: 2, elems: vec!(1., 2., 3., 4.)};
@@ -266,3 +386,4 @@ fn test_div() {
     assert_eq!(res, Matrice { columns: 2, rows: 2, elems:
                                    vec!(5./10., -5./10., 8./10., -6./10.)});
 }
+*/

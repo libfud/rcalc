@@ -5,7 +5,6 @@ use std::fmt;
 use std::cmp;
 use std::num;
 use std::iter::AdditiveIterator;
-use std::collections::hashmap::HashMap;
 
 #[cfg(use_fancy)]
 use fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
@@ -261,33 +260,14 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         } else if self.rows == 1 {
             return Some(self.elems.get(0).clone())
         } else if self.rows == 2 {
-            /*    |a b|    *
-             *    |c d|    *
-             * (ad) - (bc) */
             return Some((*self.elems.get(0) * *self.elems.get(3)) - 
                         (*self.elems.get(1) * *self.elems.get(2)))
         } 
 
         let mut sum: T = num::zero();
         for n in range(0, self.columns) { 
-            /* Get the element at the top row at the nth position, starting from 0 */
             let elem = self.elems.get(n); 
-                
-            let next = if n == 0 {
-                /* the submatrix that is in the lower right corner extending
-                 * diagonally to element 0 */
-                self.submatrix(1, 1, self.rows - 1, self.columns - 1).unwrap()
-                    .determinant().unwrap()
-            } else if n == self.columns - 1 {
-                /* the submatrix that is in the lower left corner extending
-                 * diagonally to the last element in the first row */ 
-                self.submatrix(0, 1, self.rows - 1, self.columns - 1).unwrap()
-                    .determinant().unwrap()
-            } else {
-                self.decross(1, n + 1).determinant().unwrap()
-            };
-
-            /* If n is even, add the product; if n is odd, subtract the product */
+            let next = self.decross(1, n + 1).determinant().unwrap();
             sum = if n % 2 == 0 {
                 sum + (*elem * next)
             } else {
@@ -297,93 +277,123 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         Some(sum)
     }
 
-    pub fn bottoms_up(&self) -> Option<T> {
+    pub fn get_pivot(iterator: MatriceIterator<T>) -> Option<(T, uint)> {
+        iterator.enumerate().find(|&(_, x)| *x != num::zero())
+            .map(|(idx, x)| (x.clone(), idx))
+    }
+
+    /// Return a vector of pivots and the column at which they occur.
+    pub fn row_pivots(&self) -> Vec<Option<(T, uint)>> {
+        range(0, self.rows).map(|row| Matrice::get_pivot(self.get_row(row))).collect()
+    }
+
+    pub fn col_pivots(&self) -> Vec<Option<(T, uint)>> {
+        range(0, self.columns).map(|col| Matrice::get_pivot(self.get_col(col))).collect()
+    }
+
+    pub fn swap_rows(&mut self, row_a: uint, row_b: uint) {
+        if row_a == row_b {
+            return
+        }
+
+        let temp: Vec<T> = self.get_row(row_a).map(|x| x.clone()).collect();
+        
+        for elt in range(0, self.columns) {
+            let elem_a = row_a * self.columns + elt;
+            let elem_b = row_b * self.columns + elt;
+            *self.elems.get_mut(elem_a) = self.elems.get(elem_b).clone();
+            *self.elems.get_mut(elem_b) = temp.get(elt).clone();
+        }
+    }
+
+    pub fn gauss_xform(&self) -> Option<Matrice<T>> {
+        if self.rows != self.columns || self.rows == 0 {
+            return None
+        } 
+
+        let mut degaussed = self.clone();
+
+        for row in range(0, self.rows) {
+            let (_, p_row) = match Matrice::get_pivot(degaussed.get_col(row)) {
+                Some((p, r)) => (p, r),
+                None => return None
+            };
+            
+            let swap = cmp::max(row, p_row);
+            degaussed.swap_rows(row, swap);
+            for n_row in range(row + 1, self.rows) {
+                for col in range(row + 1, self.columns) {
+                    let elt_a = n_row * self.columns + col;
+                    let elt_b = row * self.columns + col;
+                    let elt_c = n_row * self.columns + row;
+                    let elt_d = row * self.columns + row;
+
+                    *degaussed.elems.get_mut(elt_a) = 
+                        *degaussed.elems.get(elt_a) - *degaussed.elems.get(elt_b) * 
+                        (*degaussed.elems.get(elt_c) / *degaussed.elems.get(elt_d));
+                }
+
+                *degaussed.elems.get_mut(n_row * self.columns + row) = num::zero();
+            }
+        }
+
+        Some(degaussed)
+    }
+
+    pub fn alt_determinant(&self) -> Option<T> {
         if self.rows != self.columns || self.rows == 0 {
             return None
         } else if self.rows == 1 {
             return Some(self.elems.get(0).clone())
         } else if self.rows == 2 {
-            return Some((*self.elems.get(0) * *self.elems.get(3)) -
+            return Some((*self.elems.get(0) * *self.elems.get(3)) - 
                         (*self.elems.get(1) * *self.elems.get(2)))
         }
 
-        let mut det_table: HashMap<Vec<uint>, T> = HashMap::new();
-        let mut col_a = self.columns * (self.rows - 3);
-        let mut col_b = col_a + 1;
-        let stop = self.columns * (self.rows - 2) - 1;
-        loop {
-            let a = col_a + self.columns;
-            let b = col_b + self.columns;
-            let c = col_a + 2 * self.columns;
-            let d = col_b + 2 * self.columns;
-            let det = (*self.elems.get(a) * *self.elems.get(d)) -
-                       (*self.elems.get(b) * *self.elems.get(c));
+        let mut mutant = self.clone();
 
-            det_table.insert(vec!(col_a, col_b), det);
-            if col_b == stop && col_a + 1 == col_b {
-                break
-            } else if col_b == stop {
-                col_a += 1;
-                col_b = col_a + 1;
-            } else {
-                col_b += 1;
-            }
-        }
+        let mut det: T = num::one();
+        let mut upper = mutant.clone();
+        let mut lower: Matrice<T> = Matrice::ident(self.rows);
 
-        if self.rows == 3 {
-            let answer = *self.elems.get(0) * *det_table.find(&vec!(1, 2)).unwrap() -
-                *self.elems.get(1) * *det_table.find(&vec!(0, 2)).unwrap() +
-                *self.elems.get(2) * *det_table.find(&vec!(0, 1)).unwrap();
+        for row in range(0, self.rows) {
+            let elt_d = row * self.columns + row;
 
-            return Some(answer)
-        }
+            let (_, p_row) = match Matrice::get_pivot(mutant.get_col(row)) {
+                Some((p, r)) => (p, r),
+                None => return None
+            };
 
-        let mut row_from_bottom = 4u;
-        for _ in range(0, self.rows - 3) { 
-            println!("Working on the {}th row from the bottom", row_from_bottom);
-            println!("(As in the {}th row,)", self.rows - row_from_bottom + 1);
-            println!("{}", det_table);
+            mutant.swap_rows(row, cmp::max(row, p_row));
 
-            let mut temp_table: HashMap<Vec<uint>, T> = HashMap::new();
-            for n in range(0u, self.columns) {
-                println!("Starting from {}", n);
-                for m in range(0u, self.columns) {
-                    let indices: Vec<uint> = range(0, self.columns)
-                        .filter_map(|x| if x != m && x != n {
-                            Some((self.rows - row_from_bottom) * self.columns + x)
-                        } else { None }).take(row_from_bottom).collect();
+            for n_row in range(row + 1, self.rows) {
+                let elt_c = n_row * self.columns + row;
 
+                for col in range(row + 1, self.columns) {
+                    let elt_a = n_row * self.columns + col;
+                    let elt_b = row * self.columns + col;
+                    let l_elt = *mutant.elems.get(elt_b) / *mutant.elems.get(elt_d);
 
-                    println!("\nFiltering element: {}", m);
-                    let elem = (self.rows - row_from_bottom) * self.columns + m;
-                    let factor = self.elems.get((self.rows - row_from_bottom) +
-                                                self.columns + elem);
-
-//                    let indices: Vec<uint> = range(n, n + row_from_bottom - 1)
-//                        .map(|x| (self.rows - row_from_bottom) * self.columns + x).collect();
-                    
-                    let key: Vec<uint> = indices.iter().filter_map(|&x| if x != elem {
-                        Some(x + self.columns)} else { None }).collect();
-
-                    println!("Indices: {}", indices);
-                    println!("Key: {}", key);
-
-                    match det_table.find(&key) {
-                        Some(val) => {
-                            temp_table.insert(indices.clone(), *val * *factor);
-                        },
-                        None => { }
-                    }
+                    *upper.elems.get_mut(elt_a) = 
+                        *mutant.elems.get(elt_a) - *mutant.elems.get(elt_c) * l_elt;
                 }
+                for col in range(0, row + 1) {
+                    let elt_a = n_row * self.columns + col;
+                    let elt_b = row * self.columns + col;
+                    let l_elt = *mutant.elems.get(elt_b) / *mutant.elems.get(elt_d);
+                    *lower.elems.get_mut(elt_a) = l_elt;
+                }
+
+                *upper.elems.get_mut(elt_c) = num::zero();
             }
-            det_table = temp_table;
-            row_from_bottom += 1;
+            det = det * *upper.elems.get(row * self.rows + row);
         }
 
-        println!("{}", det_table);
+        println!("{}", upper);
+        println!("{}", lower);
 
-        return Some(self.elems.get(0).clone())
-    }        
+        Some(det)
+    }
 
     pub fn decross(&self, omit_row: uint, omit_col: uint) -> Matrice<T> {
         let mut new_elems: Vec<T> = Vec::new();
