@@ -19,8 +19,7 @@ fn arith_test() {
     assert_eq!(eval("(+ 2 2)", &mut env), Ok(Atom(two + two)));
     assert_eq!(eval("(+)", &mut env), Ok(Atom(zero.clone())));
     assert_eq!(eval("(-)", &mut env), 
-               Err(BadNumberOfArgs("`-' requires at least 1 arguments".to_string())));
+               Err(BadNumberOfArgs("-".to_string(), "at least".to_string(), 1)));
+    assert_eq!(eval("(pow 4 1/2)", &mut env), Ok(Atom(two.clone())));
+    assert_eq!(eval("(sin 0)", &mut env), Ok(Atom(zero.clone())));
 }
-
-    
-
