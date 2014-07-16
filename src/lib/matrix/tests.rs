@@ -1,4 +1,7 @@
+extern crate num;
+
 use super::{Matrice, MatrixResult, BadDimensionality};
+use self::num::rational::BigRational;
 
 #[test]
 fn matrix_empty_test() {
@@ -203,14 +206,15 @@ fn gauss() {
 #[test]
 fn alt_dtrmnt_test() {
     use std::f64;
-/*
+    use std::num;
+
     let x: Matrice<f64> = Matrice { columns: 3, rows: 3, elems: vec!( 25.,  5., 1.,
                                                                       64.,  8., 1.,
                                                                      144., 12., 1.)};
 
     assert_eq!(x.determinant(), Some(-84.));
     assert_eq!(f64::to_str_digits(x.alt_determinant().unwrap(), 20),
-               f64::to_str_digits(-83.9999999999997157829, 20));
+               f64::to_str_digits(-83.99999999999992894573, 20));
 
     let b: Matrice<int> = Matrice { columns: 2, rows: 3, elems: vec!(5, 7, 9, 11, 13, 15) };
     assert_eq!(b.alt_determinant(), None);
@@ -220,44 +224,74 @@ fn alt_dtrmnt_test() {
                                                                      7, 8, 9)};
 
     assert_eq!(c.alt_determinant(), Some(0));
-     */  
-    let x: Matrice<int> = Matrice { columns: 3, rows: 3, elems: vec!(6,  1, 1,
-                                                                     4, -2, 5,
-                                                                     2,  8, 7)};
-    assert_eq!(x.alt_determinant(), Some(-306));
+     
+    
+    let x: Matrice<f64> = Matrice { columns: 3, rows: 3, elems: vec!(6.,  1., 1.,
+                                                                     4., -2., 5.,
+                                                                     2.,  8., 7.)};
+    assert_eq!(x.determinant(), Some(-306.));
+    assert_eq!(x.alt_determinant(), Some(-306.));
 
-    let d: Matrice<int> = Matrice { columns: 4, rows: 4, elems: vec!(4, 5, 6, 7,
-                                                                     3, 2, 1, 5,
-                                                                     7, 8, 9, 4,
-                                                                     2, 2, 3, 1)};
-    assert_eq!(d.alt_determinant(), Some(-57));
+    let zero: BigRational = num::zero();
+    let one: BigRational = num::one();
+    let two: BigRational = one + num::one();
+    let three: BigRational = two + one;
+    let four: BigRational = two + two;
+    let six: BigRational = two * three;
 
-    let y: Matrice<int> = Matrice { columns: 4, rows: 4, elems: vec!( 1,  2,  3,  4,
-                                                                      5,  6,  7,  8,
-                                                                      9, 10, 11, 12,
-                                                                     13, 14, 15, 16)};
-    assert!(y.alt_determinant() == Some(0));
+    let bigrat_vec = vec!(two + two, four + one, three * two, four + three,
+                          one + two,  one + one,  zero + one,  two + three,
+                          six + one,  six + two, six + three,    two + two,
+                          one + one,  one + one,   one + two,   one + zero);
 
-    let z: Matrice<int> = Matrice { columns: 4, rows: 4, elems: vec!(  6,   1,   1,   9,
-                                                                       4,  -2,   5,  22,
-                                                                       2,   8,   7,  11,
-                                                                     -13, -17, -15, 100)};
-    assert_eq!(z.alt_determinant(), Some(-41247));
+    let d: Matrice<BigRational> = Matrice { columns: 4, rows: 4, elems: bigrat_vec };
+    assert_eq!(d.alt_determinant(), from_str::<BigRational>("57/1"));
 
-    let r: Matrice<int> = Matrice { columns: 5, rows: 5, elems: vec!(  1,  0, 0,  0,  0,
-                                                                       0,  1, 0,  0, -1,
-                                                                       0,  3, 0, -3, -2,
-                                                                       0,  0, 2, -1,  0,
-                                                                       1, -1, 0,  1,  0)};
-    assert_eq!(r.alt_determinant(), Some(-4));
 
-    let q: Matrice<int> = Matrice { columns: 6, rows: 6, elems: vec!(  1,  0,  0,  1, -2,  1,
-                                                                       0, -2,  1,  0,  0,  2,
-                                                                      -1, -3,  0,  0,  1, -3,
-                                                                      -4,  2,  1,  0,  0,  0,
-                                                                       0,  0,  2,  1,  1,  1,
-                                                                      -1,  5, -1, -1,  0,  0)};
-    assert_eq!(q.alt_determinant(), Some(-40));
+    let y: Matrice<f64> = Matrice { columns: 4, rows: 4, elems: vec!( 1.,  2.,  3.,  4.,
+                                                                      5.,  6.,  7.,  8.,
+                                                                      9., 10., 11., 12.,
+                                                                     13., 14., 15., 16.)};
+    assert_eq!(y.alt_determinant(), Some(0.));
+
+
+    let z: Matrice<f64> = Matrice { columns: 4, rows: 4, elems: vec!(  6.,   1.,   1.,   9.,
+                                                                       4.,  -2.,   5.,  22.,
+                                                                       2.,   8.,   7.,  11.,
+                                                                     -13., -17., -15., 100.)};
+    assert_eq!(f64::to_str_digits(z.alt_determinant().unwrap(), 20),
+               f64::to_str_digits(-41247.00000000000727595761, 20));
+
+    let r: Matrice<f64> = Matrice { columns: 5, rows: 5, elems: vec!(  1.,  0., 0.,  0.,  0.,
+                                                                       0.,  1., 0.,  0., -1.,
+                                                                       0.,  3., 0., -3., -2.,
+                                                                       0.,  0., 2., -1.,  0.,
+                                                                       1., -1., 0.,  1.,  0.)};
+    assert_eq!(r.alt_determinant(), Some(-4.));
+
+    let q: Matrice<BigRational> = Matrice { columns: 6, rows: 6, 
+                                            elems: 
+                                            vec!(  one.clone(),  zero.clone(),  zero.clone(),
+                                                   one.clone(),  -two,  one.clone(),
+                                                   
+                                                   zero.clone(), -two,  one.clone(),  zero.clone(),
+                                                   zero.clone(),  two.clone(),
+
+                                                   -one, -two - one,  zero.clone(), zero.clone(),
+                                                   one.clone(), -two - one,
+
+                                                   -two - two,  two.clone(),  one.clone(),
+                                                   zero.clone(), zero.clone(), zero.clone(),
+
+                                                   zero.clone(), zero.clone(), two.clone(),
+                                                   one.clone(), one.clone(), one.clone(),
+
+                                                   -one, two + two + one, -one, -one,
+                                                   zero.clone(), zero.clone())};
+
+
+    let res = (two * two * (two + two + one)) * two * two;  
+    assert_eq!(q.alt_determinant(), Some(-res));
 }
 
 /*

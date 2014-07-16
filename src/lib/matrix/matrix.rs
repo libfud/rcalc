@@ -440,30 +440,57 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         } else if self.rows == 1 {
             return Some(self.elems.get(0).clone())
         } else if self.rows == 2 {
+            /* ad - bc */
             return Some((*self.elems.get(0) * *self.elems.get(3)) - 
                         (*self.elems.get(1) * *self.elems.get(2)))
         }
 
+        /* We will be mutating the matrix, and since we aren't doing this for an
+         * effect to the matrix but instead to get a result, we'll do all the
+         * mutations on a new object */
         let mut upper = self.clone();
-        let mut lower: Matrice<T> = Matrice::ident(self.rows);
 
+        /* We're going to change each row from the second one down so that
+         * for the first n columns of that row, where n is equal to the
+         * row in which it occupies, there are n zeros. */
         for row in range(0, self.rows) {
+            /* Because the final determinant is equal to the product
+             * of the main diagonal, it doesn't matter if we switch
+             * rows. Because we want to avoid division by zero,
+             * we'll swap rows in case they might result in a division
+             * by zero error. */
+            let p_row = match Matrice::get_pivot(upper.get_col(row)) {
+                Some((_, r)) => r,
+                None => return None
+            };
+            upper.swap_rows(row, cmp::max(row, p_row));
+
+            /* We're working to zero out those columns appropiately,
+             * so for a 3x3, the first divisor will be the first
+             * element in the first row, and the second divisor will
+             * be the second element in the first row. Then the third
+             * divisor will be the second element in the second row */
             let divisor = upper.elems.get(row * self.columns + row).clone();
 
             for next_row in range(row + 1, self.rows) {
                 let n_row = next_row * self.columns;
-                
+                /* The numerator will be the number we're working to cancel
+                 * out via subtraction */
                 let lower_elt = *upper.elems.get(n_row + row) / divisor;
 
+                /* Subtract from next_row the scalar multiplication
+                 * of the upper row by lower_elt. */
                 let new_row: Vec<T> = upper.get_row(next_row).zip(
                     upper.get_row(row))
                     .map(|(x, y)| *x - (*y * lower_elt)).collect();
 
+                /* Set next_row to the new row. */
                 match upper.set_row(next_row, new_row) {
                     Ok(_) => { },
                     Err(_) => return None
                 }
             }
+            println!("Upper now looks like this:\n{}", upper);
         }
 
         println!("{}", upper);
