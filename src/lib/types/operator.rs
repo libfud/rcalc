@@ -293,6 +293,8 @@ pub enum MatrixOps {
     MakeMatrix,
     MatrixSet,
     MatrixExtend,
+    Determ,
+    MatrixInv,
 }
 
 impl fmt::Show for MatrixOps {
@@ -301,6 +303,8 @@ impl fmt::Show for MatrixOps {
             &MakeMatrix => "make-matrix",
             &MatrixSet => "matrix-set",
             &MatrixExtend => "matrix-extend",
+            &Determ => "matrix-det",
+            &MatrixInv => "matrix-inv",
         }));
         Ok(())
     }
@@ -312,6 +316,8 @@ impl from_str::FromStr for MatrixOps {
             "make-matrix" => Some(MakeMatrix),
             "matrix-extend" => Some(MatrixExtend),
             "matrix-set" => Some(MatrixSet),
+            "matrix-det" => Some(Determ),
+            "matrix-inv" => Some(MatrixInv),
             _ => None
         }
     }

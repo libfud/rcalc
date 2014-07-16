@@ -3,19 +3,27 @@
 #![feature(default_type_params, globs, macro_rules)]
 
 //! Polish notation programmable calculator.
+#[cfg(not(test))]
 extern crate types;
+#[cfg(not(test))]
 use types::Environment;
 
-#[cfg(target_os = "linux")]
+#[cfg(target_os = "linux" , not(test))]
 use r_readline::*;
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(target_os = "linux", test))]
 use rust_no_readline::*;
 
+#[cfg(not(test))]
 use calc::eval;
+#[cfg(test)]
+pub use calc::eval;
+
+#[cfg(not(test))]
 use calc::pretty::pretty_print;
-use std::collections::hashmap::HashMap;
-use std::io::{File, Open, ReadWrite};
+
+#[cfg(test)]
+mod test;
 
 mod calc;
 
@@ -86,6 +94,7 @@ pub mod rust_no_readline {
     }
 }
 
+#[cfg(not(test))]
 fn main() {
     //env will hold all user defined variables and functions in hashmaps,
     //to be looked up when called. They're in the main function for
@@ -101,11 +110,6 @@ fn main() {
 
         let exit_or_eval: Vec<&str> = expr.as_slice().words().collect();
         if exit_or_eval.len() == 0 {
-            continue
-        }
-
-        if expr.as_slice().starts_with(",") {
-            special(expr.as_slice(), &mut env);
             continue
         }
 
@@ -127,38 +131,4 @@ fn main() {
 
         println!("{}", pretty_print(&result, &env));
     }
-}
-
-fn special(msg: &str, env: &mut Environment) {
-    match msg.trim_right() {
-        ",clear-state" => {
-            env.symbols = HashMap::new();
-        },
-        ",save-state" => save_state(env),
-        ",q" => { },
-        _ => println!("There are no other defined actions"),
-    }
-}
-
-fn save_state(env: &mut Environment) {
-    let p = Path::new("state.bytes");
-    let mut file = match File::open_mode(&p, Open, ReadWrite) {
-        Ok(f) => f,
-        Err(e) => {
-            println!("{}", e);
-            return
-        }
-    };
-
-    for (key, val) in env.symbols.iter() {
-        match file.write_line(format!("{} {}", key, val).as_slice()) {
-            Ok(_) => { },
-            Err(m) => {
-                println!("{}", m);
-                return
-            }
-        }
-    }
-
-    println!("Saved to default.txt");
 }

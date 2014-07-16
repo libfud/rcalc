@@ -60,16 +60,6 @@ pub fn handle_logic(args: &Vec<ArgType>, env: &mut Environment, log: Gate) -> Ca
     }
 }
 
-pub fn matrix_stuff(args: &Vec<ArgType>, env: &mut Environment, mop: MatrixOps) -> CalcResult {
-    use self::types::operator::{MatrixSet, MatrixExtend, MakeMatrix};    
-
-    match mop {
-        MatrixSet => matrice::matrix_set(args, env),
-        MakeMatrix => matrice::make_matrix(args, env),
-        MatrixExtend => matrice::matrix_extend(args, env),
-    }
-}        
-
 pub fn eval(op_type: OperatorType, args: &Vec<ArgType>, 
             env: &mut Environment) -> CalcResult {
 
@@ -92,7 +82,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         Listings(lop) => list_ops(args, env, lop),
         TransForms(top) => transform_ops(args, env, top),
         Table => special::table(args, env),
-        MatrixStuff(mop) => matrix_stuff(args, env, mop),
+        MatrixStuff(mop) => matrice::matrix_ops(args, env, mop),
         Help => super::common::help(args),
     }
 }

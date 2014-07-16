@@ -18,7 +18,7 @@ pub mod sexpr;
 pub mod literal;
 pub mod operator;
 
-#[deriving(Clone)]
+#[deriving(Clone, PartialEq)]
 pub enum ErrorKind {
     BadExpr,
     BadToken(String),

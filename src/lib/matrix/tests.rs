@@ -1,10 +1,11 @@
 extern crate num;
 
-use super::{Matrice, /*MatrixResult, BadDimensionality*/};
+use super::{Matrice, MatrixResult, BadDimensionality};
 use self::num::rational::BigRational;
 use std::num;
+use std::f64;
 
-/*
+
 #[test]
 fn matrix_empty_test() {
     let empty: Matrice<int> = Matrice::new();
@@ -130,6 +131,7 @@ fn concat_cols_test() {
                                                             2, 7)}));
 }
 
+/*
 #[test] 
 fn gauss() {
     let x: Matrice<f64> = Matrice { columns: 3, rows: 3, elems: vec!( 25.,  5., 1.,
@@ -144,7 +146,7 @@ fn gauss() {
                                                elems: z}));
 }
 */
-/*
+
 #[test]
 fn determinant_test() {
     use std::f64;
@@ -209,14 +211,14 @@ fn determinant_test() {
                                                                        0.,  0., 2., -1.,  0.,
                                                                        1., -1., 0.,  1.,  0.)};
     assert_eq!(r.determinant(), Some(-4.));
-*/
+
     /*  1,  0,  0,  1, -2,  1,
      *  0, -2,  1,  0,  0,  2,
      * -1, -3,  0,  0,  1, -3,
      * -4,  2,  1,  0,  0,  0,
      *  0,  0,  2,  1,  1,  1,
      * -1,  5, -1, -1,  0,  0)*/
-/*
+
     let bigrat_vec = vec!(one + zero, zero * one, zero * one,  one * one,       -two, one * one,
                           //       1,          0,          0,          1,         -2,         1,
                           zero * one,       -two,  one * one, zero * one, zero * one, two * one,
@@ -247,7 +249,7 @@ fn transpose_test() {
                                                                          3, 4,
                                                                          7, 6)});
 }
-*/
+
 #[test]
 fn inverse_test() {
 
@@ -267,142 +269,54 @@ fn inverse_test() {
     let z: Matrice<f64> = Matrice::ident(150);
     assert_eq!(z.inverse().unwrap(), z);
 
-    let zero:    BigRational = num::zero();
-    let one:     BigRational = num::one();
-    let two:     BigRational = one + one;
-    let three:   BigRational = two + one;
-    let four:    BigRational = two + two;
-    let five:    BigRational = four + one;
-    let six:     BigRational = two * three;
-    let seven:   BigRational = four + three;
-    let eight:   BigRational = four * two;
-    let nine:    BigRational = four + five;
-    let  ten:    BigRational = five * two;
-    let twenty:  BigRational = ten * two;
-    let thirty:  BigRational = ten * three;
-    let forty:   BigRational = ten * four;
-    let fifty:   BigRational = ten * five;
-    let sixty:   BigRational = ten * six;
-    let seventy: BigRational = ten * seven;
-    let eighty:  BigRational = ten * eight;
-    let ninety:  BigRational = ten * nine;
-    let hundred: BigRational = ten * ten;
-    let two_h:   BigRational = hundred * two;
-    let three_h: BigRational = hundred * three;
-    let four_h:  BigRational = hundred * four;
-    let five_h:  BigRational = hundred * five;
-    let six_h:   BigRational = hundred * six;
-    let seven_h: BigRational = hundred * seven;
-    let eight_h: BigRational = hundred * eight;
-    let nine_h:  BigRational = hundred * nine;
-    let thousand:BigRational = hundred * ten;
-    let two_k:   BigRational = thousand * two;
-    let three_k: BigRational = thousand * three;
-    let five_k:  BigRational = thousand * five;
+    /* http://www.wolframalpha.com/input/?i=inverse{{1,0,2,-1,0,1,3,1},
+     * {-1,0,-1,1,-4,3,2,1},{0,0,0,1,7,-4,-1,-1},{0,0,3,4,9,1,-1,-2},
+     * {0,1,0,1,1,-1,1,2},{-3,1,-2,4,-5,-1,0,1},{1,1,0,0,1,0,-1,-1},
+     * {1,0,1,0,1,1,3,4}} */
+
+    let f64_vec: Vec<f64> = vec!( 1., 0.,  2., -1.,  0.,  1.,  3.,  1.,
+                                 -1., 0., -1.,  1., -4.,  3.,  2.,  1.,
+                                  0., 0.,  0.,  1.,  7., -4., -1., -1.,
+                                  0., 0.,  3.,  4.,  9.,  1., -1., -2.,
+                                  0., 1.,  0.,  1.,  1., -1.,  1.,  2.,
+                                 -3., 1., -2.,  4., -5., -1.,  0.,  1.,
+                                  1., 1.,  0.,  0.,  1.,  0., -1., -1.,
+                                  1., 0.,  1.,  0.,  1.,  1.,  3.,  4.);
 
 
-    /* http://www.wolframalpha.com/input/?i=inverse{{1,0,2,-1,0,1,3,1},{-1,0,-1,1,-4,3,2,1},{0,0,0,1,7,-4,-1,-1},{0,0,3,4,9,1,-1,-2},{0,1,0,1,1,-1,1,2},{-3,1,-2,4,-5,-1,0,1},{1,1,0,0,1,0,-1,-1},{1,0,1,0,1,1,3,4}} */
-
-    let bigrat_vec = 
-        vec!(  one.clone(), zero.clone(),  two.clone(),       -one, 
-              zero.clone(), one.clone(), three.clone(), one.clone(),
-
-              -one,   zero.clone(),        -one, one.clone(), 
-              -four, three.clone(), two.clone(), one.clone(),
-
-              zero.clone(), zero.clone(), zero.clone(), one.clone(),
-              four + three,        -four,         -one,        -one,
-
-              zero.clone(), zero.clone(), three.clone(), four.clone(),
-               four + five,  one.clone(),          -one,         -two,
-
-              zero.clone(), one.clone(), zero.clone(), one.clone(),
-               one.clone(),        -one,  one.clone(), two.clone(),
-
-              -three, one.clone(),         -two, four.clone(),
-               -five,        -one, zero.clone(),  one.clone(),
-
-              one.clone(),  one.clone(), zero.clone(), zero.clone(),
-              one.clone(), zero.clone(),         -one,         -one,
-
-              one.clone(), zero.clone(),   one.clone(), zero.clone(),
-              one.clone(),  one.clone(), three.clone(), four.clone());
-
-
-    let mut results = vec!(
-        /* row one */
-        four_h + fifty + two, -(seven * hundred + sixty + six), 
-        // 452, -766,
-         thousand + three_h + ten, -(four_h + seventy + eight),
-        // 1310, -478
-        -(five_k + eight_h + seventy + six), thousand + nine_h + twenty + four,
-        // -5876, 1924
-        three_k + nine_h + fifty + two, three_k + six_h + ten + two,
-        //  3952, 3612
-
-        /* row two */
-        seventy + six, six_h + fifty + seven, -(thousand + forty + five), hundred + eighty + six,
-        // 76, 657, -1045, 186
-        five_k + thirty + two, -(thousand + three_h + twenty + eight),
-        // 5032, -1328
-        -(six_h + ninety + four), -(two_k + seven_h + nine),
-        // -694, -2709
-
-        /* row three */
-        six_h + twenty + eight, -(thousand + three_h + four), -(thousand + hundred + ten),
-        // 628, -1304, -1110
-        four_h + twenty + eight, eight_h + sixty + six, hundred + ten + six,
-        //428, 866, 116
-        -(nine_h + eighty + two), -(six_h + two),
-        // -982, -602
-
-        /* row four */
-        two_h + seventy + two, -(four_h + twenty + one), seven_h + seventy + five, thirty + two,
-        //272, -421, 775, 32
-        -(three_k + five_h + thirty + six), thousand + five_h + eighty + four,
-        // -3536, 1584
-        thousand + nine_h + fifty + two, two_k + hundred + seven,
-        //1952, 2107
-
-        /* row five */
-        -(three_h + thirty + two), five_h + thirty + six, fifty.clone(), hundred + thirty + eight,
-        //-352, 536, 50, 138,
-        thousand + three_h + six, -(six_h + ninety + four), -(six_h + ten + two), -(six_h + two),
-        //1306, -694, -612, -602
-
-        /* row six */
-        -(five_h + sixty + two), seven_h + twenty + six, -(five_h + fifty), two_h + eighty + eight,
-        // -562, 726, -550, 288,
-        thousand + two_h + eighty + six, -(seven_h + ninety + four), -(four_h + ninety + two),
-        // 1286, -794, -492
-        -(six_h + two),
-        // -602
-
-        /* row seven */
-        nine_h + seventy, nine_h.clone(), nine_h + sixty, -(two_h + forty), -(five_h + seventy),
-        //970, 900, 960, -240, -570
-        hundred + sixty, four_h + ten, zero,
-        //160, 410, 0
-
-        /* row eight */
-        -(seven_h + seventy + four), -(four_h + seventy + three), -(six_h + forty + five),
-        //-774, -473, -645
-        eighty + six, thousand + thirty + two, -(two_h + fifty + eight),
-        //86, 1032, -258
-        -(seven_h + seventy + four), three_h + one,
-        //-774, 301
+    let mut results: Vec<f64> = 
+        vec!( 452.,  -766.,  1310., -478., -5876.,  1924.,  3952.,  3612.,
+               76.,   657., -1045.,  186.,  5032., -1328.,  -694., -2709.,
+              628., -1304., -1110.,  428.,   866.,   116.,  -982.,  -602.,
+              272.,  -421.,   775.,   32., -3536.,  1584.,  1952.,  2107.,
+             -352.,   536.,    50.,  138.,  1306.,  -694.,  -612.,  -602.,
+             -562.,   726.,  -550.,  288.,  1286.,  -794.,  -492.,  -602.,
+              970.,   900.,   960., -240.,  -570.,   160.,   410.,     0.,
+             -774.,  -473.,  -645.,   86.,  1032.,  -258.,  -774.,   301.
         );
-    let determinant = three * thousand + ten;
+    let determinant = 3010.;
     results = results.iter().map(|x| *x / determinant).collect();
 
-    let wow = Matrice { columns: 8, rows: 8, elems: bigrat_vec };
+    let wow = Matrice { columns: 8, rows: 8, elems: f64_vec };
     let ugh = Matrice { columns: 8, rows: 8, elems: results };
+    let epsilon: f64 = 0.0075;
 
-    assert_eq!(wow.determinant().unwrap(), -determinant);
-    assert_eq!(wow.inverse().unwrap(), ugh);
+    assert!((wow.determinant().unwrap() + determinant).abs() < epsilon);
+
+    let inv = wow.inverse().unwrap();
+
+    for (a, b) in inv.elems.iter().zip(ugh.elems.iter()) {
+        if (a - *b).abs() > epsilon {
+            fail!(format!("Difference of {} and {} = {}, epsilon: {}", 
+                          f64::to_str_digits(*a, 20),
+                          f64::to_str_digits(*b, 20),
+                          f64::to_str_digits(a - *b, 20),
+                          f64::to_str_digits(epsilon, 20)))
+        }
+    }
 } 
 
-/*
+
 #[test]
 fn sans_test() {
     let x: Matrice<int> = Matrice { columns: 4, rows: 4, elems: vec!( 1,  2,  3,  4,
@@ -490,7 +404,7 @@ fn test_mul() {
 
     assert!(lhs * rhs == Matrice { columns: 2, rows: 2, elems: results });
 }
-*/
+
 /*
 #[test]
 fn test_div() {
