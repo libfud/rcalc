@@ -26,7 +26,7 @@ pub fn create_bigrat(x: int) -> BigRational {
 /// Map can handle mapping a function to each element of one or more lists.
 pub fn map(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 2 {
-        return Err(BadNumberOfArgs("`map' takes at least two arguments".to_string()))
+        return Err(BadNumberOfArgs("map".to_string(), "at least".to_string(), 2))
     }
 
     let (names, func) = try!(proc_getter(args, env));
@@ -69,7 +69,7 @@ pub fn map(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
 pub fn reduce(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 3 {
-        return Err(BadNumberOfArgs("`reduce' takes at least three arguments".to_string()))
+        return Err(BadNumberOfArgs("reduce".to_string(), "at least".to_string(), 3))
     }
 
     let (names, fun) = try!(proc_getter(args, env));
@@ -119,7 +119,7 @@ pub fn reduce_helper(x: String, y: String, initval: &LitTy, list: &[LitTy],
 
 pub fn filter(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 2 {
-        return Err(BadNumberOfArgs("`filter' takes at least three arguments".to_string()))
+        return Err(BadNumberOfArgs("filter".to_string(), "at least".to_string(), 3))
     }
 
     let (names, func) = try!(proc_getter(args, env));
@@ -152,9 +152,7 @@ pub fn filter(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
 pub fn rangelist(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 2 || args.len() > 3 {
-        return Err(BadNumberOfArgs(
-            "`rangelist' requires a beginning and end, and optionally takes step."
-                .to_string()))
+        return Err(BadNumberOfArgs("rangelist".to_string(),"at least".to_string(), 2))
     }
 
     let (a, b) = (try!(range_getter(try!(args.get(0).desymbolize(env)))),

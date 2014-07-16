@@ -26,8 +26,7 @@ pub fn arith(args: &Args, env: &mut Env, oper: Arith) -> CalcResult {
     let (min_len, op, ident) = minlen_op_ident(&oper);
 
     if args.len() < min_len {
-        return Err(BadNumberOfArgs(format!(
-            "Specified operation requires at least {} arguments", min_len)))
+        return Err(BadNumberOfArgs(oper.to_string(), "at least".to_string(), min_len))
     }
 
     if args.len() == 0 {

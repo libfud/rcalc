@@ -25,7 +25,7 @@ pub enum ErrorKind {
     BadPowerRange,
     BadFloatRange,
     MatrixErr(MatrixErrors),
-    BadNumberOfArgs(String),
+    BadNumberOfArgs(String, String, uint),
     BadArgType(String),
     DivByZero,
     NonBoolean,
@@ -41,7 +41,11 @@ impl ErrorKind {
             BadPowerRange => "Exponent too large for builtin `pow'!".to_string(),
             BadFloatRange => "Number too large or precise for `exp' and `log'".to_string(),
             MatrixErr(x) => x.to_string(),
-            BadNumberOfArgs(x) => x.clone(),
+            BadNumberOfArgs(x, y, args) => 
+                format!("`{} requires {} {} {}.", x, y, args, match args {
+                    1 => "argument",
+                    _ => "arguments"
+                }),
             DivByZero => "Attempted division by zero!".to_string(),
             NonBoolean => "Non boolean condition".to_string(),
             UnboundArg(x) => format!("Error: Unbound variable `{}'", x),
@@ -50,7 +54,7 @@ impl ErrorKind {
 }
 
 impl fmt::Show for ErrorKind {
-    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let res = match self {
             &BadArgType(ref x) => x.clone(),
             &BadExpr => "Malformed expression".to_string(),
@@ -58,12 +62,16 @@ impl fmt::Show for ErrorKind {
             &BadPowerRange => "Exponent too large for builtin `pow'!".to_string(),
             &BadFloatRange => "Number too large or precise for `exp' and `log'".to_string(),
             &MatrixErr(ref x) => x.to_string(),
-            &BadNumberOfArgs(ref x) => x.clone(),
+            &BadNumberOfArgs(ref x, ref y, args) => 
+                format!("`{} requires {} {} {}.", x, y, args, match args {
+                    1 => "argument",
+                    _ => "arguments"
+                }),
             &DivByZero => "Attempted division by zero!".to_string(),
             &NonBoolean => "Non boolean condition".to_string(),
             &UnboundArg(ref x) => format!("Error: Unbound variable `{}'", x),
         };
-        print!("{}", res);
+        try!(write!(fmt, "{}", res));
         Ok(())
     }
 }

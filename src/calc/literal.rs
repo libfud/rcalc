@@ -18,7 +18,7 @@ pub fn list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
 pub fn cons(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 2 {
-        return Err(BadNumberOfArgs("Wrong number of arguments to `cons'".to_string()))
+        return Err(BadNumberOfArgs("cons".to_string(), "only".to_string(), 2))
     }
 
     let car = try!(args.get(0).arg_to_literal(env));
@@ -32,7 +32,7 @@ pub fn cons(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
 pub fn car(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 1 {
-        return Err(BadNumberOfArgs("Wrong number of arguments to `car'".to_string()))
+        return Err(BadNumberOfArgs("car".to_string(), "only".to_string(), 1))
     }
 
     match try!(args.get(0).desymbolize(env)) {
@@ -49,7 +49,7 @@ pub fn car(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
 pub fn cdr(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 1 {
-        return Err(BadNumberOfArgs("Wrong number of arguments to `cdr'".to_string()))
+        return Err(BadNumberOfArgs("cdr".to_string(), "only".to_string(), 1))
     }
 
     match try!(args.get(0).desymbolize(env)) {

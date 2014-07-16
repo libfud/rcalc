@@ -14,9 +14,7 @@ pub fn eval(fn_name: &String, args: &Vec<ArgType>,
     };
 
     if args.len() != args_to_fulfill.len() {
-        let msg = format!("fn {} takes {} arguments but {} arguments were given!",
-                          fn_name, args_to_fulfill.len(), args.len());
-        return Err(BadNumberOfArgs(msg))
+        return Err(BadNumberOfArgs(fn_name.clone(), "only".to_string(), args_to_fulfill.len()))
     }
 
     let mut child_env = Environment::new_frame(env);

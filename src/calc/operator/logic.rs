@@ -19,8 +19,7 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
 
     loop {
         if args.len() != 3 {
-            return Err(BadNumberOfArgs(format!(
-                "`if` requires three arguments, {} provided", args.len())))
+            return Err(BadNumberOfArgs("if".to_string(), "only".to_string(), 3))
         }
 
         let condition = match try!(arguments.get(0).desymbolize(env)) {
@@ -52,7 +51,7 @@ pub type LitTy = LiteralType;
 
 pub fn ordering(args: &Vec<ArgType>, env: &mut Env, comp: |LitTy, LitTy| -> bool) -> CalcResult {
     if args.len() != 2 {
-        return Err(BadNumberOfArgs("Ordering requires two arguments".to_string()))
+        return Err(BadNumberOfArgs("Ordering".to_string(), "only".to_string(), 2))
     }
 
 
@@ -73,7 +72,7 @@ pub fn and_or(args: &Args, env: &mut Env, short: bool) -> CalcResult {
 
 pub fn xor(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() < 2 {
-        return Err(BadNumberOfArgs("`xor' requires at least two arguments".to_string()))
+        return Err(BadNumberOfArgs("xor".to_string(), "at least".to_string(), 2))
     }
 
     let mut result = match try!(args.get(0).desymbolize(env)) {
@@ -93,7 +92,7 @@ pub fn xor(args: &Args, env: &mut Env) -> CalcResult {
 
 pub fn not(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() != 1 {
-        return Err(BadNumberOfArgs("Not only takes one argument".to_string()))
+        return Err(BadNumberOfArgs("Not".to_string(), "only".to_string(), 1))
     }
 
     let val = match try!(args.get(0).desymbolize(env)) {
@@ -114,7 +113,7 @@ pub fn num_op(args: &Args, env: &mut Env, op: RoundId) -> CalcResult {
     let half = one / two;
 
     if args.len() != 1 {
-        return Err(BadNumberOfArgs(format!("{} only takes one argument", op)))
+        return Err(BadNumberOfArgs(op.to_string(), "only".to_string(), 1))
     }
 
     let num = match try!(args.get(0).desymbolize(env)) {

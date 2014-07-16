@@ -18,17 +18,13 @@ pub fn matrix_ops(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
         MatrixSet => matrix_set(args, env),
         MakeMatrix => make_matrix(args, env),
         MatrixExtend => matrix_extend(args, env),
-/*        Determ => (args, env, |&a| Matrice::determinant(a)),
-        MatrixInv => self_method(args, env, |&a| Matrice::inverse(a)),
-*/
-        Determ => determ(args, env),
-        MatrixInv => invert(args, env)
+        Determ | MatrixInv => single(args, env, mop),
     }
 }        
 
 pub fn make_matrix(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() > 1  {
-        return Err(BadNumberOfArgs("`make-matrix' takes at most one argument".to_string()))
+        return Err(BadNumberOfArgs("make-matrix".to_string(), "at most".to_string(), 1))
     }
 
     let matrix_res: Result<Matrice<Lit>, MatrixErrors> = if args.len() == 0 {
@@ -82,7 +78,7 @@ pub fn list_to_2d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, (uint, uint)
 
 pub fn matrix_extend(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() != 3 {
-        return Err(BadNumberOfArgs("`matrix-extend' takes three arguments".to_string()))
+        return Err(BadNumberOfArgs("matrix-extend".to_string(), "only".to_string(), 3))
     }
 
     let matrix = match try!(args.get(0).desymbolize(env)) {
@@ -95,7 +91,7 @@ pub fn matrix_extend(args: &Args, env: &mut Env) -> CalcResult {
 
 pub fn matrix_set(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() != 3 {
-        return Err(BadNumberOfArgs("`matrix-set' takes three arguments".to_string()))
+        return Err(BadNumberOfArgs("matrix-set".to_string(), "only".to_string(), 3))
     }
 
     let matrix = match try!(args.get(0).desymbolize(env)) {
@@ -106,9 +102,9 @@ pub fn matrix_set(args: &Args, env: &mut Env) -> CalcResult {
     Ok(Atom(Matrix(matrix)))
 }
 
-pub fn determ(args: &Args, env: &mut Env) -> CalcResult {
+pub fn single(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     if args.len() != 1 {
-        return Err(BadNumberOfArgs("`determinant takes one argument".to_string()))
+        return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 1))
     }
 
     let matrix = match try!(args.get(0).desymbolize(env)) {
@@ -116,24 +112,15 @@ pub fn determ(args: &Args, env: &mut Env) -> CalcResult {
         _ => return Err(BadArgType("Not a matrix".to_string()))
     };
 
-    match matrix.determinant() {
-        Some(x) => Ok(Atom(x)),
-        None =>  Err(BadArgType("No determinant for this matrix".to_string()))
-    }
-}
-
-pub fn invert(args: &Args, env: &mut Env) -> CalcResult {
-    if args.len() != 1 {
-        return Err(BadNumberOfArgs("`determinant takes one argument".to_string()))
-    }
-
-    let matrix = match try!(args.get(0).desymbolize(env)) {
-        Matrix(x) => x.clone(),
-        _ => return Err(BadArgType("Not a matrix".to_string()))
-    };
-
-    match matrix.inverse() {
-        Some(x) => Ok(Atom(Matrix(x))),
-        None =>  Err(BadArgType("No determinant for this matrix".to_string()))
+    match mop {
+        Determ => match matrix.determinant() {
+            Some(x) => Ok(Atom(x)),
+            None =>  Err(BadArgType("No determinant for this matrix".to_string()))
+        },
+        MatrixInv =>     match matrix.inverse() {
+            Some(x) => Ok(Atom(Matrix(x))),
+            None =>  Err(BadArgType("No determinant for this matrix".to_string()))
+        },
+        _ => fail!("Undefined!")
     }
 }

@@ -27,8 +27,7 @@ pub mod pretty;
 
 pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() < 2 {
-        return Err(BadNumberOfArgs(
-            format!("Cannot define a variable without having a name and val")))
+        return Err(BadNumberOfArgs("define".to_string(), "only".to_string(), 2))
     }
     
     let name_and_vars = match try!(args.get(0).desymbolize(env)) {

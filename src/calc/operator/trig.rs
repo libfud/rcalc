@@ -13,7 +13,7 @@ use super::super::{CalcResult, Environment, Evaluate, BadNumberOfArgs,
 
 pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: Transcendental) -> CalcResult {
     if args.len() > 1 {
-        return Err(BadNumberOfArgs(format!("{} takes one argument", fop)))
+        return Err(BadNumberOfArgs(fop.to_string(), "only".to_string(), 1))
     }
 
     let floated = match try!(args.get(0).desymbolize(env)) {
