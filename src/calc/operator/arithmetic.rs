@@ -6,14 +6,13 @@ use std::num;
 use self::types::operator::{Add, Sub, Mul, Div, Rem, Arith};
 use self::types::literal::Matrix;
 use super::super::{CalcResult, Environment, BadNumberOfArgs, BadArgType, Evaluate};
-use super::super::{BigNum};
 use super::{BigRational, ArgType, Atom, Lit};
 
 pub type Args<T = ArgType> = Vec<T>;
 pub type BigR = BigRational;
 pub type Env = Environment;
 
-fn minlen_op_ident(op: &Arith) -> (uint, |Lit, &Lit| -> Lit,  BigR) {
+fn minlen_op_ident(op: &Arith) -> (uint, |Lit, &Lit| -> Lit,  Lit) {
     match op {
         &Add => (0, |a: Lit, b: &Lit| a + *b, num::zero()),
         &Sub => (1, |a: Lit, b: &Lit| a - *b, num::zero()),
@@ -31,9 +30,9 @@ pub fn arith(args: &Args, env: &mut Env, oper: Arith) -> CalcResult {
             "Specified operation requires at least {} arguments", min_len)))
     }
 
-    let ident = BigNum(ident);
-
-    if args.len() == 1 {
+    if args.len() == 0 {
+        Ok(Atom(ident))
+    } else if args.len() == 1 {
         match oper {
             Sub => Ok(Atom(-try!(args.get(0).desymbolize(env)))),
             Div => match try!(args.get(0).desymbolize(env)) {

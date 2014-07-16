@@ -11,7 +11,7 @@ use types::Environment;
 #[cfg(target_os = "linux" , not(test))]
 use r_readline::*;
 
-#[cfg(not(target_os = "linux", test))]
+#[cfg(not(target_os = "linux"), not(test))]
 use rust_no_readline::*;
 
 #[cfg(not(test))]

@@ -172,7 +172,9 @@ pub fn arg_accumulator(etype: &ExprType, tokens: &mut TokenStream<Token, ErrorKi
                 let sub_expr = try!(translate(tokens, env));
                 args.push(sub_expr);
             },
-            RParen => return Ok(args),
+            RParen => {
+                return Ok(args)
+            }
             Operator(op) => args.push(try!(handle_operator(tokens, env, etype, op))),
             Literal(lit) => args.push(Atom(lit)),
         }

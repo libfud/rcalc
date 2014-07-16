@@ -76,7 +76,6 @@ impl<T, U: Clone> Iterator<Result<T, U>> for TokenStream<T, U> {
                 let (token, len) = analyze(
                     self.expr.as_slice().slice_from(self.index), 
                     self.rules.as_slice(), &self.on_err);                  
-
                 self.index += len;
                 token
             }
