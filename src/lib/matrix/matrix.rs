@@ -160,6 +160,28 @@ impl<T> Matrice<T> {
             jump: self.columns - 1
         }
     }
+
+    pub fn swap_rows(&mut self, row_a: uint, row_b: uint) -> MatrixResult<()> {
+        if row_a == row_b {
+            return Ok(())
+        } else if row_a > self.rows || row_b > self.rows {
+            return Err(BadDimensionality)
+        }
+
+        let (small, big) = (cmp::min(row_a, row_b), cmp::max(row_a, row_b));
+
+        let cols = self.columns;
+
+        let (low, high ) = self.elems.mut_split_at(big * cols);
+        let low = low.mut_slice(small * cols, (small + 1) * cols);
+        let high = high.mut_slice_to(cols);
+
+        for (low_elem, high_elem) in low.mut_iter().zip(high.mut_iter()) {
+            mem::swap(low_elem, high_elem);
+        }
+
+        Ok(())
+    }
 }
 
 impl<T: Clone> Matrice<T> {
@@ -253,7 +275,49 @@ impl<T: Clone> Matrice<T> {
         
         Some(Matrice { columns: self.columns, rows: self.rows + other.rows,
                        elems: new_elems })
-    }        
+    }
+
+    pub fn set_row(&mut self, old_row: uint, new_row: Vec<T>) -> MatrixResult<()> {
+        if old_row > self.rows {
+            return Err(BadDimensionality)
+        }
+
+        for (elt, new) in range(old_row * self.columns,
+                                (old_row + 1) * self.columns).zip(new_row.iter()) {
+            *self.elems.get_mut(elt) = new.clone()
+        }
+
+        Ok(())
+    }
+
+    pub fn decross(&self, omit_row: uint, omit_col: uint) -> Matrice<T> {
+        let mut new_elems: Vec<T> = Vec::new();
+        for row in range(0, self.rows) {
+            if row + 1 == omit_row {
+                continue
+            }
+            for col in range(0, self.columns) {
+                if col + 1 == omit_col {
+                    continue
+                } 
+                new_elems.push(self.elems.get(row * self.columns + col).clone());
+            }
+        }
+
+        let new_rows = if omit_row == 0 || omit_row > self.rows {
+            self.rows
+        } else {
+            self.rows - 1
+        };
+        
+        let new_cols = if omit_col == 0 || omit_col > self.columns {
+            self.columns
+        } else {
+            self.columns - 1
+        };
+
+        Matrice { rows: new_rows, columns: new_cols, elems: new_elems }
+    }
 }
 
 impl<T: Num> Matrice<T> {
@@ -265,32 +329,6 @@ impl<T: Num> Matrice<T> {
         }
         
         Matrice { rows: n, columns: n, elems: elems }
-    }
-}
-
-impl<T: Num + Clone + fmt::Show> Matrice<T> {
-    /// If the Matrice is square, returns its determinant, otherwise None.
-    pub fn determinant(&self) -> Option<T> {
-        if self.rows != self.columns || self.rows == 0 {
-            return None
-        } else if self.rows == 1 {
-            return Some(self.elems.get(0).clone())
-        } else if self.rows == 2 {
-            return Some((*self.elems.get(0) * *self.elems.get(3)) - 
-                        (*self.elems.get(1) * *self.elems.get(2)))
-        } 
-
-        let mut sum: T = num::zero();
-        for n in range(0, self.columns) { 
-            let elem = self.elems.get(n); 
-            let next = self.decross(1, n + 1).determinant().unwrap();
-            sum = if n % 2 == 0 {
-                sum + (*elem * next)
-            } else {
-                sum - (*elem * next)
-            };
-        }
-        Some(sum)
     }
 
     pub fn get_pivot<'a, It: Iterator<&'a T>>(iterator: It) -> Option<(&'a T, uint)> {
@@ -307,40 +345,34 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         range(0, self.columns).map(|col| Matrice::get_pivot(self.get_col(col))).collect()
     }
 
-    pub fn swap_rows(&mut self, row_a: uint, row_b: uint) -> MatrixResult<()> {
-        if row_a == row_b {
-            return Ok(())
-        } else if row_a > self.rows || row_b > self.rows {
-            return Err(BadDimensionality)
+    pub fn is_ident(&self) -> bool {
+        if self.rows != self.columns {
+            false
+        } else {
+            let one: T = num::one();
+            range(0, self.rows()).all(|i| {
+                self.get_row(i).enumerate().all(|(j, x)| if i == j {
+                    *x == one 
+                } else { 
+                    x.is_zero()
+                })})
+/*            for row in range(0, self.rows) {
+                if self.get_row(row).take(row).any(|x| *x != zero) {
+                    return false
+                }
+                if *self.elems.get(row * self.columns + row) != one {
+                    return false
+                }
+                if self.get_row(row).skip(row + 1).any(|x| *x != zero) {
+                    return false
+                }
+            }
+            true*/
         }
-
-        let (small, big) = (cmp::min(row_a, row_b), cmp::max(row_a, row_b));
-
-        let cols = self.columns;
-
-        let (low, high ) = self.elems.mut_split_at(big * cols);
-        let low = low.mut_slice(small * cols, (small + 1) * cols);
-        let high = high.mut_slice_to(cols);
-
-        for (low_elem, high_elem) in low.mut_iter().zip(high.mut_iter()) {
-            mem::swap(low_elem, high_elem);
-        }
-
-        Ok(())
     }
+}
 
-    pub fn set_row(&mut self, old_row: uint, new_row: Vec<T>) -> MatrixResult<()> {
-        if old_row > self.rows {
-            return Err(BadDimensionality)
-        }
-
-        for (elt, new) in range(old_row * self.columns,
-                                (old_row + 1) * self.columns).zip(new_row.iter()) {
-            *self.elems.get_mut(elt) = new.clone()
-        }
-
-        Ok(())
-    }
+impl<T: Num + Clone + fmt::Show> Matrice<T> {
 /*
     pub fn gauss_xform(&self) -> Option<Matrice<T>> {
         if self.rows != self.columns || self.rows == 0 {
@@ -372,7 +404,7 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         Some(degaussed)
     }
 */
-    pub fn alt_determinant(&self) -> Option<T> {
+    pub fn determinant(&self) -> Option<T> {
         if self.rows != self.columns || self.rows == 0 {
             return None
         } else if self.rows == 1 {
@@ -383,26 +415,25 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
                         (*self.elems.get(1) * *self.elems.get(2)))
         }
 
+        if self.is_ident() {
+            return Some(num::one())
+        }
+
         /* We will be mutating the matrix, and since we aren't doing this for an
          * effect to the matrix but instead to get a result, we'll do all the
          * mutations on a new object */
         let mut upper = self.clone();
-
-        println!("Starting with \n{}", upper);
 
         /* We're going to change each row from the second one down so that
          * for the first n columns of that row, where n is equal to the
          * row in which it occupies, there are n zeros. */
         let mut swaps = 0u;
         for row in range(0, self.rows) {
-            println!("Working down from row {}", row);
             /* Because the final determinant is equal to the product
              * of the main diagonal, it doesn't matter if we switch
              * rows. Because we want to avoid division by zero,
              * we'll swap rows in case they might result in a division
              * by zero error. */
-            let col: Vec<T> = upper.get_col(row).skip(row).map(|x| x.clone()).collect();
-            println!("We will find the pivots for this column {}.", col);
             let p_row = match Matrice::get_pivot(upper.get_col(row).skip(row)) {
                 Some((_, r)) => r + row,
                 None => continue
@@ -411,13 +442,10 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
             if p_row > row {
                 swaps += 1;
                 match upper.swap_rows(row, p_row) {
-                    Ok(()) => {
-                        println!("Swapping row {} with row {}. Total of {} swaps performed.",
-                                 row, p_row, swaps);
-                    }
+                    Ok(()) => { }
                     Err(m) => fail!(m.to_string())
                 }
-            }                
+            }
 
             /* We're working to zero out those columns appropiately,
              * so for a 3x3, the first divisor will be the first
@@ -425,15 +453,12 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
              * be the second element in the first row. Then the third
              * divisor will be the second element in the second row */
             let divisor = upper.elems.get(row * self.columns + row).clone();
-            println!("Divisor is {}.", divisor);
 
             for next_row in range(row + 1, self.rows) {
                 let n_row = next_row * self.columns;
                 /* The numerator will be the number we're working to cancel
                  * out via subtraction */
-                println!("Numerator is {}", upper.elems.get(n_row + row));
                 let lower_elt = *upper.elems.get(n_row + row) / divisor;
-                println!("Cofactor is {}.", lower_elt);
 
                 /* Subtract from next_row the scalar multiplication
                  * of the upper row by lower_elt. */
@@ -447,50 +472,16 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
                     Err(_) => return None
                 }
             }
-            println!("Upper now looks like this:\n{}", upper);
         }
-
-        println!("{}", upper);
 
         let one: T = num::one();
-        
         let prod = upper.left_diag().fold(one, |a, b| a * *b);
 
-        if swaps % 2 != 0 {
-            println!("Odd number of swaps ({}). Negating the product.", swaps);
-            Some(-prod)
-        } else {
+        if swaps % 2 == 0 {
             Some(prod)
-        }
-    }
-
-    pub fn decross(&self, omit_row: uint, omit_col: uint) -> Matrice<T> {
-        let mut new_elems: Vec<T> = Vec::new();
-        for row in range(0, self.rows) {
-            if row + 1 == omit_row {
-                continue
-            }
-            for col in range(0, self.columns) {
-                if col + 1 == omit_col {
-                    continue
-                } 
-                new_elems.push(self.elems.get(row * self.columns + col).clone());
-            }
-        }
-
-        let new_rows = if omit_row == 0 || omit_row > self.rows {
-            self.rows
         } else {
-            self.rows - 1
-        };
-        
-        let new_cols = if omit_col == 0 || omit_col > self.columns {
-            self.columns
-        } else {
-            self.columns - 1
-        };
-
-        Matrice { rows: new_rows, columns: new_cols, elems: new_elems }
+            Some(-prod)
+        }
     }
 
     /// Passing zero as an argument for row and column returns the same
@@ -571,9 +562,9 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
     pub fn inverse(&self) -> Option<Matrice<T>> {
         if self.rows != self.columns || self.rows == 0 {
             return None
-        }
-
-        if self.rows == 1 {
+        } else if self.is_ident() {
+            return Some(self.clone())
+        } else if self.rows == 1 {
             let one: T = num::one();
             return Some( Matrice { rows: 1, columns: 1,
                                    elems: vec!(one / *self.elems.get(0))})
