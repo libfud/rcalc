@@ -3,21 +3,25 @@
 extern crate matrix;
 extern crate types;
 
-use self::matrix::{Matrice, MatrixErrors};
+use self::matrix::{Matrice, MatrixErrors, BadDimensionality};
 use self::types::MatrixErr;
-use self::types::operator::{MatrixOps, MatrixSet, MakeMatrix, MatrixExtend, Determ, MatrixInv};
+use self::types::operator::{MatrixOps, MakeMatrix, MatrixSetRow, MatrixSetCol, 
+                            MatrixAppendRows, Determ, MatrixInv, MatrixAppendCols,
+                            MatrixGetElem, MatrixGetRow, MatrixGetCol};
 use super::{ArgType, Atom, CalcResult, Environment, Evaluate};
 use super::{BadArgType, BadNumberOfArgs};
-use super::{Lit, List, Matrix, Symbol};
+use super::{Lit, List, BigNum, Matrix, Symbol};
 
 type Env<T = Environment> = T;
 type Args<T = ArgType> = Vec<T>;
 
 pub fn matrix_ops(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     match mop {
-        MatrixSet => matrix_set(args, env),
         MakeMatrix => make_matrix(args, env),
-        MatrixExtend => matrix_extend(args, env),
+        MatrixSetRow | MatrixSetCol => matrix_set(args, env, mop),
+        MatrixAppendRows | MatrixAppendCols => matrix_append(args, env, mop),
+        MatrixGetElem => get_elem(args, env),
+        MatrixGetRow | MatrixGetCol => get_row_col(args,env, mop),
         Determ | MatrixInv => single(args, env, mop),
     }
 }        
@@ -40,6 +44,75 @@ pub fn make_matrix(args: &Args, env: &mut Env) -> CalcResult {
     };
 
     Ok(Atom(Matrix(matrix)))
+}
+
+pub fn arg_to_uint(arg: Lit) -> CalcResult<uint> {
+    match arg {
+        BigNum(x) => match x.to_integer().to_uint() {
+            Some(num) => Ok(num),
+            None => Err(BadArgType("Number must be a positive integer".to_string()))
+        },
+        _ => Err(BadArgType("Number must be a positive integer".to_string()))
+    }
+}
+
+pub fn get_elem(args: &Args, env: &mut Env) -> CalcResult {
+    if args.len() != 3 {
+        return Err(BadNumberOfArgs("matrix-get-elem".to_string(), "only".to_string(), 3))
+    }
+
+    let matrix = match try!(args.get(0).desymbolize(env)) {
+        Matrix(x) => x.clone(),
+        _ => return Err(BadArgType("Not a matrix".to_string()))
+    };
+
+    let mut row = try!(arg_to_uint(try!(args.get(1).desymbolize(env))));
+    let mut col = try!(arg_to_uint(try!(args.get(2).desymbolize(env))));
+
+    if row == 0 || col == 0 {
+        return Err(BadArgType("Matrices are indexed starting from 1".to_string()))
+    }
+
+    row -= 1;
+    col -= 1;
+
+    match matrix.get_elem(row, col) {
+        Some(x) => Ok(Atom(x)),
+        None => Err(MatrixErr(BadDimensionality))
+    }
+}
+
+pub fn get_row_col(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
+    if args.len() != 2 {
+        return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 2))
+    }
+
+    let matrix = match try!(args.get(0).desymbolize(env)) {
+        Matrix(x) => x.clone(),
+        y => return Err(BadArgType(format!("{} is not a matrix", y)))
+    };
+
+    let mut row_col = try!(arg_to_uint(try!(args.get(1).desymbolize(env))));
+
+    if row_col == 0 {
+        return Err(BadArgType("Matrices are indexed starting from 1".to_string()))
+    }
+
+    row_col -= 1;
+
+    match mop {
+        MatrixGetRow => if row_col > matrix.rows() {
+            Err(MatrixErr(BadDimensionality))
+        } else {
+            Ok(Atom(List(matrix.get_row(row_col).map(|x| x.clone()).collect())))
+        },
+        MatrixGetCol => if row_col > matrix.cols() {
+            Err(MatrixErr(BadDimensionality))
+        } else {
+            Ok(Atom(List(matrix.get_col(row_col).map(|x| x.clone()).collect())))
+        },
+        _ => fail!("Undefined")
+    }
 }
 
 pub fn list_to_1d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, uint)> {
@@ -76,28 +149,64 @@ pub fn list_to_2d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, (uint, uint)
     }
 }
 
-pub fn matrix_extend(args: &Args, env: &mut Env) -> CalcResult {
+pub fn matrix_set(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     if args.len() != 3 {
-        return Err(BadNumberOfArgs("matrix-extend".to_string(), "only".to_string(), 3))
+        return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 3))
     }
 
-    let matrix = match try!(args.get(0).desymbolize(env)) {
+    let mut matrix = match try!(args.get(0).desymbolize(env)) {
         Matrix(x) => x.clone(),
         _ => return Err(BadArgType("Not a matrix".to_string()))
     };
 
-    Ok(Atom(Matrix(matrix)))
+    let old_item = try!(arg_to_uint(try!(args.get(1).desymbolize(env))));
+ 
+    let (new_items, _) = try!(list_to_1d(try!(args.get(2).desymbolize(env)), env));
+
+    match mop {
+        MatrixSetRow => match matrix.set_row(old_item, new_items) {
+            Ok(_) => Ok(Atom(Matrix(matrix))),
+            Err(m) => Err(MatrixErr(m))
+        },
+        MatrixSetCol => match matrix.set_col(old_item, new_items) {
+            Ok(_) => Ok(Atom(Matrix(matrix))),
+            Err(m) => Err(MatrixErr(m))
+        },
+        _ => fail!("Undefined")
+    }
 }
 
-pub fn matrix_set(args: &Args, env: &mut Env) -> CalcResult {
-    if args.len() != 3 {
-        return Err(BadNumberOfArgs("matrix-set".to_string(), "only".to_string(), 3))
+pub fn matrix_append(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
+    if args.len() != 2 {
+        return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 2))
     }
 
-    let matrix = match try!(args.get(0).desymbolize(env)) {
+    let mut matrix = match try!(args.get(0).desymbolize(env)) {
         Matrix(x) => x.clone(),
         _ => return Err(BadArgType("Not a matrix".to_string()))
     };
+
+    let (new_items,(len, count)) = try!(list_to_2d(try!(args.get(1).desymbolize(env)), env));
+
+    match mop {
+        MatrixAppendRows => {
+            for list in range(0, count) {
+                match matrix.append_row(new_items.slice(list * len, (list + 1) * len).to_owned()) {
+                    Ok(_) =>  { },
+                    Err(m) => return Err(MatrixErr(m))
+                }
+            }
+        }
+        MatrixAppendCols => {
+            for list in range(0, count) {
+                match matrix.append_col(new_items.slice(list * len, (list + 1) * len).to_owned()) {
+                    Ok(_) =>  { },
+                    Err(m) => return Err(MatrixErr(m))
+                }
+            }
+        }
+        _ => fail!("Undefined")
+    }
 
     Ok(Atom(Matrix(matrix)))
 }

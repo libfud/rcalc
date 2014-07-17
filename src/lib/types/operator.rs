@@ -291,8 +291,13 @@ impl fmt::Show for XForms {
 #[deriving(Clone, PartialOrd, PartialEq)]
 pub enum MatrixOps {
     MakeMatrix,
-    MatrixSet,
-    MatrixExtend,
+    MatrixSetRow,
+    MatrixSetCol,
+    MatrixAppendRows,
+    MatrixAppendCols,
+    MatrixGetElem,
+    MatrixGetRow,
+    MatrixGetCol,
     Determ,
     MatrixInv,
 }
@@ -301,8 +306,13 @@ impl fmt::Show for MatrixOps {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
             &MakeMatrix => "make-matrix",
-            &MatrixSet => "matrix-set",
-            &MatrixExtend => "matrix-extend",
+            &MatrixSetRow => "matrix-set-row",
+            &MatrixSetCol => "matrix-set-col",
+            &MatrixAppendRows => "matrix-append-rows",
+            &MatrixAppendCols => "matrix-append-cols",
+            &MatrixGetElem => "matrix-get-elem",
+            &MatrixGetRow => "matrix-get-row",
+            &MatrixGetCol => "matrix-get-col",
             &Determ => "matrix-det",
             &MatrixInv => "matrix-inv",
         }));
@@ -314,8 +324,13 @@ impl from_str::FromStr for MatrixOps {
     fn from_str(s: &str) -> Option<MatrixOps> {
         match s {
             "make-matrix" => Some(MakeMatrix),
-            "matrix-extend" => Some(MatrixExtend),
-            "matrix-set" => Some(MatrixSet),
+            "matrix-append-rows" => Some(MatrixAppendRows),
+            "matrix-append-cols" => Some(MatrixAppendCols),
+            "matrix-set-row" => Some(MatrixSetRow),
+            "matrix-set-col" => Some(MatrixSetCol),
+            "matrix-get-elem" => Some(MatrixGetElem),
+            "matrix-get-row" => Some(MatrixGetRow),
+            "matrix-get-col" => Some(MatrixGetCol),
             "matrix-det" => Some(Determ),
             "matrix-inv" => Some(MatrixInv),
             _ => None

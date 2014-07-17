@@ -22,6 +22,8 @@ pub use calc::eval;
 #[cfg(not(test))]
 use calc::pretty::pretty_print;
 
+use std::task;
+
 #[cfg(test)]
 mod test;
 
@@ -108,27 +110,41 @@ fn main() {
         };
         rust_add_history(expr.as_slice());
 
-        let exit_or_eval: Vec<&str> = expr.as_slice().words().collect();
-        if exit_or_eval.len() == 0 {
+        let exit_q: Vec<&str> = expr.as_slice().words().collect();
+        if exit_q.len() == 0 {
             continue
         }
 
-        let result = match exit_or_eval.as_slice()[0] {
+        match *exit_q.get(0) {
             "exit" | "(exit" | "(exit)" | ",q" => break,
-            "(" => {
-                if exit_or_eval.len() >= 2 {
-                    match exit_or_eval.as_slice()[1] {
-                        "exit" | "exit)"    => break,
-                        _   => eval(expr.as_slice().trim(), &mut env),
-                    }
-                } else {
-                    eval(expr.as_slice().trim(), &mut env)
-                }
+            "(" => if exit_q.len() >= 2  && exit_q.get(1).starts_with("exit") {
+                    break
+                },
+            _   => { },
+        }
+
+        let expr = expr.as_slice().trim().to_string();
+        let (tx, rx) = channel();
+        tx.send(env.clone());
+        
+        let ok = task::try(proc() {
+            let mut temp_env = rx.recv();
+            let expr = expr.clone();
+            let ok = eval(expr.as_slice(), &mut temp_env);
+            (ok, temp_env)
+        });
+
+        let result = match ok {
+            Ok((res, new_env)) => {
+                env = new_env;
+                res
             },
-
-            _   => eval(expr.as_slice().trim(), &mut env)
+            Err(_) => {
+                println!("Expression caused task failure.");
+                continue
+            }
         };
-
+        
         println!("{}", pretty_print(&result, &env));
     }
 }

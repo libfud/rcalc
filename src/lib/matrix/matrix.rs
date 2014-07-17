@@ -200,12 +200,22 @@ impl<T: Clone> Matrice<T> {
         }
     }
 
-    pub fn append_row(mut self, other: Vec<T>) -> MatrixResult<()> {
+    pub fn get_elem(&self, row: uint, column: uint) -> Option<T> {
+        if row * self.columns + column > self.elems.len() {
+            None
+        } else {
+            Some(self.elems.get(row * self.columns + column).clone())
+        }
+    }
+
+    pub fn append_row(&mut self, other: Vec<T>) -> MatrixResult<()> {
         if other.len() != self.columns {
             Err(BadDimensionality)
         } else {
             self.rows = self.rows + 1;
-            self.elems.append(other.as_slice());
+            let mut new_elems = self.elems.clone();
+            new_elems = new_elems.append(other.as_slice());
+            self.elems = new_elems;
             Ok(())
         }
     }
@@ -278,7 +288,7 @@ impl<T: Clone> Matrice<T> {
     }
 
     pub fn set_row(&mut self, old_row: uint, new_row: Vec<T>) -> MatrixResult<()> {
-        if old_row > self.rows {
+        if old_row > self.rows || new_row.len() > self.columns {
             return Err(BadDimensionality)
         }
 
@@ -287,6 +297,18 @@ impl<T: Clone> Matrice<T> {
             *self.elems.get_mut(elt) = new.clone()
         }
 
+        Ok(())
+    }
+
+    pub fn set_col(&mut self, old_col: uint, new_col: Vec<T>) -> MatrixResult<()> {
+        if old_col > self.columns || new_col.len() > self.rows {
+            return Err(BadDimensionality)
+        }
+
+        for (elt, new) in range(0, self.rows).zip(new_col.iter()) {
+            *self.elems.get_mut(elt * self.rows + old_col) = new.clone()
+        }
+        
         Ok(())
     }
 
@@ -355,19 +377,8 @@ impl<T: Num> Matrice<T> {
                     *x == one 
                 } else { 
                     x.is_zero()
-                })})
-/*            for row in range(0, self.rows) {
-                if self.get_row(row).take(row).any(|x| *x != zero) {
-                    return false
-                }
-                if *self.elems.get(row * self.columns + row) != one {
-                    return false
-                }
-                if self.get_row(row).skip(row + 1).any(|x| *x != zero) {
-                    return false
-                }
-            }
-            true*/
+                })
+            })
         }
     }
 }
