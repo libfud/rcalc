@@ -37,7 +37,7 @@ which allow recursion are also present.
 rcalc will not be considered complete until it has the following:
 
 * limits
-* ~~matrices~~ vectors, tensors, trees
+* vectors, trees
 * help message for every feature, builtin function, and an interface for 
 documenting user defined functions
 * graphing
