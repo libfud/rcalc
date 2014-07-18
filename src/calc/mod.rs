@@ -30,7 +30,7 @@ pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("define".to_string(), "only".to_string(), 2))
     }
     
-    let name_and_vars = match try!(args.get(0).desymbolize(env)) {
+    let name_and_vars = match try!(args[0].desymbolize(env)) {
         List(ref x) => if x.len() == 0 {
             return Err(BadArgType("Name required for definitions".to_string()))
         } else {
@@ -39,8 +39,8 @@ pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         x => return Err(BadArgType(format!("{} is not a symbol", x)))
     };
 
-    let name = match name_and_vars.get(0) {
-        &Symbol(ref x) => x.clone(),
+    let name = match name_and_vars[0] {
+        Symbol(ref x) => x.clone(),
         _ => return Err(BadArgType("Names can only be symbols!".to_string()))
     };
 

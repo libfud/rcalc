@@ -56,31 +56,31 @@ impl Dimensionality {
         match dimens.len() {
             0 => Ok(Null),
             1 => {
-                let (x, len) = dimens.get(0).clone();
+                let (x, len) = dimens[0].clone();
                 Ok(OneD(x, len))
             },
             2 => {
-                let (x, len) = dimens.get(0).clone();
-                let (y, wid) = dimens.get(1).clone();
+                let (x, len) = dimens[0].clone();
+                let (y, wid) = dimens[1].clone();
                 if x == y {
                     return Err(BadDimensionality)
                 }
                 Ok(TwoD((x, len), (y, wid)))
             }
             3 => {
-                let (x, len) = dimens.get(0).clone();
-                let (y, wid) = dimens.get(1).clone();
-                let (z, h) = dimens.get(2).clone();
+                let (x, len) = dimens[0].clone();
+                let (y, wid) = dimens[1].clone();
+                let (z, h) = dimens[2].clone();
                 if x == y || x == z || y == z {
                     return Err(BadDimensionality)
                 }
                 Ok(ThreeD((x, len), (y, wid), (z, h)))
             }
             4 => {
-                let (x, len) = dimens.get(0).clone();
-                let (y, wid) = dimens.get(1).clone();
-                let (z, h) = dimens.get(2).clone();
-                let (t, s) = dimens.get(3).clone();
+                let (x, len) = dimens[0].clone();
+                let (y, wid) = dimens[1].clone();
+                let (z, h) = dimens[2].clone();
+                let (t, s) = dimens[3].clone();
                 if x == y || x == z || x == t || y == z || y == t || z == t {
                     return Err(BadDimensionality)
                 }
@@ -119,9 +119,9 @@ impl<T: fmt::Show > fmt::Show for Tensor<T> {
             Null => { },
             OneD(_, _) => try!(writeln!(fmt, "{}", self.elems)),
             TwoD(_, _) => {
-                let (a, b) = (lens.get(0), lens.get(1));
-                for column in range(0, *a) {
-                    try!(write!(fmt, "{} ", self.elems.slice(column * *b, column * *b + *b)));
+                let (a, b) = (lens[0], lens[1]);
+                for column in range(0, a) {
+                    try!(write!(fmt, "{} ", self.elems.slice(column * b, column * b + b)));
                 }
             }
             _ => try!(writeln!(fmt, "I don't know yet.\n{}", self.elems)),
@@ -141,7 +141,7 @@ impl<T: Clone + Num, U> Tensor<T> {
         }
         
         if axes.len() > 0 {
-            let mut a = axes.get(0);
+            let mut a = &axes[0];
             for axis in axes.tail().iter() {
                 if a == axis {
                     return Err(MismatchedAxes)
@@ -188,7 +188,7 @@ impl<T: Clone + Num, U> Tensor<T> {
         let axes = self.dimensionality.get_axes();
 
         let axis = match axes.len() {
-            1 => axes.get(0).clone(),
+            1 => axes[0].clone(),
             _ => return Err(MismatchedAxes)
         };
             
@@ -202,26 +202,26 @@ impl<T: Clone + Num, U> Tensor<T> {
     pub fn extend_2d(&mut self, other: Vec<T>, other_dim: Dim) -> MatrixResult<()> {
         let scalars = self.dimensionality.get_lens();
         let (length, width) = match scalars.len() {
-            2 => (scalars.get(0).clone(), scalars.get(1).clone()),
+            2 => (scalars[0].clone(), scalars[1].clone()),
             _ => return Err(BadDimensionality)
         };
 
         let other_scalars = other_dim.get_lens();
         let (other_len, other_wid) = match other_scalars.len() {
-            2 => (other_scalars.get(0).clone(), other_scalars.get(1).clone()),
+            2 => (other_scalars[0].clone(), other_scalars[1].clone()),
             _ => return Err(BadDimensionality),
         };
 
         let axes = self.dimensionality.get_axes();
         let (a, b) = match axes.len() {
-            2 => (axes.get(0), axes.get(1)),
+            2 => (axes[0], axes[1]),
             _ => return Err(BadDimensionality),
         };
 
 
         let other_axes = other_dim.get_axes();
         let (x, y) = match other_axes.len() {
-            2 => (other_axes.get(0), other_axes.get(1)),
+            2 => (other_axes[0], other_axes[1]),
             _ => return Err(BadDimensionality),
         };
 

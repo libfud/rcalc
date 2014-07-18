@@ -76,7 +76,7 @@ impl<T: fmt::Show > fmt::Show for Matrice<T> {
         for column in range(0, self.columns) {
             let mut col = Vec::new();
             for row in range(0, self.rows) {
-                col.push(self.elems.get(column + row * self.columns).to_string());
+                col.push(self.elems[column + row * self.columns].to_string());
             }
             col_widths.push(col.iter().fold(0, |a, b| cmp::max(a, b.len())));
             columns.push(col);
@@ -91,9 +91,9 @@ impl<T: fmt::Show > fmt::Show for Matrice<T> {
                 MiddleLeft
             }));
             for col in range(0, self.columns) {
-                let len = columns.get(col).get(row).len(); // space and comma
-                try!(write!(fmt, "{a}{b}{c}", b = columns.get(col).get(row),
-                            a = " ".repeat(col_widths.get(col) + 1 - len),
+                let len = columns[col][row].len(); // space and comma
+                try!(write!(fmt, "{a}{b}{c}", b = columns[col][row],
+                            a = " ".repeat(col_widths[col] + 1 - len),
                             c = if col != self.columns - 1 { "," } else { "" }));
             }
             try!(writeln!(fmt, "{}", if row == 0 {
@@ -204,7 +204,7 @@ impl<T: Clone> Matrice<T> {
         if row * self.columns + column > self.elems.len() {
             None
         } else {
-            Some(self.elems.get(row * self.columns + column).clone())
+            Some(self.elems[row * self.columns + column].clone())
         }
     }
 
@@ -228,7 +228,7 @@ impl<T: Clone> Matrice<T> {
             for n in range(0, self.rows) {
                 new_elems.extend(self.elems.iter().skip(n * self.columns)
                                  .take(self.columns).map(|x| x.clone()));
-                new_elems.push(other.get(n).clone());
+                new_elems.push(other[n].clone());
             }
             self.columns = self.columns + 1;
             self.elems = new_elems;
@@ -322,7 +322,7 @@ impl<T: Clone> Matrice<T> {
                 if col + 1 == omit_col {
                     continue
                 } 
-                new_elems.push(self.elems.get(row * self.columns + col).clone());
+                new_elems.push(self.elems[row * self.columns + col].clone());
             }
         }
 
@@ -419,11 +419,11 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         if self.rows != self.columns || self.rows == 0 {
             return None
         } else if self.rows == 1 {
-            return Some(self.elems.get(0).clone())
+            return Some(self.elems[0].clone())
         } else if self.rows == 2 {
             /* ad - bc */
-            return Some((*self.elems.get(0) * *self.elems.get(3)) - 
-                        (*self.elems.get(1) * *self.elems.get(2)))
+            return Some((self.elems[0] * self.elems[3]) - 
+                        (self.elems[1] * self.elems[2]))
         }
 
         if self.is_ident() {
@@ -463,13 +463,13 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
              * element in the first row, and the second divisor will
              * be the second element in the first row. Then the third
              * divisor will be the second element in the second row */
-            let divisor = upper.elems.get(row * self.columns + row).clone();
+            let divisor = upper.elems[row * self.columns + row].clone();
 
             for next_row in range(row + 1, self.rows) {
                 let n_row = next_row * self.columns;
                 /* The numerator will be the number we're working to cancel
                  * out via subtraction */
-                let lower_elt = *upper.elems.get(n_row + row) / divisor;
+                let lower_elt = upper.elems[n_row + row] / divisor;
 
                 /* Subtract from next_row the scalar multiplication
                  * of the upper row by lower_elt. */
@@ -508,7 +508,7 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
                 if col + 1 == omit_col {
                     continue
                 } 
-                new_elems.push(self.elems.get(row * self.columns + col));
+                new_elems.push(&self.elems[row * self.columns + col]);
             }
         }
 
@@ -578,7 +578,7 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         } else if self.rows == 1 {
             let one: T = num::one();
             return Some( Matrice { rows: 1, columns: 1,
-                                   elems: vec!(one / *self.elems.get(0))})
+                                   elems: vec!(one / self.elems[0])})
         }
          
         let mut minors = match self.minors() {
@@ -588,9 +588,9 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
 
         let determinant: T = range(0, self.columns).map(|n| {
             if n % 2 == 0 {
-                *self.elems.get(n) * *minors.elems.get(n)
+                self.elems[n] * minors.elems[n]
             } else {
-                -(*self.elems.get(n) * *minors.elems.get(n))
+                -(self.elems[n] * minors.elems[n])
             }
         }).sum();
 
@@ -598,15 +598,89 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
             for x in range(0, minors.columns) {
                 let i = row * self.cols() + x;
                 if (row % 2 == 0)^(x % 2 == 0) {
-                    *minors.elems.get_mut(i) = *minors.elems.get(i) / -determinant
+                    *minors.elems.get_mut(i) = minors.elems[i] / -determinant
                 } else {
-                    *minors.elems.get_mut(i) = *minors.elems.get(i) / determinant
+                    *minors.elems.get_mut(i) = minors.elems[i] / determinant
                 }
             }
         }
         
         Some(minors.transpose())
     }
+
+    pub fn alt_inverse(&self) -> Option<Matrice<T>> {
+        if self.rows != self.columns || self.rows == 0 {
+            return None
+        } /*else if self.is_ident() {
+            return Some(self.clone())
+        }*/ else if self.rows == 1 {
+            let one: T = num::one();
+            return Some( Matrice { rows: 1, columns: 1,
+                                   elems: vec!(one / self.elems[0])})
+        }
+
+        let ident_mtx: Matrice<T> = Matrice::ident(self.rows);
+        let mut left_mtx = self.clone();
+        let mut right_mtx = ident_mtx.clone();
+//        let mut right_mtx: Matrice<T> = Matrice::ident(self.rows);
+        println!("Starting with \n{}", left_mtx);
+
+        for row in range(0, self.rows) {
+            let p_row = match Matrice::get_pivot(left_mtx.get_col(row).skip(row)) {
+                Some((_, r)) => r + row,
+                None => continue
+            };
+
+            if p_row > row {
+                match left_mtx.swap_rows(row, p_row) {
+                    Ok(()) => { }
+                    Err(m) => fail!(m.to_string())
+                }
+                match right_mtx.swap_rows(row, p_row) {
+                    Ok(()) => { }
+                    Err(m) => fail!(m.to_string())
+                }
+            }
+
+            let divisor = left_mtx.elems[row * self.columns + row].clone();
+
+            for next_row in range(row + 1, self.rows) {
+                let n_row = next_row * self.columns;
+                /* The numerator will be the number we're working to cancel
+                 * out via subtraction */
+                let lower_elt = left_mtx.elems[n_row + row] / divisor;
+
+                /* Subtract from next_row the scalar multiplication
+                 * of the upper row by lower_elt. */
+                let left_row: Vec<T> = left_mtx.get_row(next_row).zip(
+                    left_mtx.get_row(row))
+                    .map(|(x, y)| *x - (*y * lower_elt)).collect();
+
+                let right_row: Vec<T> = right_mtx.get_row(next_row).zip(
+                    right_mtx.get_row(next_row - 1))
+                    .map(|(x, y)| *x - (*y * lower_elt)).collect();
+
+                /* Set next_row to the new row. */
+                match left_mtx.set_row(next_row - 1, left_row) {
+                    Ok(_) => { },
+                    Err(_) => return None
+                }
+
+                match right_mtx.set_row(next_row - 1, right_row) {
+                    Ok(_) => { },
+                    Err(_) => return None
+                }
+
+                println!("Left matrix:\n{}", left_mtx);
+                println!("Right matrix:\n{}", right_mtx);
+            }
+        }
+
+        println!("{}", right_mtx * left_mtx);
+        println!("{}", left_mtx * right_mtx);
+
+        Some(left_mtx)
+    } 
 }
 
 pub struct MatriceIterator<'a, T> {
@@ -684,21 +758,7 @@ impl<T: Num + Clone + fmt::Show> Div<Matrice<T>, Matrice<T>> for Matrice<T> {
         *self * inverse
     }
 }
-/*
-impl<T: Rem<T, T>> Rem<Matrice<T>, Matrice<T>> for Matrice<T> {
-    fn rem(&self, other: &Matrice<T>) -> Matrice<T> {
-        if (self.columns, self.rows) != (other.columns, other.rows) {
-            fail!(MismatchedAxes.to_string())
-        }
 
-        let new_elems: Vec<T> = self.elems.iter().zip(other.elems.iter()).map(
-            |(lhs, rhs)| *lhs % *rhs).collect();
-
-
-        Matrice { columns: self.columns, rows: self.rows, elems: new_elems }
-    }
-}
-*/
 impl<T: Num + Clone + fmt::Show> Neg<Matrice<T>> for Matrice<T> {
     fn neg(&self) -> Matrice<T> {
         use std::num;

@@ -314,6 +314,17 @@ fn inverse_test() {
                           f64::to_str_digits(epsilon, 20)))
         }
     }
+
+    let inv = wow.alt_inverse().unwrap();
+    for (a, b) in inv.elems.iter().zip(ugh.elems.iter()) {
+        if (a - *b).abs() > epsilon {
+            fail!(format!("Difference of {} and {} = {}, epsilon: {}", 
+                          f64::to_str_digits(*a, 20),
+                          f64::to_str_digits(*b, 20),
+                          f64::to_str_digits(a - *b, 20),
+                          f64::to_str_digits(epsilon, 20)))
+        }
+    }    
 } 
 
 

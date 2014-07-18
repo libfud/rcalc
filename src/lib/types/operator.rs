@@ -300,6 +300,7 @@ pub enum MatrixOps {
     MatrixGetCol,
     Determ,
     MatrixInv,
+    MatrixFromFn,
 }
 
 impl fmt::Show for MatrixOps {
@@ -315,6 +316,7 @@ impl fmt::Show for MatrixOps {
             &MatrixGetCol => "matrix-get-col",
             &Determ => "matrix-det",
             &MatrixInv => "matrix-inv",
+            &MatrixFromFn => "matrix-from-fn",
         }));
         Ok(())
     }
@@ -333,6 +335,7 @@ impl from_str::FromStr for MatrixOps {
             "matrix-get-col" => Some(MatrixGetCol),
             "matrix-det" => Some(Determ),
             "matrix-inv" => Some(MatrixInv),
+            "matrix-from-fn" => Some(MatrixFromFn),
             _ => None
         }
     }

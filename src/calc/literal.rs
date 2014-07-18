@@ -21,8 +21,8 @@ pub fn cons(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("cons".to_string(), "only".to_string(), 2))
     }
 
-    let car = try!(args.get(0).arg_to_literal(env));
-    let cdr = try!(args.get(1).arg_to_literal(env));
+    let car = try!(args[0].arg_to_literal(env));
+    let cdr = try!(args[1].arg_to_literal(env));
 
     match cdr {
         List(x) => Ok(Atom(List(vec!(car).append(x.as_slice())))),
@@ -35,12 +35,12 @@ pub fn car(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("car".to_string(), "only".to_string(), 1))
     }
 
-    match try!(args.get(0).desymbolize(env)) {
+    match try!(args[0].desymbolize(env)) {
         List(x) => {
             if x.len() < 1 {
                 Err(BadArgType("Empty list!".to_string()))
             } else {
-                Ok(Atom(x.get(0).clone()))
+                Ok(Atom(x[0].clone()))
             }
         },
         _ => Err(BadArgType("Wrong type for `car'".to_string()))
@@ -52,7 +52,7 @@ pub fn cdr(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("cdr".to_string(), "only".to_string(), 1))
     }
 
-    match try!(args.get(0).desymbolize(env)) {
+    match try!(args[0].desymbolize(env)) {
         List(x) => match x.len() {
             0 => Err(BadArgType("List too short!".to_string())),
             _ => Ok(Atom(List(x.tail().to_owned())))

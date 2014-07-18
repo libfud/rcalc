@@ -11,10 +11,10 @@ use std::iter::range_step;
 pub fn proc_getter(args: &Vec<ArgType>, 
                    env: &mut Environment) -> CalcResult<(Vec<String>, Expression)> {
         
-    match args.get(0).clone() {
+    match args[0].clone() {
         Atom(Proc(x, y)) => Ok((x.clone(), y.clone())),
         Atom(Symbol(x)) => proc_getter(&vec!(Atom(try!(env.lookup(&x)))), env),
-        _ =>  Err(BadArgType(format!("Expected function but found {}", args.get(0))))
+        _ =>  Err(BadArgType(format!("Expected function but found {}", args[0])))
     }
 }
 
@@ -46,15 +46,15 @@ pub fn map(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     }
 
     let mut result: Vec<LiteralType> = Vec::new();
-    let len = list_vec.get(0).len();
+    let len = list_vec[0].len();
     
     for x in range(0u, len) {
         let mut temp: Vec<LiteralType> = Vec::new();
         for y in range(0u, names.len()) {
-            if list_vec.get(y).len() != len {
+            if list_vec[y].len() != len {
                 return Err(BadArgType("Mismatched lengths!".to_string()))
             }
-            temp.push(list_vec.as_slice()[y].get(x).clone());
+            temp.push(list_vec.as_slice()[y][x].clone());
         }
 
         let mut child_env = Environment::new_frame(env);
@@ -77,12 +77,12 @@ pub fn reduce(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     let (x, y) = if names.len() != 2 {
         return Err(BadArgType("Expected 2 names".to_string()))
     } else {
-        (names.get(0).clone(), names.get(1).clone())
+        (names[0].clone(), names[1].clone())
     };
 
-    let initval = try!(args.get(1).desymbolize(env));
+    let initval = try!(args[1].desymbolize(env));
 
-    let list = match try!(args.get(2).desymbolize(env)) {
+    let list = match try!(args[2].desymbolize(env)) {
         List(x) => x.clone(),
         _ => return Err(BadArgType("Invalid type for reduce".to_string()))
     };
@@ -128,7 +128,7 @@ pub fn filter(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadArgType("Expected 1 name for predicate".to_string()))
     }
 
-    let list = match try!(args.get(1).desymbolize(env)) {
+    let list = match try!(args[1].desymbolize(env)) {
         List(x) => x.clone(),
         _ => return Err(BadArgType("Invalid type for filter".to_string()))
     };
@@ -138,7 +138,7 @@ pub fn filter(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     let mut new_list: Vec<LiteralType> = Vec::new();
 
     for item in list.iter() {
-        child_env.symbols.insert(names.get(0).clone(), item.clone());
+        child_env.symbols.insert(names[0].clone(), item.clone());
 
         match try!(func.eval(&mut child_env)) {
             Atom(Boolean(true)) => new_list.push(item.clone()),
@@ -155,11 +155,11 @@ pub fn rangelist(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("rangelist".to_string(),"at least".to_string(), 2))
     }
 
-    let (a, b) = (try!(range_getter(try!(args.get(0).desymbolize(env)))),
-                  try!(range_getter(try!(args.get(1).desymbolize(env)))));
+    let (a, b) = (try!(range_getter(try!(args[0].desymbolize(env)))),
+                  try!(range_getter(try!(args[1].desymbolize(env)))));
 
     let step = if args.len() == 3 {
-        try!(range_getter(try!(args.get(2).desymbolize(env))))
+        try!(range_getter(try!(args[2].desymbolize(env))))
     } else {
         1
     };

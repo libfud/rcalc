@@ -14,8 +14,8 @@ pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("pow".to_string(), "only".to_string(), 2))
     } 
 
-    let (base, exponent) = match (try!(args.get(0).desymbolize(env)),
-                                  try!(args.get(1).desymbolize(env))) {
+    let (base, exponent) = match (try!(args[0].desymbolize(env)),
+                                  try!(args[1].desymbolize(env))) {
         (BigNum(x), BigNum(y)) => (x, y),
         _ => return Err(BadArgType("Only numbers can be raised to a power".to_string()))
     };

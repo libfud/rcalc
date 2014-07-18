@@ -48,14 +48,14 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if name.len() != 1 {
         return Err(BadArgType("Only single variables are supported currently".to_string()))
     }
-    let name = name.get(0);
+    let name = &name[0];
 
-    let fun_str = match args.get(0) {
-        &Atom(Symbol(ref x)) => x.clone(),
+    let fun_str = match args[0] {
+        Atom(Symbol(ref x)) => x.clone(),
         _ => func.to_symbol(env)
     };
     
-    let list = match try!(args.get(1).desymbolize(env)) {
+    let list = match try!(args[1].desymbolize(env)) {
         List(x) => x,
         _ => return Err(BadArgType("`table' takes a list as its second argument.".to_string()))
     };
@@ -89,10 +89,10 @@ pub fn insertion_sort<T: PartialOrd + Clone>(mut array: Vec<T>) -> Vec<T> {
 
     let mut i = 1u;
     while i < array.len() {
-        let val = array.get(i).clone();
+        let val = array[i].clone();
         let mut j = i - 1;
-        while j + 1 != 0 && array.get(j) > &val {
-            array.as_mut_slice()[j + 1] = array.get(j).clone();
+        while j + 1 != 0 && array[j] > val {
+            array.as_mut_slice()[j + 1] = array[j].clone();
             j -= 1;
         }
         array.as_mut_slice()[j + 1] = val;
@@ -153,7 +153,7 @@ pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("Sort".to_string(), "only".to_string(), 1))
     }
 
-    let list = match try!(args.get(0).arg_to_literal(env)) {
+    let list = match try!(args[0].arg_to_literal(env)) {
         List(x) => x.clone(),
         _ => return Err(BadArgType("Cannot sort items which aren't in a list!".to_string()))
     };
