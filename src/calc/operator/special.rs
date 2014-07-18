@@ -68,11 +68,17 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 }
 
 fn table_writer(table: Vec<(String, String)>, name_len: uint, fn_len: uint) {
-    println!("{}", "-".repeat(4 + name_len + fn_len));
-    for &(ref x, ref fx) in table.iter() {
-        println!("|{a}{b}|{c}{d}|", a = x, b = " ".repeat(name_len - x.len()),
+    println!("┌{}┬{}┐", "─".repeat(name_len), "─".repeat(1 + fn_len));
+    for (i, &(ref x, ref fx)) in table.iter().enumerate() {
+        println!("│{a}{b}│{c}{d}│", a = x, b = " ".repeat(name_len - x.len()),
                  d = fx, c = " ".repeat(fn_len - fx.len() + 1));
-        println!("{}", "-".repeat(4 + name_len + fn_len));
+        if i == 0 {
+            println!("╞{}╪{}╡", "═".repeat(name_len), "═".repeat(1 + fn_len));
+        } else if i == table.len() - 1 {
+            println!("└{}┴{}┘", "─".repeat(name_len), "─".repeat(1 + fn_len));
+        } else {
+            println!("├{}┼{}┤", "─".repeat(name_len), "─".repeat(1 + fn_len));
+        }
     }
 }    
 
