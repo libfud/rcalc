@@ -33,18 +33,18 @@ pub fn arith(args: &Args, env: &mut Env, oper: Arith) -> CalcResult {
         Ok(Atom(ident))
     } else if args.len() == 1 {
         match oper {
-            Sub => Ok(Atom(-try!(args.get(0).desymbolize(env)))),
-            Div => match try!(args.get(0).desymbolize(env)) {
+            Sub => Ok(Atom(-try!(args[0].desymbolize(env)))),
+            Div => match try!(args[0].desymbolize(env)) {
                 Matrix(x) => match x.inverse() {
                         Some(inverted) => Ok(Atom(Matrix(inverted))),
                         None => Err(BadArgType("Inversion failed".to_string()))
                 },
                 x => Ok(Atom(op(ident, &x)))
             },                    
-            _ => Ok(Atom(op(ident, &try!(args.get(0).desymbolize(env)))))
+            _ => Ok(Atom(op(ident, &try!(args[0].desymbolize(env)))))
         }
     } else {
-        let mut answer = try!(args.get(0).desymbolize(env));
+        let mut answer = try!(args[0].desymbolize(env));
         for x in args.tail().iter() {
             answer = op(answer, &try!(x.desymbolize(env)));
         }

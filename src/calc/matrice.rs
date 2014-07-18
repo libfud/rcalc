@@ -7,7 +7,7 @@ use self::matrix::{Matrice, MatrixErrors, BadDimensionality};
 use self::types::MatrixErr;
 use self::types::operator::{MatrixOps, MakeMatrix, MatrixSetRow, MatrixSetCol, 
                             MatrixAppendRows, Determ, MatrixInv, MatrixAppendCols,
-                            MatrixGetElem, MatrixGetRow, MatrixGetCol};
+                            MatrixGetElem, MatrixGetRow, MatrixGetCol, MatrixFromFn};
 use super::{ArgType, Atom, CalcResult, Environment, Evaluate};
 use super::{BadArgType, BadNumberOfArgs};
 use super::{Lit, List, BigNum, Matrix, Symbol};
@@ -23,6 +23,7 @@ pub fn matrix_ops(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
         MatrixGetElem => get_elem(args, env),
         MatrixGetRow | MatrixGetCol => get_row_col(args,env, mop),
         Determ | MatrixInv => single(args, env, mop),
+        MatrixFromFn => matrix_from_fn(args, env),
     }
 }        
 
@@ -34,16 +35,62 @@ pub fn make_matrix(args: &Args, env: &mut Env) -> CalcResult {
     let matrix_res: Result<Matrice<Lit>, MatrixErrors> = if args.len() == 0 {
         Ok(Matrice::new())
     } else {
-        let (elems, (x, y)) = try!(list_to_2d(try!(args.get(0).desymbolize(env)), env));
+        let (elems, (x, y)) = try!(list_to_2d(try!(args[0].desymbolize(env)), env));
         Matrice::from_vec(elems, x, y) 
     };
 
-    let matrix = match matrix_res {
-        Ok(x) => x,
-        Err(m) => return Err(MatrixErr(m))
-    };
+    match matrix_res {
+        Ok(x) => Ok(Atom(Matrix(x))),
+        Err(m) => Err(MatrixErr(m))
+    }
+}
 
-    Ok(Atom(Matrix(matrix)))
+pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
+    use super::operator::listops::proc_getter;
+
+    if args.len() < 2 {
+        return Err(BadNumberOfArgs("matrix-from-fn".to_string(), 
+                                   "at least".to_string(), 2))
+    }
+
+    let (names, func) = try!(proc_getter(args, env));
+
+    if args.len() - 1 != names.len() {
+        return Err(BadNumberOfArgs(func.to_string(), "only".to_string(), 
+                                   names.len()))
+    }
+
+    let mut lists: Vec<Vec<Lit>> = Vec::with_capacity(args.tail().len());
+    for &arg in args.tail().iter() {
+        match try!(arg.desymbolize(env)) {
+            List(x) => lists.push(x),
+            _ => return Err(BadArgType("Arguments to function given as lists.".to_string()))
+        }
+    }
+
+    if lists.tail().iter().any(|x| x.len() != lists.head().len()) {
+        return Err(BadArgType("Each list of arguments must be the same length".to_string()))
+    }
+
+    let mut matrix_vec: Vec<Lit> = Vec::new();
+
+    for column in range(0, lists.head().len()) {
+        let mut child_env = Environment::new_frame(env);
+
+        let mut values: Vec<Lit> = lists.iter().map(|x| x[column].clone()).collect();
+        matrix_vec.push_all(values.as_slice());
+
+        for (arg, val) in names.iter().zip(values.iter()) {
+            child_env.symbols.insert(arg.clone(), val.clone());
+        }
+
+        matrix_vec.push(try!(try!(func.eval(&mut child_env)).desymbolize(env)));
+    }
+
+    match Matrice::from_vec(matrix_vec, lists.head().len(), lists.len() + 1) {
+        Ok(x) => Ok(Atom(Matrix(x))),
+        Err(m) => Err(MatrixErr(m))
+    }
 }
 
 pub fn arg_to_uint(arg: Lit) -> CalcResult<uint> {
@@ -61,13 +108,13 @@ pub fn get_elem(args: &Args, env: &mut Env) -> CalcResult {
         return Err(BadNumberOfArgs("matrix-get-elem".to_string(), "only".to_string(), 3))
     }
 
-    let matrix = match try!(args.get(0).desymbolize(env)) {
+    let matrix = match try!(args[0].desymbolize(env)) {
         Matrix(x) => x.clone(),
         _ => return Err(BadArgType("Not a matrix".to_string()))
     };
 
-    let mut row = try!(arg_to_uint(try!(args.get(1).desymbolize(env))));
-    let mut col = try!(arg_to_uint(try!(args.get(2).desymbolize(env))));
+    let mut row = try!(arg_to_uint(try!(args[1].desymbolize(env))));
+    let mut col = try!(arg_to_uint(try!(args[2].desymbolize(env))));
 
     if row == 0 || col == 0 {
         return Err(BadArgType("Matrices are indexed starting from 1".to_string()))
@@ -87,12 +134,12 @@ pub fn get_row_col(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
         return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 2))
     }
 
-    let matrix = match try!(args.get(0).desymbolize(env)) {
+    let matrix = match try!(args[0].desymbolize(env)) {
         Matrix(x) => x.clone(),
         y => return Err(BadArgType(format!("{} is not a matrix", y)))
     };
 
-    let mut row_col = try!(arg_to_uint(try!(args.get(1).desymbolize(env))));
+    let mut row_col = try!(arg_to_uint(try!(args[1].desymbolize(env))));
 
     if row_col == 0 {
         return Err(BadArgType("Matrices are indexed starting from 1".to_string()))
@@ -154,14 +201,14 @@ pub fn matrix_set(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
         return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 3))
     }
 
-    let mut matrix = match try!(args.get(0).desymbolize(env)) {
+    let mut matrix = match try!(args[0].desymbolize(env)) {
         Matrix(x) => x.clone(),
         _ => return Err(BadArgType("Not a matrix".to_string()))
     };
 
-    let old_item = try!(arg_to_uint(try!(args.get(1).desymbolize(env))));
+    let old_item = try!(arg_to_uint(try!(args[1].desymbolize(env))));
  
-    let (new_items, _) = try!(list_to_1d(try!(args.get(2).desymbolize(env)), env));
+    let (new_items, _) = try!(list_to_1d(try!(args[2].desymbolize(env)), env));
 
     match mop {
         MatrixSetRow => match matrix.set_row(old_item, new_items) {
@@ -181,12 +228,12 @@ pub fn matrix_append(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
         return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 2))
     }
 
-    let mut matrix = match try!(args.get(0).desymbolize(env)) {
+    let mut matrix = match try!(args[0].desymbolize(env)) {
         Matrix(x) => x.clone(),
         _ => return Err(BadArgType("Not a matrix".to_string()))
     };
 
-    let (new_items,(len, count)) = try!(list_to_2d(try!(args.get(1).desymbolize(env)), env));
+    let (new_items,(len, count)) = try!(list_to_2d(try!(args[1].desymbolize(env)), env));
 
     match mop {
         MatrixAppendRows => {
@@ -216,7 +263,7 @@ pub fn single(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
         return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 1))
     }
 
-    let matrix = match try!(args.get(0).desymbolize(env)) {
+    let matrix = match try!(args[0].desymbolize(env)) {
         Matrix(x) => x.clone(),
         _ => return Err(BadArgType("Not a matrix".to_string()))
     };

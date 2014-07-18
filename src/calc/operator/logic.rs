@@ -22,15 +22,15 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
             return Err(BadNumberOfArgs("if".to_string(), "only".to_string(), 3))
         }
 
-        let condition = match try!(arguments.get(0).desymbolize(env)) {
+        let condition = match try!(arguments[0].desymbolize(env)) {
             Boolean(x)  => x,
             _ => return Err(NonBoolean)
         };
 
         let result = if condition {
-            arguments.get(1).clone()
+            arguments[1].clone()
         } else {
-            arguments.get(2).clone()
+            arguments[2].clone()
         };
 
         match result {
@@ -55,8 +55,8 @@ pub fn ordering(args: &Vec<ArgType>, env: &mut Env, comp: |LitTy, LitTy| -> bool
     }
 
 
-    Ok(Atom(Boolean(comp(try!(args.get(0).desymbolize(env)),
-                         try!(args.get(1).desymbolize(env))))))
+    Ok(Atom(Boolean(comp(try!(args[0].desymbolize(env)),
+                         try!(args[1].desymbolize(env))))))
 }
 
 pub fn and_or(args: &Args, env: &mut Env, short: bool) -> CalcResult {
@@ -75,7 +75,7 @@ pub fn xor(args: &Args, env: &mut Env) -> CalcResult {
         return Err(BadNumberOfArgs("xor".to_string(), "at least".to_string(), 2))
     }
 
-    let mut result = match try!(args.get(0).desymbolize(env)) {
+    let mut result = match try!(args[0].desymbolize(env)) {
         Boolean(x) => x,
         _ => return Err(NonBoolean)
     };
@@ -95,7 +95,7 @@ pub fn not(args: &Args, env: &mut Env) -> CalcResult {
         return Err(BadNumberOfArgs("Not".to_string(), "only".to_string(), 1))
     }
 
-    let val = match try!(args.get(0).desymbolize(env)) {
+    let val = match try!(args[0].desymbolize(env)) {
         Boolean(x)  => x,
         _   => return Err(NonBoolean)
     };
@@ -116,7 +116,7 @@ pub fn num_op(args: &Args, env: &mut Env, op: RoundId) -> CalcResult {
         return Err(BadNumberOfArgs(op.to_string(), "only".to_string(), 1))
     }
 
-    let num = match try!(args.get(0).desymbolize(env)) {
+    let num = match try!(args[0].desymbolize(env)) {
         BigNum(x) => x,
         _ => return Err(BadArgType(format!("Only numbers can {}", op.idea())))
     };

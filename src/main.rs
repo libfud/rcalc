@@ -115,9 +115,9 @@ fn main() {
             continue
         }
 
-        match *exit_q.get(0) {
+        match exit_q[0] {
             "exit" | "(exit" | "(exit)" | ",q" => break,
-            "(" => if exit_q.len() >= 2  && exit_q.get(1).starts_with("exit") {
+            "(" => if exit_q.len() >= 2  && exit_q[1].starts_with("exit") {
                     break
                 },
             _   => { },
