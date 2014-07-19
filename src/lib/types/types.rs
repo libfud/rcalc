@@ -108,9 +108,9 @@ impl Environment {
 }
 
 impl fmt::Show for Environment {
-    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
-        println!("{}", self.symbols);
-        print!("Has {} parent.", if self.parent.is_some() { "a" } else { "no" });
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(writeln!(fmt, "{}", self.symbols));
+        try!(write!(fmt, "Has {} parent.", if self.parent.is_some() { "a" } else { "no" }));
         Ok(())
     }
 }

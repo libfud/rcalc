@@ -355,27 +355,29 @@ pub enum OperatorType {
     Define,
     Lambda,
     Table, 
+    TableFromMatrix,
     MatrixStuff(MatrixOps),
     Help,
 }
 
 impl fmt::Show for OperatorType {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(fmt, "{}", match self {
-            &Arithmetic(ref x) => x.to_string(),
-            &Transcend(ref x) => x.to_string(),
-            &Ordering(ref x) => x.to_string(),
-            &RoundIdent(ref x) => x.to_string(),
-            &Logic(ref x) => x.to_string(),
-            &Listings(ref x) => x.to_string(),
-            &TransForms(ref x) => x.to_string(),
-            &MatrixStuff(ref x) => x.to_string(),
-            &Pow => "pow".to_string(),
-            &Quote => "'".to_string(),
-            &Define => "define".to_string(),
-            &Lambda => "lambda".to_string(),
-            &Table => "table".to_string(),
-            &Help => "help".to_string(),
+        try!(write!(fmt, "{}", match *self {
+            Arithmetic(ref x) => x.to_string(),
+            Transcend(ref x) => x.to_string(),
+            Ordering(ref x) => x.to_string(),
+            RoundIdent(ref x) => x.to_string(),
+            Logic(ref x) => x.to_string(),
+            Listings(ref x) => x.to_string(),
+            TransForms(ref x) => x.to_string(),
+            MatrixStuff(ref x) => x.to_string(),
+            Pow => "pow".to_string(),
+            Quote => "'".to_string(),
+            Define => "define".to_string(),
+            Lambda => "lambda".to_string(),
+            Table => "table".to_string(),
+            TableFromMatrix => "table-from-matrix".to_string(),
+            Help => "help".to_string(),
         }));
         Ok(())
     }
@@ -424,6 +426,7 @@ impl from_str::FromStr for OperatorType {
             "lambda" => Some(Lambda),
             "quote" | "'" => Some(Quote),
             "table" => Some(Table),
+            "table-from-matrix" => Some(TableFromMatrix),
             "help" => Some(Help),
             _ => None
         }

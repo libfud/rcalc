@@ -9,7 +9,7 @@ pub use super::{LiteralType, Lit, LitRes, Symbol, Void};
 pub use super::literal::{cons, car, cdr, list};
 pub use self::types::operator::{OperatorType, Arithmetic, Transcend, Ordering,
                                 Pow, RoundIdent, Logic, Quote, Listings, ListOps,
-                                TransForms, XForms, Define, Lambda, Table, 
+                                TransForms, XForms, Define, Lambda, Table, TableFromMatrix,
                                 Gate, MatrixStuff, MatrixOps, Help};
 use super::matrice;
 
@@ -68,7 +68,6 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
     use self::logic::{ordering, num_op};
     use self::trig::float_ops;
 
-
     match op_type {
         Arithmetic(op) => arith(args, env, op),
         Pow => power::pow_wrapper(args, env),
@@ -82,6 +81,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         Listings(lop) => list_ops(args, env, lop),
         TransForms(top) => transform_ops(args, env, top),
         Table => special::table(args, env),
+        TableFromMatrix => special::table_from_matrix(args, env),
         MatrixStuff(mop) => matrice::matrix_ops(args, env, mop),
         Help => super::common::help(args),
     }
