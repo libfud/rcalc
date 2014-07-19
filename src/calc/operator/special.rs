@@ -75,6 +75,8 @@ fn table_writer(table: Table, name_lens: Vec<uint>, fn_len: uint) {
         for nom in range(0, names.len()) {
             print!("{}{} |", " ".repeat(1 + name_lens[nom] - names[nom].len()), names[nom]);
         }
+
+        assert!(fn_len >= fx.len());
         
         println!("{}{}|", " ".repeat(fn_len - fx.len() + 1), fx);
         println!("{}", "-".repeat(total_len));
@@ -148,7 +150,7 @@ pub fn table_from_matrix(args: &Vec<ArgType>, env: &mut Environment) -> CalcResu
 
     let mut table: Table = Vec::with_capacity(matrix.rows() + 1);
     let mut name_lens = Vec::from_elem(matrix_vars, 0u);
-    let mut fn_len = 0u;
+    let mut fn_len = fun_str.len();
 
     table.push((names, fun_str));
     for row in range(0, matrix.rows()) {

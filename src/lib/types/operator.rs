@@ -299,24 +299,26 @@ pub enum MatrixOps {
     MatrixGetRow,
     MatrixGetCol,
     Determ,
+    Transpose,
     MatrixInv,
     MatrixFromFn,
 }
 
 impl fmt::Show for MatrixOps {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(fmt, "{}", match self {
-            &MakeMatrix => "make-matrix",
-            &MatrixSetRow => "matrix-set-row",
-            &MatrixSetCol => "matrix-set-col",
-            &MatrixAppendRows => "matrix-append-rows",
-            &MatrixAppendCols => "matrix-append-cols",
-            &MatrixGetElem => "matrix-get-elem",
-            &MatrixGetRow => "matrix-get-row",
-            &MatrixGetCol => "matrix-get-col",
-            &Determ => "matrix-det",
-            &MatrixInv => "matrix-inv",
-            &MatrixFromFn => "matrix-from-fn",
+        try!(write!(fmt, "{}", match *self {
+            MakeMatrix => "make-matrix",
+            MatrixSetRow => "matrix-set-row",
+            MatrixSetCol => "matrix-set-col",
+            MatrixAppendRows => "matrix-append-rows",
+            MatrixAppendCols => "matrix-append-cols",
+            MatrixGetElem => "matrix-get-elem",
+            MatrixGetRow => "matrix-get-row",
+            MatrixGetCol => "matrix-get-col",
+            Determ => "matrix-det",
+            Transpose => "matrix-transpose",
+            MatrixInv => "matrix-inv",
+            MatrixFromFn => "matrix-from-fn",
         }));
         Ok(())
     }
@@ -335,6 +337,7 @@ impl from_str::FromStr for MatrixOps {
             "matrix-get-col" => Some(MatrixGetCol),
             "matrix-det" => Some(Determ),
             "matrix-inv" => Some(MatrixInv),
+            "matrix-transpose" => Some(Transpose),
             "matrix-from-fn" => Some(MatrixFromFn),
             _ => None
         }

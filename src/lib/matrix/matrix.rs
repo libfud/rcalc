@@ -580,7 +580,7 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
             return Some( Matrice { rows: 1, columns: 1,
                                    elems: vec!(one / self.elems[0])})
         }
-         
+
         let mut minors = match self.minors() {
             Some(x) => x,
             None => return None
@@ -593,6 +593,10 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
                 -(self.elems[n] * minors.elems[n])
             }
         }).sum();
+
+        if determinant.is_zero() {
+            return None
+        }
 
         for row in range(0, minors.rows) {
             for x in range(0, minors.columns) {

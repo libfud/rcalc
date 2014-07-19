@@ -6,7 +6,7 @@ extern crate types;
 use self::matrix::{Matrice, MatrixErrors, BadDimensionality};
 use self::types::MatrixErr;
 use self::types::operator::{MatrixOps, MakeMatrix, MatrixSetRow, MatrixSetCol, 
-                            MatrixAppendRows, Determ, MatrixInv, MatrixAppendCols,
+                            MatrixAppendRows, MatrixInv, MatrixAppendCols, Determ, Transpose,
                             MatrixGetElem, MatrixGetRow, MatrixGetCol, MatrixFromFn};
 use super::{ArgType, Atom, CalcResult, Environment, Evaluate};
 use super::{BadArgType, BadNumberOfArgs};
@@ -22,7 +22,7 @@ pub fn matrix_ops(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
         MatrixAppendRows | MatrixAppendCols => matrix_append(args, env, mop),
         MatrixGetElem => get_elem(args, env),
         MatrixGetRow | MatrixGetCol => get_row_col(args,env, mop),
-        Determ | MatrixInv => single(args, env, mop),
+        Determ | MatrixInv | Transpose => single(args, env, mop),
         MatrixFromFn => matrix_from_fn(args, env),
     }
 }        
@@ -276,10 +276,11 @@ pub fn single(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
             Some(x) => Ok(Atom(x)),
             None =>  Err(BadArgType("No determinant for this matrix".to_string()))
         },
-        MatrixInv =>     match matrix.inverse() {
+        MatrixInv => match matrix.inverse() {
             Some(x) => Ok(Atom(Matrix(x))),
             None =>  Err(BadArgType("No determinant for this matrix".to_string()))
         },
+        Transpose => Ok(Atom(Matrix(matrix.transpose()))),
         _ => fail!("Undefined!")
     }
 }
