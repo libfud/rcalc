@@ -26,24 +26,20 @@ pub struct WithEnv<'a> {
 }
 
 impl<'a> fmt::Show for WithEnv<'a> {
-    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match self.data {
-            &Boolean(ref x) => print!("{}", x),
-            &BigNum(ref x) => if x.is_integer() {
-                print!("{}", x.numer())
-            } else {
-                print!("{}", x)
-            },
-            &List(ref list) => print!("{}", list),
-            &Matrix(ref m) => print!("{}", m),
+            &Boolean(ref x) => try!(write!(fmt, "{}", x)),
+            &BigNum(ref x) => try!(write!(fmt, "{}", x)),
+            &List(ref list) => try!(write!(fmt, "{}", list)),
+            &Matrix(ref m) => try!(write!(fmt, "{}", m)),
             &Proc(ref args, ref expr) => {
-                print!("Procedure: parameters: {}, body: {}", args, expr)
+                try!(write!(fmt, "Procedure: parameters: {}, body: {}", args, expr))
             },
-            &Symbol(ref s) => print!("{} {}", s, match self.env.lookup(s) {
+            &Symbol(ref s) => try!(write!(fmt, "{} {}", s, match self.env.lookup(s) {
                 Ok(x) => format!("= {}", x),
                 Err(m) => m.to_string(),
-            }),
-            &Void => print!("")
+            })),
+            &Void => ()
         }
 
         Ok(())
@@ -52,20 +48,16 @@ impl<'a> fmt::Show for WithEnv<'a> {
 
 impl fmt::Show for LiteralType {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &Boolean(ref x) => try!(write!(fmt, "{}", x)),
-            &BigNum(ref x) => if x.is_integer() {
-                try!(write!(fmt, "{}", x.numer()))
-            } else {
-                try!(write!(fmt, "{}", x))
-            },
-            &List(ref list) => try!(write!(fmt, "{}", list)),
-            &Matrix(ref m) => try!(write!(fmt, "{}", m)),
-            &Proc(ref args, ref expr) => {
+        match *self {
+            Boolean(ref x) => try!(write!(fmt, "{}", x)),
+            BigNum(ref x) => try!(write!(fmt, "{}", x)),
+            List(ref list) => try!(write!(fmt, "{}", list)),
+            Matrix(ref m) => try!(write!(fmt, "{}", m)),
+            Proc(ref args, ref expr) => {
                 try!(write!(fmt, "Procedure: parameters: {}, body: {}", args, expr))
             },
-            &Symbol(ref s) => try!(write!(fmt, "{}", s)),
-            &Void => try!(write!(fmt, ""))
+            Symbol(ref s) => try!(write!(fmt, "{}", s)),
+            Void => ()
         }
 
         Ok(())
@@ -162,4 +154,3 @@ impl Rem<Lit, Lit> for Lit {
         }
     }
 }
-

@@ -1,6 +1,9 @@
 //! Special functions like table and plot points.
 
-use super::super::{Expression, Evaluate, BigNum, List, Symbol, Void, LiteralType};
+extern crate types;
+
+use self::types::literal::{BigNum, List, Matrix, Symbol, Void, LiteralType};
+use super::super::{Expression, Evaluate};
 use super::listops::proc_getter;
 use super::super::{BadArgType, BadNumberOfArgs};
 use super::{Environment, CalcResult, ArgType, Atom};
@@ -16,7 +19,7 @@ pub fn range_getter(arg: LiteralType) -> CalcResult<int> {
 type Lit = LiteralType;
 type Env = Environment;
 type Expr = Expression;
-type Table = Vec<(Vec<String>, String)>;
+pub type Table = Vec<(Vec<String>, String)>;
 type Lists = Vec<Vec<Lit>>;
 
 fn make_table(lists: Lists, names: Vec<String>, func: Expr, fun_str: String,
@@ -33,13 +36,14 @@ fn make_table(lists: Lists, names: Vec<String>, func: Expr, fun_str: String,
         let mut child_env = Environment::new_frame(env);
 
         let values: Vec<Lit> = lists.iter().map(|x| x[column].clone()).collect();
-        let t_names: Vec<String> = Vec::with_capacity(values.len());
+        let mut t_names: Vec<String> = Vec::with_capacity(values.len());
 
         for val in range(0, values.len()) {
             let name = values[val].to_string();
             if name.len() > names_len[val] {
                 *names_len.get_mut(val) = name.len();
             }
+            t_names.push(name);
         }
 
         for (arg, val) in names.iter().zip(values.iter()) {
@@ -61,8 +65,6 @@ fn make_table(lists: Lists, names: Vec<String>, func: Expr, fun_str: String,
 fn table_writer(table: Table, name_lens: Vec<uint>, fn_len: uint) {
     use std::iter::AdditiveIterator;
 
-    println!("{}", table);
-
     /* Beginning pipe, pipe and two spaces for each variable, pipe and space for
      * each answer */
     let total_len = 1 + name_lens.iter().map(|x| *x + 3).sum() + fn_len + 2;
@@ -71,7 +73,7 @@ fn table_writer(table: Table, name_lens: Vec<uint>, fn_len: uint) {
     for &(ref names, ref fx) in table.iter() {
         print!("|");
         for nom in range(0, names.len()) {
-            print!(" {} |", names[nom]);
+            print!("{}{} |", " ".repeat(1 + name_lens[nom] - names[nom].len()), names[nom]);
         }
         
         println!("{}{}|", " ".repeat(fn_len - fx.len() + 1), fx);
@@ -89,15 +91,14 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadArgType("At least one variable must be supplied".to_string()))
     }
 
-    if args.len() - 1 != names.len() {
-        return Err(BadNumberOfArgs(func.to_string(), "only".to_string(), 
-                                   names.len()))
-    }
-
     let fun_str = match args[0] {
         Atom(Symbol(ref x)) => x.clone(),
         _ => func.to_symbol(env)
     };
+
+    if args.len() - 1 != names.len() {
+        return Err(BadNumberOfArgs(func.to_string(), "only".to_string(), names.len()))
+    }
 
     let mut lists: Vec<Vec<Lit>> = Vec::with_capacity(args.tail().len());
     for arg in args.tail().iter() {
@@ -117,6 +118,34 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     
     Ok(Atom(Void))
 }
+
+pub fn table_from_matrix(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+    if args.len() != 2 {
+        return Err(BadNumberOfArgs("table-from-matrix".to_string, "only".to_string(), 2))
+    }
+
+    let matrix = match args[0].desymbolize(env) {
+        Matrix(x) => x.clone(),
+        x => return Err(BadArgType(format!("Expected matrix but found {}", x)))
+    };
+
+    let fun_str = match args[1] {
+        Atom(Symbol(ref x)) => x.clone(),
+        _ => func.to_symbol(env)
+    };
+
+    let (names, func) = try!(proc_getter(&args.tail().to_owned(), env));
+    let matrix_vars = matrix.columns() - 1;
+    if names.len() != matrix_vars {
+        return Err(BadArgType(format!("Expected {} args but found {}", 
+                                      matrix_vars, names.len())))
+    }
+
+    let mut table: Table = Vec::with_capacity(table.rows() + 1);
+    table.push(names, fun_str);
+    for row in range(0, matrix.rows()) {
+        let t_names: Vec<String> = matrix.get_row(row).map(|x| x.to_string()).collect();
+        
 
 pub fn insertion_sort<T: PartialOrd + Clone>(mut array: Vec<T>) -> Vec<T> {
     if array.len() <= 1 {

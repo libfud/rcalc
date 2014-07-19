@@ -34,7 +34,7 @@ impl Expression {
                 &Atom(ref x) => x.to_string(),
                 &SExpr(ref x) => x.to_symbol(env),
             };
-            symbols = symbols.append(arg.as_slice());
+            symbols = symbols.append(arg.append(" ").as_slice());
         }
         symbols = symbols.append(")");
         symbols
