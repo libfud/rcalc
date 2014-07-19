@@ -54,6 +54,9 @@ pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
     }
 
     let (names, func) = try!(proc_getter(args, env));
+    if names.len() < 1 {
+        return Err(BadArgType("At least one variable must be supplied".to_string()))
+    }
 
     if args.len() - 1 != names.len() {
         return Err(BadNumberOfArgs(func.to_string(), "only".to_string(), 
@@ -61,23 +64,23 @@ pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
     }
 
     let mut lists: Vec<Vec<Lit>> = Vec::with_capacity(args.tail().len());
-    for &arg in args.tail().iter() {
+    for arg in args.tail().iter() {
         match try!(arg.desymbolize(env)) {
             List(x) => lists.push(x),
             _ => return Err(BadArgType("Arguments to function given as lists.".to_string()))
         }
     }
 
-    if lists.tail().iter().any(|x| x.len() != lists.head().len()) {
+    if lists.tail().iter().any(|x| x.len() != lists[0].len()) {
         return Err(BadArgType("Each list of arguments must be the same length".to_string()))
     }
 
     let mut matrix_vec: Vec<Lit> = Vec::new();
 
-    for column in range(0, lists.head().len()) {
+    for column in range(0, lists[0].len()) {
         let mut child_env = Environment::new_frame(env);
 
-        let mut values: Vec<Lit> = lists.iter().map(|x| x[column].clone()).collect();
+        let values: Vec<Lit> = lists.iter().map(|x| x[column].clone()).collect();
         matrix_vec.push_all(values.as_slice());
 
         for (arg, val) in names.iter().zip(values.iter()) {
@@ -87,7 +90,7 @@ pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
         matrix_vec.push(try!(try!(func.eval(&mut child_env)).desymbolize(env)));
     }
 
-    match Matrice::from_vec(matrix_vec, lists.head().len(), lists.len() + 1) {
+    match Matrice::from_vec(matrix_vec, lists.len() + 1, lists[0].len()) {
         Ok(x) => Ok(Atom(Matrix(x))),
         Err(m) => Err(MatrixErr(m))
     }

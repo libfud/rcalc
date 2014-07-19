@@ -1,7 +1,10 @@
 //!List operations.
 
+extern crate types;
+
+use self::types::{Atom, SExpr};
 use super::super::{Expression, Evaluate};
-use super::{ArgType, Atom, CalcResult, Environment, BigRational, Ratio};
+use super::{ArgType, CalcResult, Environment, BigRational, Ratio};
 use super::bigint::*;
 use super::super::{LiteralType, BigNum, List, Proc, Symbol, Boolean};
 use super::special::range_getter;
@@ -14,6 +17,7 @@ pub fn proc_getter(args: &Vec<ArgType>,
     match args[0].clone() {
         Atom(Proc(x, y)) => Ok((x.clone(), y.clone())),
         Atom(Symbol(x)) => proc_getter(&vec!(Atom(try!(env.lookup(&x)))), env),
+        SExpr(x) => proc_getter(&vec!(try!(x.eval(env))), env),
         _ =>  Err(BadArgType(format!("Expected function but found {}", args[0])))
     }
 }
