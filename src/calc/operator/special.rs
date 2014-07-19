@@ -121,30 +121,59 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
 pub fn table_from_matrix(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 2 {
-        return Err(BadNumberOfArgs("table-from-matrix".to_string, "only".to_string(), 2))
+        return Err(BadNumberOfArgs("table-from-matrix".to_string(), "only".to_string(), 2))
     }
 
-    let matrix = match args[0].desymbolize(env) {
+    let matrix = match try!(args[0].desymbolize(env)) {
         Matrix(x) => x.clone(),
         x => return Err(BadArgType(format!("Expected matrix but found {}", x)))
     };
+
+    if matrix.cols() < 2 {
+        return Err(BadArgType("Expeted at least one variable".to_string()))
+    }
+
+    let (names, func) = try!(proc_getter(&args.tail().to_owned(), env));
 
     let fun_str = match args[1] {
         Atom(Symbol(ref x)) => x.clone(),
         _ => func.to_symbol(env)
     };
 
-    let (names, func) = try!(proc_getter(&args.tail().to_owned(), env));
-    let matrix_vars = matrix.columns() - 1;
+    let matrix_vars = matrix.cols() - 1;
     if names.len() != matrix_vars {
         return Err(BadArgType(format!("Expected {} args but found {}", 
                                       matrix_vars, names.len())))
     }
 
-    let mut table: Table = Vec::with_capacity(table.rows() + 1);
-    table.push(names, fun_str);
+    let mut table: Table = Vec::with_capacity(matrix.rows() + 1);
+    let mut name_lens = Vec::from_elem(matrix_vars, 0u);
+    let mut fn_len = 0u;
+
+    table.push((names, fun_str));
     for row in range(0, matrix.rows()) {
-        let t_names: Vec<String> = matrix.get_row(row).map(|x| x.to_string()).collect();
+        let mut t_names: Vec<String> = matrix.get_row(row).map(|x| x.to_string()).collect();
+
+        let val = t_names.pop().unwrap();
+
+        if val.len() > fn_len {
+            fn_len = t_names.last().unwrap().len();
+        }
+
+        for nom in range(0, t_names.len()) {
+            if t_names[nom].len() > name_lens[nom] {
+                *name_lens.get_mut(nom) = t_names[nom].len();
+            }
+        }        
+        
+        table.push((t_names, val))
+    }
+
+    println!("{}", table);
+    println!("{} {}", name_lens, fn_len);
+    table_writer(table, name_lens, fn_len);
+    Ok(Atom(Void))
+}
         
 
 pub fn insertion_sort<T: PartialOrd + Clone>(mut array: Vec<T>) -> Vec<T> {
