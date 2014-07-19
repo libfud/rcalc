@@ -69,17 +69,48 @@ fn table_writer(table: Table, name_lens: Vec<uint>, fn_len: uint) {
      * each answer */
     let total_len = 1 + name_lens.iter().map(|x| *x + 3).sum() + fn_len + 2;
 
-    println!("{}", "-".repeat(total_len));
-    for &(ref names, ref fx) in table.iter() {
-        print!("|");
+    print!("┌");
+    for &i in name_lens.iter() {
+        print!("{}┬", "─".repeat(i + 2));
+    }
+    println!("{}┐", "─".repeat(fn_len + 1));
+    for (i, &(ref names, ref fx)) in table.iter().enumerate() {
+        print!("│");
         for nom in range(0, names.len()) {
-            print!("{}{} |", " ".repeat(1 + name_lens[nom] - names[nom].len()), names[nom]);
+            print!("{}{} │", " ".repeat(1 + name_lens[nom] - names[nom].len()), names[nom]);
         }
 
         assert!(fn_len >= fx.len());
         
-        println!("{}{}|", " ".repeat(fn_len - fx.len() + 1), fx);
-        println!("{}", "-".repeat(total_len));
+        let (start, middle, end, horiz) = if i == 0 {
+            ('╞', '╪', '╡', "═")
+        } else if i == table.len() - 1 {
+            ('└', '┴', '┘', "─")
+        } else {
+            ('├', '┼', '┤', "─")
+        };
+        
+        println!("{}{}│", " ".repeat(fn_len - fx.len() + 1), fx);
+        print!("{}", start);
+        for &i in name_lens.iter() {
+            print!("{}{}", horiz.repeat(i + 2), middle);
+        }
+        println!("{}{}", horiz.repeat(fn_len + 1), end);
+    }
+}
+
+fn old_table_writer(table: Vec<(String, String)>, name_len: uint, fn_len: uint) {
+    println!("┌{}┬{}┐", "─".repeat(name_len), "─".repeat(1 + fn_len));
+    for (i, &(ref x, ref fx)) in table.iter().enumerate() {
+        println!("│{a}{b}│{c}{d}│", a = x, b = " ".repeat(name_len - x.len()),
+                 d = fx, c = " ".repeat(fn_len - fx.len() + 1));
+        if i == 0 {
+            println!("╞{}╪{}╡", "═".repeat(name_len), "═".repeat(1 + fn_len));
+        } else if i == table.len() - 1 {
+            println!("└{}┴{}┘", "─".repeat(name_len), "─".repeat(1 + fn_len));
+        } else {
+            println!("├{}┼{}┤", "─".repeat(name_len), "─".repeat(1 + fn_len));
+        }
     }
 }
 
