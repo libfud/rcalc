@@ -61,7 +61,7 @@ pub fn pow(base: &BigRational, exponent: &BigRational,
     if positive {
         Ok(powered * root)
     } else { 
-        Ok(powered / root)
+        Ok(powered.recip() * root)
     }
 }
 
