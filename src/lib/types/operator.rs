@@ -138,6 +138,7 @@ impl OrderEq {
 #[deriving(Clone, PartialOrd, PartialEq)]
 pub enum RoundId {
     Round,
+    RoundToNearest,
     Floor,
     Ceiling,
     Zero,
@@ -149,6 +150,7 @@ impl fmt::Show for RoundId {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
             &Round => "round",
+            &RoundToNearest => "round-to-nearest",
             &Floor => "floor",
             &Ceiling => "ceiling",
             &Zero => "zero?",
@@ -163,6 +165,7 @@ impl from_str::FromStr for RoundId {
     fn from_str(s: &str) -> Option<RoundId> {
         match s {
             "round" => Some(Round),
+            "round-to-nearest" => Some(RoundToNearest),
             "ceiling" => Some(Ceiling),
             "floor" => Some(Floor),
             "zero?" => Some(Zero),
@@ -177,6 +180,7 @@ impl RoundId {
     pub fn idea(self) -> String {
         let s = match self {
             Round => "be rounded",
+            RoundToNearest => "be rounded to the nearest n",
             Floor => "have their floor returned",
             Ceiling => "have their ceiling returned",
             Even => "be even",
@@ -420,6 +424,11 @@ impl from_str::FromStr for OperatorType {
 
         match from_str::<MatrixOps>(s) {
             Some(x) => return Some(MatrixStuff(x)),
+            None => { }
+        }
+
+        match from_str::<RoundId>(s) {
+            Some(x) => return Some(RoundIdent(x)),
             None => { }
         }
     

@@ -26,7 +26,17 @@ pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 pub fn pow(base: &BigRational, exponent: &BigRational, 
            env: &mut Environment) -> CalcResult<BigRational> {
 
-    let power = match exponent.to_integer().to_u64() {
+    let one: BigRational = num::one();
+
+    if *base == one || *exponent == one {
+        return Ok(base.clone())
+    } else if *exponent == num::zero() {
+        return Ok(one)
+    }
+
+    let positive = *exponent > num::zero();
+
+    let power = match exponent.abs().to_integer().to_u64() {
         Some(x) => x,
         None    => return Err(BadPowerRange)
     };
@@ -48,7 +58,11 @@ pub fn pow(base: &BigRational, exponent: &BigRational,
 
     let powered = exp_by_sq(base, power);
 
-    Ok(powered * root)
+    if positive {
+        Ok(powered * root)
+    } else { 
+        Ok(powered / root)
+    }
 }
 
 pub fn exp_by_sq(base_orig: &BigRational, mut power: u64) -> BigRational {

@@ -106,14 +106,16 @@ pub fn not(args: &Args, env: &mut Env) -> CalcResult {
 pub fn num_op(args: &Args, env: &mut Env, op: RoundId) -> CalcResult {
     use std::num;
     use super::super::num::Integer;
-    use self::types::operator::{Round, Floor, Ceiling, Zero};
+    use self::types::operator::{Round, RoundToNearest, Floor, Ceiling, Zero};
 
     let one: BigRational = num::one();
     let two = one + one;
     let half = one / two;
 
-    if args.len() != 1 {
+    if args.len() != 1 && op != RoundToNearest {
         return Err(BadNumberOfArgs(op.to_string(), "only".to_string(), 1))
+    } else if args.len() != 2 && op == RoundToNearest {
+        return Err(BadNumberOfArgs(op.to_string(), "only".to_string(), 2))
     }
 
     let num = match try!(args[0].desymbolize(env)) {
@@ -123,11 +125,16 @@ pub fn num_op(args: &Args, env: &mut Env, op: RoundId) -> CalcResult {
 
     match op { 
         //round() doesn't work right for BigRationals.
-        Round => Ok(Atom(BigNum(if num - num.floor() >= half { 
-            num.ceil()
-        } else {
-            num.floor()
-        }))),
+        Round => Ok(Atom(BigNum((num + half).floor()))),
+        RoundToNearest => { 
+            let nearest= match try!(args[1].desymbolize(env)) {
+                BigNum(x) => x.recip(),
+                x => return Err(BadArgType(
+                    format!("{} is not a number to which {} can be rounded", x, num)))
+            };
+
+            Ok(Atom(BigNum((num * nearest + half).floor() / nearest)))
+        },
         Floor => Ok(Atom(BigNum(num.floor()))),
         Ceiling => Ok(Atom(BigNum(num.ceil()))),
         Zero => Ok(Atom(Boolean(num == num::zero()))),

@@ -63,7 +63,7 @@ impl fmt::Show for ErrorKind {
             &BadFloatRange => "Number too large or precise for `exp' and `log'".to_string(),
             &MatrixErr(ref x) => x.to_string(),
             &BadNumberOfArgs(ref x, ref y, args) => 
-                format!("`{} requires {} {} {}.", x, y, args, match args {
+                format!("`{}' requires {} {} {}.", x, y, args, match args {
                     1 => "argument",
                     _ => "arguments"
                 }),
