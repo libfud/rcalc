@@ -55,7 +55,7 @@ pub fn cdr(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     match try!(args[0].desymbolize(env)) {
         List(x) => match x.len() {
             0 => Err(BadArgType("List too short!".to_string())),
-            _ => Ok(Atom(List(x.tail().to_owned())))
+            _ => Ok(Atom(List(x.tail().to_vec())))
         },
         _ => Err(BadArgType("Wrong type for `cdr'".to_string()))
     }

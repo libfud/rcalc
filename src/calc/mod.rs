@@ -86,7 +86,7 @@ pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
             Ok(Atom(Void))
         }
         &SExpr(ref x) => {
-            let expr = Expression::new(x.expr_type.clone(), args.tail().to_owned());
+            let expr = Expression::new(x.expr_type.clone(), args.tail().to_vec());
             env.symbols.insert(name, Proc(vars, expr));
             Ok(Atom(Void))
         }

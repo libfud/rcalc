@@ -383,38 +383,7 @@ impl<T: Num> Matrice<T> {
     }
 }
 
-impl<T: Num + Clone + fmt::Show> Matrice<T> {
-/*
-    pub fn gauss_xform(&self) -> Option<Matrice<T>> {
-        if self.rows != self.columns || self.rows == 0 {
-            return None
-        } 
-
-        let mut degaussed = self.clone();
-        for row in range(0, self.rows) {
-            let (_, p_row) = match Matrice::get_pivot(degaussed.get_col(row)) {
-                Some((p, r)) => (p, r),
-                None => return None
-            };
-            degaussed.swap_rows(row, cmp::max(row, p_row));
-            for n_row in range(row + 1, self.rows) {
-                for col in range(row + 1, self.columns) {
-                    let elt_a = n_row * self.columns + col;
-                    let elt_b = row * self.columns + col;
-                    let elt_c = n_row * self.columns + row;
-                    let elt_d = row * self.columns + row;
-
-                    *degaussed.elems.get_mut(elt_a) = 
-                        *degaussed.elems.get(elt_a) - *degaussed.elems.get(elt_b) * 
-                        (*degaussed.elems.get(elt_c) / *degaussed.elems.get(elt_d));
-                }
-                *degaussed.elems.get_mut(n_row * self.columns + row) = num::zero();
-            }
-        }
-
-        Some(degaussed)
-    }
-*/
+impl<T: Num + PartialOrd + Clone + fmt::Show> Matrice<T> {
     pub fn determinant(&self) -> Option<T> {
         if self.rows != self.columns || self.rows == 0 {
             return None
@@ -527,14 +496,56 @@ impl<T: Num + Clone + fmt::Show> Matrice<T> {
         Matrice { rows: new_rows, columns: new_cols, elems: new_elems }
     }
 
-    /// Returns a new 
     pub fn transpose(&self) -> Matrice<T> {
-        let mut new_elems = Vec::with_capacity(self.real_len());
+        let mut new_elems = Vec::with_capacity(self.elems.len());
         for column in range(0, self.columns) {
             new_elems.extend(self.get_col(column).map(|x| x.clone()));
         }
 
         Matrice { rows: self.columns, columns: self.rows, elems: new_elems }
+    }
+
+    pub fn translate_by(&self, other: &Vec<T>) -> Option<Matrice<T>> {
+        if other.len() != self.rows { 
+            return None
+        }
+
+        let mut new_elems = Vec::with_capacity(self.elems.len());
+
+        for row in range(0, self.rows) {
+            new_elems.extend(self.get_row(row).map(|x| *x + other[row]))
+        }
+
+        Some(Matrice { rows: self.rows, columns: self.rows, elems: new_elems })
+    }
+
+    pub fn polygon_area(&self) -> Option<T> {
+        if self.columns != 2 || self.rows < 2 {
+            return None
+        }
+
+        let mut answer: T = num::zero();
+        for n in range(0, self.rows()) {
+            let n_row = n * 2;
+            answer = if n == 0 { 
+                answer + self.elems[0] * self.elems[3] 
+                    - self.elems[2] * self.elems[1]
+            } else if n + 1 == self.rows {
+                answer + self.elems[n_row] * self.elems[1]
+                    - self.elems[0] * self.elems[n_row + 1]
+            } else {
+                answer + self.elems[n_row] * self.elems[n_row + 3] -
+                    self.elems[n_row + 2] * self.elems[n_row + 1]
+            }
+        }
+
+        let one: T = num::one();
+
+        if answer > num::zero() {
+            Some(answer / (one + one))
+        } else {
+            Some(-answer / (one + one))
+        }
     }
 
     /// Returns a matrix of minors.
@@ -752,7 +763,7 @@ impl<T: Num + Clone + fmt::Show> Mul<Matrice<T>, Matrice<T>> for Matrice<T> {
     }
 }
 
-impl<T: Num + Clone + fmt::Show> Div<Matrice<T>, Matrice<T>> for Matrice<T> {
+impl<T: Num + PartialOrd + Clone + fmt::Show> Div<Matrice<T>, Matrice<T>> for Matrice<T> {
     fn div(&self, other: &Matrice<T>) -> Matrice<T> {
         let inverse = match other.inverse() {
             Some(x) => x,

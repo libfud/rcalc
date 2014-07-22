@@ -5,8 +5,9 @@ extern crate types;
 
 use self::matrix::{Matrice, MatrixErrors, BadDimensionality};
 use self::types::MatrixErr;
-use self::types::operator::{MatrixOps, MakeMatrix, MatrixSetRow, MatrixSetCol, 
-                            MatrixAppendRows, MatrixInv, MatrixAppendCols, Determ, Transpose,
+use self::types::operator::{MatrixOps, MakeMatrix, MatrixSetRow, MatrixSetCol, PolygonArea,
+                            MatrixConcatRows, MatrixConcatCols, MatrixAppendRows,
+                            MatrixInv, MatrixAppendCols, Determ, Transpose, Scalar,
                             MatrixGetElem, MatrixGetRow, MatrixGetCol, MatrixFromFn};
 use super::{ArgType, Atom, CalcResult, Environment, Evaluate};
 use super::{BadArgType, BadNumberOfArgs};
@@ -20,12 +21,48 @@ pub fn matrix_ops(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
         MakeMatrix => make_matrix(args, env),
         MatrixSetRow | MatrixSetCol => matrix_set(args, env, mop),
         MatrixAppendRows | MatrixAppendCols => matrix_append(args, env, mop),
+        MatrixConcatRows | MatrixConcatCols => matrix_concat(args, env, mop),
         MatrixGetElem => get_elem(args, env),
         MatrixGetRow | MatrixGetCol => get_row_col(args,env, mop),
-        Determ | MatrixInv | Transpose => single(args, env, mop),
+        Determ | MatrixInv | Transpose | PolygonArea => single(args, env, mop),
+        Scalar => scalar(args, env),
         MatrixFromFn => matrix_from_fn(args, env),
     }
 }        
+
+pub fn list_to_1d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, uint)> {
+    match arg {
+        List(list) => {
+            let len = list.len();
+            Ok((list, len))
+        }
+        Symbol(ref s) => list_to_1d(try!(env.lookup(s)), env),
+        _ =>  Err(BadArgType("Elements to extend a matrix must be given in a list".to_string()))
+    }
+}
+
+pub fn list_to_2d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, (uint, uint))> {
+    let mut length = 0u;
+    let mut width = 0u;
+    match arg {
+        List(list) => {
+            let mut arg_list = Vec::new();
+            for x in list.move_iter() {
+                match try!(Atom(x).desymbolize(env)) {
+                    List(y) => {
+                        let (sub_list, _) = try!(list_to_1d(List(y), env));
+                        length = sub_list.len();
+                        arg_list.push_all(sub_list.as_slice());
+                    },
+                    _ => return Err(BadArgType("Matrices only take numbers".to_string()))
+                }
+                width += 1;
+            }
+            Ok((arg_list, (length, width)))
+        }
+        _ =>  Err(BadArgType("Elements to extend a matrix must be given in a list".to_string()))
+    }
+}
 
 pub fn make_matrix(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() > 1  {
@@ -91,6 +128,40 @@ pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
     }
 
     match Matrice::from_vec(matrix_vec, lists.len() + 1, lists[0].len()) {
+        Ok(x) => Ok(Atom(Matrix(x))),
+        Err(m) => Err(MatrixErr(m))
+    }
+}
+
+
+pub fn scalar(args: &Args, env: &mut Env) -> CalcResult {
+    use super::operator::listops::proc_getter;
+
+    if args.len() != 2 {
+        return Err(BadNumberOfArgs("matrix-scalar".to_string(), "only".to_string(), 2))
+    }
+
+    let matrix = match try!(args[0].desymbolize(env)) {
+        Matrix(x) => x.clone(),
+        _ => return Err(BadArgType("Not a matrix".to_string()))
+    };
+
+    let (names, func) = try!(proc_getter(&args.tail().to_vec(), env));
+    if names.len() != 1 {
+        return Err(BadArgType("Only one variable expected".to_string()))
+    };
+
+    let matrix_elems = matrix.to_vec();
+
+    let mut new_elems = Vec::with_capacity(matrix_elems.len());
+
+    for elem in matrix_elems.iter() {
+        let mut child_env = Environment::new_frame(env);
+        child_env.symbols.insert(names[0].clone(), elem.clone());
+        new_elems.push(try!(try!(func.eval(&mut child_env)).desymbolize(env)));
+    }
+
+    match Matrice::from_vec(new_elems, matrix.cols(), matrix.rows()) {
         Ok(x) => Ok(Atom(Matrix(x))),
         Err(m) => Err(MatrixErr(m))
     }
@@ -165,40 +236,6 @@ pub fn get_row_col(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     }
 }
 
-pub fn list_to_1d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, uint)> {
-    match arg {
-        List(list) => {
-            let len = list.len();
-            Ok((list, len))
-        }
-        Symbol(ref s) => list_to_1d(try!(env.lookup(s)), env),
-        _ =>  Err(BadArgType("Elements to extend a matrix must be given in a list".to_string()))
-    }
-}
-
-pub fn list_to_2d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, (uint, uint))> {
-    let mut length = 0u;
-    let mut width = 0u;
-    match arg {
-        List(list) => {
-            let mut arg_list = Vec::new();
-            for x in list.move_iter() {
-                match try!(Atom(x).desymbolize(env)) {
-                    List(y) => {
-                        let (sub_list, _) = try!(list_to_1d(List(y), env));
-                        length = sub_list.len();
-                        arg_list.push_all(sub_list.as_slice());
-                    },
-                    _ => return Err(BadArgType("Matrices only take numbers".to_string()))
-                }
-                width += 1;
-            }
-            Ok((arg_list, (length, width)))
-        }
-        _ =>  Err(BadArgType("Elements to extend a matrix must be given in a list".to_string()))
-    }
-}
-
 pub fn matrix_set(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     if args.len() != 3 {
         return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 3))
@@ -241,7 +278,7 @@ pub fn matrix_append(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     match mop {
         MatrixAppendRows => {
             for list in range(0, count) {
-                match matrix.append_row(new_items.slice(list * len, (list + 1) * len).to_owned()) {
+                match matrix.append_row(new_items.slice(list * len, (list + 1) * len).to_vec()) {
                     Ok(_) =>  { },
                     Err(m) => return Err(MatrixErr(m))
                 }
@@ -249,7 +286,7 @@ pub fn matrix_append(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
         }
         MatrixAppendCols => {
             for list in range(0, count) {
-                match matrix.append_col(new_items.slice(list * len, (list + 1) * len).to_owned()) {
+                match matrix.append_col(new_items.slice(list * len, (list + 1) * len).to_vec()) {
                     Ok(_) =>  { },
                     Err(m) => return Err(MatrixErr(m))
                 }
@@ -259,6 +296,34 @@ pub fn matrix_append(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     }
 
     Ok(Atom(Matrix(matrix)))
+}
+
+pub fn matrix_concat(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
+    if args.len() != 2 {
+        return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 2))
+    }
+
+    let matrix_a = match try!(args[0].desymbolize(env)) {
+        Matrix(x) => x.clone(),
+        _ => return Err(BadArgType("Not a matrix".to_string()))
+    };
+
+    let matrix_b = match try!(args[1].desymbolize(env)) {
+        Matrix(x) => x.clone(),
+        _ => return Err(BadArgType("Not a matrix".to_string()))
+    };
+
+    match mop {
+        MatrixConcatCols => match matrix_a.concat_cols(&matrix_b) {
+            Some(x) => Ok(Atom(Matrix(x))),
+            None => Err(BadArgType("could not concatentate matrices".to_string()))
+        },
+        MatrixConcatRows => match matrix_a.concat_rows(&matrix_b) {
+            Some(x) => Ok(Atom(Matrix(x))),
+            None => Err(BadArgType("could not concatentate matrices".to_string()))
+        },
+        _ => fail!("undefined")
+    }
 }
 
 pub fn single(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
@@ -281,6 +346,10 @@ pub fn single(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
             None =>  Err(BadArgType("No determinant for this matrix".to_string()))
         },
         Transpose => Ok(Atom(Matrix(matrix.transpose()))),
+        PolygonArea => match matrix.polygon_area() {
+            Some(x) => Ok(Atom(x)),
+            None => Err(BadArgType("invalid matrix to use with shoelace".to_string()))
+        },
         _ => fail!("Undefined!")
     }
 }

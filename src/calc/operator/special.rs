@@ -188,7 +188,7 @@ pub fn table_from_matrix(args: &Vec<ArgType>, env: &mut Environment) -> CalcResu
 
 pub fn insertion_sort<T: PartialOrd + Clone>(mut array: Vec<T>) -> Vec<T> {
     if array.len() <= 1 {
-        return array.to_owned()
+        return array.to_vec()
     }
 
     let mut i = 1u;

@@ -122,8 +122,8 @@ impl from_str::FromStr for OrderEq {
     }
 }
 
-impl OrderEq {
-    pub fn to_ord<T: PartialOrd + PartialEq>(self) -> |T, T| -> bool {
+impl<'a> OrderEq {
+    pub fn to_ord<'a, T: PartialOrd + PartialEq>(self) -> |T, T|:'a -> bool {
         match self {
             Eq => |a: T, b: T| a == b,
             NEq => |a: T, b: T| a != b,
@@ -299,13 +299,17 @@ pub enum MatrixOps {
     MatrixSetCol,
     MatrixAppendRows,
     MatrixAppendCols,
+    MatrixConcatRows,
+    MatrixConcatCols,
     MatrixGetElem,
     MatrixGetRow,
     MatrixGetCol,
     Determ,
+    Scalar,
     Transpose,
     MatrixInv,
     MatrixFromFn,
+    PolygonArea,
 }
 
 impl fmt::Show for MatrixOps {
@@ -316,13 +320,17 @@ impl fmt::Show for MatrixOps {
             MatrixSetCol => "matrix-set-col",
             MatrixAppendRows => "matrix-append-rows",
             MatrixAppendCols => "matrix-append-cols",
+            MatrixConcatRows => "matrix-concat-rows",
+            MatrixConcatCols => "matrix-concat-cols",
             MatrixGetElem => "matrix-get-elem",
             MatrixGetRow => "matrix-get-row",
             MatrixGetCol => "matrix-get-col",
             Determ => "matrix-det",
+            Scalar => "matrix-scalar",
             Transpose => "matrix-transpose",
             MatrixInv => "matrix-inv",
             MatrixFromFn => "matrix-from-fn",
+            PolygonArea => "polygon-area",
         }));
         Ok(())
     }
@@ -334,15 +342,19 @@ impl from_str::FromStr for MatrixOps {
             "make-matrix" => Some(MakeMatrix),
             "matrix-append-rows" => Some(MatrixAppendRows),
             "matrix-append-cols" => Some(MatrixAppendCols),
+            "matrix-concat-rows" => Some(MatrixConcatRows),
+            "matrix-concat-cols" => Some(MatrixConcatCols),
             "matrix-set-row" => Some(MatrixSetRow),
             "matrix-set-col" => Some(MatrixSetCol),
             "matrix-get-elem" => Some(MatrixGetElem),
             "matrix-get-row" => Some(MatrixGetRow),
             "matrix-get-col" => Some(MatrixGetCol),
             "matrix-det" => Some(Determ),
+            "matrix-scalar" => Some(Scalar),
             "matrix-inv" => Some(MatrixInv),
             "matrix-transpose" => Some(Transpose),
             "matrix-from-fn" => Some(MatrixFromFn),
+            "polygon-area" => Some(PolygonArea),
             _ => None
         }
     }
