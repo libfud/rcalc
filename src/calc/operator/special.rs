@@ -213,7 +213,7 @@ pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("Sort".to_string(), "only".to_string(), 1))
     }
 
-    let mut list = match try!(args[0].arg_to_literal(env)) {
+    let mut list = match try!(args[0].desymbolize(env)) {
         List(x) => x.clone(),
         _ => return Err(BadArgType("Cannot sort items which aren't in a list!".to_string()))
     };
@@ -226,9 +226,8 @@ pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 pub fn sort_by(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     use self::types::literal::Proc;
     use self::types::operator;
-    use self::types::operator::OrderEq;
+    use self::types::operator::{Lt, Gt, Eq};
     use self::types::sexpr::BuiltIn;
-    use std::cmp::{Less, Greater, Equal};
 
     if args.len() != 2 {
         return Err(BadNumberOfArgs("sort-by".to_string(), "only".to_string(), 2))
@@ -247,10 +246,10 @@ pub fn sort_by(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         _ => return Err(BadArgType("Please use a lambda".to_string()))
     };
 
-    match order.to_ordering() {
-        Less | Equal => list.sort_by(|a, b| b.cmp(a)),
-        Greater => list.sort_by(|a, b| a.cmp(b)),
-//        None => return Err(BadArgType("Use only <, > and =".to_string()))
+    match order {
+        Lt => list.sort_by(|a, b| a.cmp(b)),
+        Gt => list.sort_by(|a, b| b.cmp(a)),
+        _ => return Err(BadArgType("Use only < and >".to_string()))
     }
 
     Ok(Atom(List(list)))

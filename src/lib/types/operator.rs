@@ -2,7 +2,6 @@
 
 use std::fmt;
 use std::from_str;
-use std::cmp::Ordering;
 
 #[cfg(use_fancy)]
 use self::fancy::{LessThanEq, GreaterThanEq};
@@ -134,19 +133,6 @@ impl<'a> OrderEq {
             GtEq => |a: T, b: T| a >= b,
          }
     }
-
-    pub fn to_ordering<'a, T: PartialOrd + PartialEq>(&self) -> Option<Ordering> {
-        use std::cmp::{Less, Equal, Greater};
-        match self {
-            &Eq => Some(Equal),
-            &NEq => None,
-            &Lt => Some(Less),
-            &LtEq => None,
-            &Gt => Some(Greater),
-            &GtEq => None
-         }
-    }
-
 }
 
 #[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
@@ -277,6 +263,7 @@ pub enum XForms {
     Reduce,
     Filter,
     Sort,
+    SortBy,
     RangeList
 }
 
@@ -287,6 +274,7 @@ impl from_str::FromStr for XForms {
             "reduce" => Some(Reduce),
             "filter" => Some(Filter),
             "sort" => Some(Sort),
+            "sort-by" => Some(SortBy),
             "range-list" => Some(RangeList),
             _ => None
         }
@@ -300,6 +288,7 @@ impl fmt::Show for XForms {
             &Reduce => "reduce",
             &Filter => "filter",
             &Sort => "sort",
+            &SortBy => "sort-by",
             &RangeList => "range-list",
         }));
         Ok(())

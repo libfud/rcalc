@@ -35,9 +35,9 @@ pub fn list_ops(args: &Vec<ArgType>, env: &mut Environment, lop: ListOps) -> Cal
 }
 
 pub fn transform_ops(args: &Vec<ArgType>, env: &mut Environment, top: XForms) -> CalcResult {
-    use self::types::operator::{Map, Reduce, Filter, RangeList, Sort};
+    use self::types::operator::{Map, Reduce, Filter, RangeList, Sort, SortBy};
     use self::listops::{map, filter, reduce, rangelist};
-    use self::special::sort;
+    use self::special::{sort, sort_by};
 
     match top {
         Map => map(args, env),
@@ -45,6 +45,7 @@ pub fn transform_ops(args: &Vec<ArgType>, env: &mut Environment, top: XForms) ->
         Filter => filter(args, env),
         RangeList => rangelist(args, env), 
         Sort => sort(args, env),
+        SortBy => sort_by(args, env),
     }
 }
 
