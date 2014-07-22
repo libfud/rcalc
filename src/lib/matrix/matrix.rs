@@ -61,7 +61,7 @@ impl fmt::Show for MatrixErrors {
 
 /* Matrices and their implementation */
 
-#[deriving(Clone, PartialOrd, PartialEq)]
+#[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
 pub struct Matrice<T> {
     columns: uint,
     rows: uint,
@@ -388,7 +388,8 @@ impl<T: Num + PartialOrd + Clone + fmt::Show> Matrice<T> {
         if self.rows != self.columns {
             None
         } else {
-            Some(self.left_diag().map(|x| *x).sum())
+            let zero: T = num::zero();
+            Some(self.left_diag().fold(zero, |a, b| a + *b))
         }
     }
     

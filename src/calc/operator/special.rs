@@ -3,12 +3,9 @@
 extern crate types;
 
 use self::types::literal::{BigNum, List, Matrix, Symbol, Void, LiteralType};
-use super::super::{Expression, Evaluate};
+use super::super::{Expression, Evaluate, BadArgType, BadNumberOfArgs};
 use super::listops::proc_getter;
-use super::super::{BadArgType, BadNumberOfArgs};
 use super::{Environment, CalcResult, ArgType, Atom};
-use std::{iter, cmp};
-
 pub fn range_getter(arg: LiteralType) -> CalcResult<int> {
     match arg {
         BigNum(x) => Ok(x.to_integer().to_int().unwrap()),
@@ -184,28 +181,8 @@ pub fn table_from_matrix(args: &Vec<ArgType>, env: &mut Environment) -> CalcResu
     table_writer(table, name_lens, fn_len);
     Ok(Atom(Void))
 }
-        
 
-pub fn insertion_sort<T: PartialOrd + Clone>(mut array: Vec<T>) -> Vec<T> {
-    if array.len() <= 1 {
-        return array.to_vec()
-    }
-
-    let mut i = 1u;
-    while i < array.len() {
-        let val = array[i].clone();
-        let mut j = i - 1;
-        while j + 1 != 0 && array[j] > val {
-            array.as_mut_slice()[j + 1] = array[j].clone();
-            j -= 1;
-        }
-        array.as_mut_slice()[j + 1] = val;
-        i += 1;
-    }
-
-    array
-}
-
+/*        
 pub fn merge<T: PartialOrd>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
     struct OrderedIterator<T, A, B> {
         a: iter::Peekable<T, A>,
@@ -229,40 +206,55 @@ pub fn merge<T: PartialOrd>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
     (OrderedIterator{a:left.move_iter().peekable(), 
                      b: right.move_iter().peekable()}).collect()
 }
+*/
             
-
-pub fn merge_sort<T: PartialOrd + Clone>(array: Vec<T>, 
-                                         min_size: uint) -> CalcResult<Vec<T>> {
-    if min_size < 1 {
-        return Err(BadArgType("0 is an invalid minimum size!".to_string()))
-    }
-
-    let length = array.len();
-    if length <= min_size { 
-        return Ok(insertion_sort(array))
-    }
-
-    let middle = length / 2;
-    let mut left = Vec::from_slice(array.slice(0, middle));
-    let mut right = Vec::from_slice(array.slice(middle, length));
-
-    left = try!(merge_sort(left, min_size));
-    right = try!(merge_sort(right, min_size));
-
-    Ok(merge(left, right))
-}
-        
 pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 1 {
         return Err(BadNumberOfArgs("Sort".to_string(), "only".to_string(), 1))
     }
 
-    let list = match try!(args[0].arg_to_literal(env)) {
+    let mut list = match try!(args[0].arg_to_literal(env)) {
         List(x) => x.clone(),
         _ => return Err(BadArgType("Cannot sort items which aren't in a list!".to_string()))
     };
 
-    let answer = try!(merge_sort(list, 100));
+    list.sort();
 
-    Ok(Atom(List(answer)))
+    Ok(Atom(List(list)))
+}
+
+pub fn sort_by(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+    use self::types::literal::Proc;
+    use self::types::operator;
+    use self::types::sexpr::BuiltIn;
+    use std::cmp::{Less, Greater, Equal};
+
+    if args.len() != 2 {
+        return Err(BadNumberOfArgs("sort-by".to_string(), "only".to_string(), 2))
+    }
+
+    let mut list = match try!(args[0].desymbolize(env)) {
+        List(x) => x.clone(),
+        _ => return Err(BadArgType("Cannot sort items which aren't in a list!".to_string()))
+    };
+
+    let order = match try!(args[1].desymbolize(env)) {
+        Proc(_, procedure) => match procedure.expr_type { 
+            BuiltIn(operator::Ordering(cmp)) => match cmp.to_ordering() {
+//                &operator::Lt => Less,
+//                _ => fail!("foo"),
+                Some(ord) => ord,
+                None => return Err(BadArgType("Use only =, < or >".to_string()))
+            },
+            _ => return Err(BadArgType("Use only builtin".to_string()))
+        },
+        _ => return Err(BadArgType("Please use a lambda".to_string()))
+    };
+
+    match order {
+        Less | Equal => list.sort_by(|a, b| b.cmp(a)),
+        Greater => list.sort_by(|a, b| a.cmp(b)),
+    }
+
+    Ok(Atom(List(list)))
 }

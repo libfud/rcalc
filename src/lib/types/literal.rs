@@ -9,7 +9,7 @@ use std::num;
 use std::num::{Zero, One};
 use std::fmt;
 
-#[deriving(Clone, PartialEq, PartialOrd)]
+#[deriving(Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub enum LiteralType {
     Boolean(bool),
     BigNum(BigRational),

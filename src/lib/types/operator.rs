@@ -2,6 +2,7 @@
 
 use std::fmt;
 use std::from_str;
+use std::cmp::Ordering;
 
 #[cfg(use_fancy)]
 use self::fancy::{LessThanEq, GreaterThanEq};
@@ -20,7 +21,7 @@ mod not_fancy {
     pub static GreaterThanEq: &'static str = ">=";
 }
 
-#[deriving(Clone, PartialOrd, PartialEq)] 
+#[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)] 
 pub enum Arith {
     Add,
     Sub,
@@ -55,7 +56,7 @@ impl from_str::FromStr for Arith {
     }
 }           
 
-#[deriving(Clone, PartialOrd, PartialEq)]
+#[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
 pub enum Transcendental {
     Log, Ln, Exp,
     Sin, Cos, Tan,
@@ -90,7 +91,7 @@ impl from_str::FromStr for Transcendental {
     }
 }
 
-#[deriving(Clone, PartialOrd, PartialEq)]
+#[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
 pub enum OrderEq {
     Eq,
     NEq,
@@ -133,9 +134,22 @@ impl<'a> OrderEq {
             GtEq => |a: T, b: T| a >= b,
          }
     }
+
+    pub fn to_ordering<'a, T: PartialOrd + PartialEq>(&self) -> Option<Ordering> {
+        use std::cmp::{Less, Equal, Greater};
+        match self {
+            &Eq => Some(Equal),
+            &NEq => None,
+            &Lt => Some(Less),
+            &LtEq => None,
+            &Gt => Some(Greater),
+            &GtEq => None
+         }
+    }
+
 }
 
-#[deriving(Clone, PartialOrd, PartialEq)]
+#[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
 pub enum RoundId {
     Round,
     RoundToNearest,
@@ -192,7 +206,7 @@ impl RoundId {
     }
 }
 
-#[deriving(Clone, PartialOrd, PartialEq)]
+#[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
 pub enum Gate {
     If,
     And,
@@ -223,7 +237,7 @@ impl from_str::FromStr for Gate {
     }
 }
 
-#[deriving(Clone, PartialOrd, PartialEq)]
+#[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
 pub enum ListOps {
     List,
     Cons,
@@ -257,7 +271,7 @@ impl from_str::FromStr for ListOps {
     }
 }
 
-#[deriving(Clone, PartialOrd, PartialEq)]
+#[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
 pub enum XForms {
     Map,
     Reduce,
@@ -292,7 +306,7 @@ impl fmt::Show for XForms {
     }
 }
 
-#[deriving(Clone, PartialOrd, PartialEq)]
+#[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
 pub enum MatrixOps {
     MakeMatrix,
     MatrixSetRow,
@@ -360,7 +374,7 @@ impl from_str::FromStr for MatrixOps {
     }
 }
 
-#[deriving(Clone, PartialOrd, PartialEq)]
+#[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
 pub enum OperatorType {
     Arithmetic(Arith),
     Pow,

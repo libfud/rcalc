@@ -2,13 +2,13 @@
 
 use super::{LiteralType, Environment, OperatorType};
 
-#[deriving(Show, Clone, PartialEq, PartialOrd)]
+#[deriving(Show, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub enum ExprType {
     BuiltIn(OperatorType),
     Function(String)
 }
 
-#[deriving(Clone, Show, PartialEq, PartialOrd)]
+#[deriving(Clone, Show, PartialEq, PartialOrd, Eq, Ord)]
 pub struct Expression {
     pub expr_type: ExprType,
     pub args: Vec<ArgType>,
@@ -41,7 +41,7 @@ impl Expression {
     }
 }
 
-#[deriving(Clone, Show, PartialEq, PartialOrd)]
+#[deriving(Clone, Show, PartialEq, PartialOrd, Eq, Ord)]
 pub enum ArgType {
     Atom(LiteralType),
     SExpr(Expression),
