@@ -226,6 +226,7 @@ pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 pub fn sort_by(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     use self::types::literal::Proc;
     use self::types::operator;
+    use self::types::operator::OrderEq;
     use self::types::sexpr::BuiltIn;
     use std::cmp::{Less, Greater, Equal};
 
@@ -240,20 +241,16 @@ pub fn sort_by(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
     let order = match try!(args[1].desymbolize(env)) {
         Proc(_, procedure) => match procedure.expr_type { 
-            BuiltIn(operator::Ordering(cmp)) => match cmp.to_ordering() {
-//                &operator::Lt => Less,
-//                _ => fail!("foo"),
-                Some(ord) => ord,
-                None => return Err(BadArgType("Use only =, < or >".to_string()))
-            },
+            BuiltIn(operator::Ordering(cmp)) => cmp,
             _ => return Err(BadArgType("Use only builtin".to_string()))
         },
         _ => return Err(BadArgType("Please use a lambda".to_string()))
     };
 
-    match order {
+    match order.to_ordering() {
         Less | Equal => list.sort_by(|a, b| b.cmp(a)),
         Greater => list.sort_by(|a, b| a.cmp(b)),
+//        None => return Err(BadArgType("Use only <, > and =".to_string()))
     }
 
     Ok(Atom(List(list)))
