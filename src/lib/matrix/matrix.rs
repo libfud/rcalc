@@ -384,6 +384,40 @@ impl<T: Num> Matrice<T> {
 }
 
 impl<T: Num + PartialOrd + Clone + fmt::Show> Matrice<T> {
+    pub fn trace(&self) -> Option<T> {
+        if self.rows != self.columns {
+            None
+        } else {
+            Some(self.left_diag().map(|x| *x).sum())
+        }
+    }
+    
+    pub fn hadamard_prod(&self, other: &Matrice<T>) -> Option<Matrice<T>> {
+        if self.rows != other.rows || self.columns != other.columns {
+            None
+        } else {
+            Some(Matrice { rows: self.rows, columns: self.columns,
+                           elems: self.elems.iter().zip(other.elems.iter()).map(|(x, y)| {
+                               *x * *y}).collect() })
+        }
+    }
+
+    pub fn kronecker_prod(&self, other: &Matrice<T>) -> Option<Matrice<T>> {
+        if self.columns != other.rows {
+            return None
+        }
+
+        let mut new_elems: Vec<T> = Vec::with_capacity(self.columns * other.rows);
+        for row in range(0, self.rows) {
+            for col in range(0, other.columns) {
+                new_elems.push(self.get_row(row).zip(other.get_col(col))
+                               .map(|(lhs, rhs)| *lhs * *rhs).sum());
+            }
+        }
+
+        Some(Matrice { columns: other.columns, rows: self.rows, elems: new_elems })
+    }
+
     pub fn determinant(&self) -> Option<T> {
         if self.rows != self.columns || self.rows == 0 {
             return None
@@ -517,35 +551,6 @@ impl<T: Num + PartialOrd + Clone + fmt::Show> Matrice<T> {
         }
 
         Some(Matrice { rows: self.rows, columns: self.rows, elems: new_elems })
-    }
-
-    pub fn polygon_area(&self) -> Option<T> {
-        if self.columns != 2 || self.rows < 2 {
-            return None
-        }
-
-        let mut answer: T = num::zero();
-        for n in range(0, self.rows()) {
-            let n_row = n * 2;
-            answer = if n == 0 { 
-                answer + self.elems[0] * self.elems[3] 
-                    - self.elems[2] * self.elems[1]
-            } else if n + 1 == self.rows {
-                answer + self.elems[n_row] * self.elems[1]
-                    - self.elems[0] * self.elems[n_row + 1]
-            } else {
-                answer + self.elems[n_row] * self.elems[n_row + 3] -
-                    self.elems[n_row + 2] * self.elems[n_row + 1]
-            }
-        }
-
-        let one: T = num::one();
-
-        if answer > num::zero() {
-            Some(answer / (one + one))
-        } else {
-            Some(-answer / (one + one))
-        }
     }
 
     /// Returns a matrix of minors.
@@ -698,6 +703,78 @@ impl<T: Num + PartialOrd + Clone + fmt::Show> Matrice<T> {
     } 
 }
 
+impl<T: Num + PartialOrd> Matrice<T> {
+    pub fn polygon_area(&self) -> Option<T> {
+        if self.columns != 2 || self.rows < 2 {
+            return None
+        }
+
+        let mut answer: T = num::zero();
+        for n in range(0, self.rows()) {
+            let n_row = n * 2;
+            answer = if n == 0 { 
+                answer + self.elems[0] * self.elems[3] 
+                    - self.elems[2] * self.elems[1]
+            } else if n + 1 == self.rows {
+                answer + self.elems[n_row] * self.elems[1]
+                    - self.elems[0] * self.elems[n_row + 1]
+            } else {
+                answer + self.elems[n_row] * self.elems[n_row + 3] -
+                    self.elems[n_row + 2] * self.elems[n_row + 1]
+            }
+        }
+
+        let one: T = num::one();
+
+        if answer > num::zero() {
+            Some(answer / (one + one))
+        } else {
+            Some(-answer / (one + one))
+        }
+    }
+}
+
+pub trait SquareRoot<T> {
+    fn sqrt(&self) -> T;
+}
+
+impl SquareRoot<f32> for f32 {
+    fn sqrt(&self) -> f32 {
+        self.sqrt()
+    }
+}
+
+impl SquareRoot<f64> for f64 {
+    fn sqrt(&self) -> f64 {
+        self.sqrt()
+    }
+}
+
+impl<T: Num + SquareRoot<T>> Matrice<T> {
+    pub fn euclid_norm(&self) -> Option<T> {
+        if (self.rows == 1) ^ (self.cols() == 1) {
+            Some(self.elems.iter().map(|x| *x * *x).sum().sqrt())
+        } else {
+            None
+        }
+    }
+
+    pub fn cross_prod(&self, other: &Matrice<T>) -> Option<Matrice<T>> {
+        match ((self.rows, self.columns), (other.rows, other.columns)) {
+            ((1, 3), (1, 3)) |
+            ((3, 1), (3, 1)) => {
+                Some(Matrice { 
+                    rows: self.rows, columns: self.columns, elems:
+                    vec!(self.elems[1] * other.elems[2] - self.elems[2] * other.elems[1],
+                         self.elems[2] * other.elems[0] - self.elems[0] * other.elems[2],
+                         self.elems[0] * other.elems[1] - self.elems[1] * other.elems[0])
+                })
+            },
+            (_, _) => None
+        }
+    }
+}
+
 pub struct MatriceIterator<'a, T> {
     elems: &'a [T],
     jump: uint,
@@ -759,7 +836,6 @@ impl<T: Num + Clone + fmt::Show> Mul<Matrice<T>, Matrice<T>> for Matrice<T> {
         }
 
         Matrice { columns: other.columns, rows: self.rows, elems: new_elems }
-                
     }
 }
 

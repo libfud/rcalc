@@ -3,7 +3,7 @@
 extern crate num;
 extern crate matrix;
 
-use self::matrix::{Matrice};
+use self::matrix::{Matrice, SquareRoot};
 use super::{BigRational, CalcResult, Expression, Environment};
 use std::num;
 use std::num::{Zero, One};
@@ -151,6 +151,60 @@ impl Rem<Lit, Lit> for Lit {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x % *y),
             (&Matrix(ref x), &BigNum(_)) => Matrix(x.scalar(rhs, |a, b| a % *b)),
             _ => fail!("Rem is only defined for numbers".to_string())
+        }
+    }
+}
+
+fn abs(x: &Lit) -> Lit {
+    if *x < num::zero() {
+        -x
+    } else {
+        x.clone()
+    }
+}
+
+fn floor(x: &Lit) -> Lit {
+    match *x {
+        BigNum(ref y) => BigNum(y.floor()),
+        _ => fail!("Undefined")
+    }
+}
+
+fn round(x: &Lit) -> Lit {
+    let one: Lit = num::one();
+    let half = one / (one + one);
+    floor(&(x + half))
+}
+
+impl SquareRoot<Lit> for Lit {
+    fn sqrt(&self) -> Lit {
+        match self {
+            &BigNum(_) => { },
+            _ => fail!("Undefined")
+        }
+
+        let one: Lit = num::one();
+        let two = one + one;
+        let sixteen = (two + two) * (two + two);
+        let epsilon = *self / (sixteen * sixteen * sixteen * (one + one));
+        //x / 8192
+        
+        //Well, I guess it's a guess.
+        let mut guess = one.clone();
+            
+        loop {
+            if abs(&(*self - guess * guess)) < epsilon {
+                break
+            }
+
+            guess = (*self / guess + guess ) / (one + one);
+        }
+
+        let rounded = round(&guess);
+        if rounded * rounded == *self {
+            rounded
+        } else {
+            guess
         }
     }
 }
