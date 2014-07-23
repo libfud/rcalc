@@ -122,7 +122,7 @@ impl Evaluate for ArgType {
     #[inline]
     fn desymbolize(&self, env: &mut Environment) -> CalcResult<LiteralType> {
         match self {
-            &Atom(Symbol(ref x)) => Atom(try!(env.lookup(x))).desymbolize(env),
+            &Atom(Symbol(ref x)) => Atom(try!(env.lookup(x)).clone()).desymbolize(env),
             &Atom(ref x) => Ok(x.clone()),
             &SExpr(_) => try!(self.eval(env)).desymbolize(env)
         }

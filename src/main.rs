@@ -22,8 +22,8 @@ pub use calc::eval;
 #[cfg(not(test))]
 use calc::pretty::pretty_print;
 
-use std::task;
 use std::task::TaskBuilder;
+use std::rc::Rc;
 
 #[cfg(test)]
 mod test;
@@ -128,9 +128,8 @@ fn main() {
         let (env_tx, env_rx) = channel();
         env_tx.send(env.clone());
         exp_tx.send(expr.as_slice().trim().to_string());
-        
-        let ok = task::try(proc() {
-//            task::TaskBuilder::stack_size(8192);
+
+        let ok = TaskBuilder::new().stack_size(9_000_000).try(proc() {
             let mut temp_env = env_rx.recv();
             let expr = exp_rx.recv();
             let ok = eval(expr.as_slice(), &mut temp_env);

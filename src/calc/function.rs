@@ -7,11 +7,9 @@ use super::{CalcResult, Environment, Evaluate, ArgType, Atom, Proc, BadNumberOfA
 pub fn eval(fn_name: &String, args: &Vec<ArgType>,
             env: &mut Environment) -> CalcResult {
     
-    let value = try!(env.lookup(fn_name));
-
-    let (args_to_fulfill, func) = match value {
-        Proc(x, y) => (x, y),
-        _ => return Ok(Atom(value)),
+    let (args_to_fulfill, func) = match try!(env.lookup(fn_name)) {
+        &Proc(ref x, ref y) => (x.clone(), y.clone()),
+        x => return Ok(Atom(x.clone()))
     };
 
     if args.len() != args_to_fulfill.len() {

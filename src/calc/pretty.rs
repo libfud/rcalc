@@ -24,7 +24,7 @@ pub fn pretty_print(result: &CalcResult, env: &Environment) -> String {
 pub fn pretty(arg: &LiteralType, env: &Environment) -> String {
     let s = match arg {
         &Symbol(ref s) => match env.lookup(s) {
-            Ok(x) => pretty(&x, env),
+            Ok(x) => pretty(x, env),
             Err(_) => s.to_string()
         },
         &Void => "".to_string(),

@@ -199,7 +199,7 @@ pub fn list_it(tokens: &mut TokenStream<Token, ErrorKind>,
                 return Err(BadToken("Sorry, gotta pull this feature for now".to_string()))
             }
             Literal(lit_ty) => lit_vec.push(lit_ty),
-            Variable(x) => lit_vec.push(try!(env.lookup(&x))),
+            Variable(x) => lit_vec.push(try!(env.lookup(&x)).clone()),
             RParen => break,
             Operator(Quote) => {
                 let sub_list = try!(list_it(tokens, env));

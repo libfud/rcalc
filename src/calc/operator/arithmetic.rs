@@ -4,12 +4,10 @@ extern crate types;
 
 use std::num;
 use self::types::operator::{Add, Sub, Mul, Div, Rem, Arith};
-use self::types::literal::Matrix;
-use super::super::{CalcResult, Environment, BadNumberOfArgs, BadArgType, Evaluate};
-use super::{BigRational, ArgType, Atom, Lit};
+use super::super::{CalcResult, Environment, BadNumberOfArgs, Evaluate};
+use super::{ArgType, Atom, Lit};
 
 pub type Args<T = ArgType> = Vec<T>;
-pub type BigR = BigRational;
 pub type Env = Environment;
 
 #[inline]

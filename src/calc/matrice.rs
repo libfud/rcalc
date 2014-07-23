@@ -5,14 +5,9 @@ extern crate types;
 
 use self::matrix::{Matrice, MatrixErrors, BadDimensionality};
 use self::types::MatrixErr;
-use self::types::operator::{MatrixOps, MakeMatrix, MatrixSetRow, MatrixSetCol, PolygonArea,
-                            MatrixConcatRows, MatrixConcatCols, MatrixAppendRows,
-                            MatrixInv, MatrixAppendCols, Determ, Transpose, Scalar,
-                            CrossProd, DotProd,
-                            MatrixGetElem, MatrixGetRow, MatrixGetCol, MatrixFromFn};
-use super::{ArgType, Atom, CalcResult, Environment, Evaluate};
-use super::{BadArgType, BadNumberOfArgs};
-use super::{Lit, List, Matrix, Symbol};
+use self::types::operator::*;
+use self::types::literal::{Lit, List, Matrix};
+use super::{ArgType, Atom, CalcResult, Environment, Evaluate, BadArgType, BadNumberOfArgs};
 
 type Env<T = Environment> = T;
 type Args<T = ArgType> = Vec<T>;
@@ -35,17 +30,6 @@ pub fn matrix_ops(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     }
 }        
 
-pub fn list_to_1d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, uint)> {
-    match arg {
-        List(list) => {
-            let len = list.len();
-            Ok((list, len))
-        }
-        Symbol(ref s) => list_to_1d(try!(env.lookup(s)), env),
-        _ =>  Err(BadArgType("Elements to extend a matrix must be given in a list".to_string()))
-    }
-}
-
 pub fn list_to_2d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, (uint, uint))> {
     let mut length = 0u;
     let mut width = 0u;
@@ -55,7 +39,7 @@ pub fn list_to_2d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, (uint, uint)
             for x in list.move_iter() {
                 match try!(Atom(x).desymbolize(env)) {
                     List(y) => {
-                        let (sub_list, _) = try!(list_to_1d(List(y), env));
+                        let sub_list = y.clone();
                         length = sub_list.len();
                         arg_list.push_all(sub_list.as_slice());
                     },
@@ -222,7 +206,7 @@ pub fn matrix_set(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
 
     let mut matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
     let old_item = try!((try!(args[1].desymbolize(env))).to_uint());
-    let (new_items, _) = try!(list_to_1d(try!(args[2].desymbolize(env)), env));
+    let new_items = try!(try!(args[2].desymbolize(env)).to_vec());
 
     match mop {
         MatrixSetRow => match matrix.set_row(old_item, new_items) {

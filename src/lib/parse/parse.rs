@@ -2,11 +2,12 @@
 #![crate_type = "lib"]
 #![feature(default_type_params)]
 
+extern crate num;
 extern crate types;
 
+pub use num::rational::{BigRational, Ratio};
 pub use types::{CalcResult, Environment, BadToken, BadExpr, BadArgType,
-                Ratio, BigRational, Expression, ArgType, Atom, SExpr,
-                LiteralType};
+                Expression, ArgType, Atom, SExpr, LiteralType};
 pub use types::{sexpr, operator, literal, ErrorKind};
 use types::literal::{BigNum, Boolean};
 

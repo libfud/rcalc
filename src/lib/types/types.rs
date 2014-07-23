@@ -2,17 +2,16 @@
 #![crate_type = "lib"]
 #![feature(default_type_params)]
 
-extern crate num;
 extern crate matrix;
 
 pub use self::matrix::{Matrice, MatrixErrors};
-pub use self::num::rational::{BigRational, Ratio};
-pub use self::num::bigint;
+//pub use self::num::rational::{BigRational, Ratio};
 pub use literal::{LiteralType};
 pub use sexpr::{ArgType, Atom, SExpr, Expression};
 pub use operator::OperatorType;
 use std::collections::hashmap::HashMap;
 use std::fmt;
+use std::rc::Rc;
 
 pub mod sexpr;
 pub mod literal;
@@ -63,27 +62,24 @@ pub type CalcResult<T = ArgType> = Result<T, ErrorKind>;
 #[deriving(Clone)]
 pub struct Environment {
     pub symbols: HashMap<String, LiteralType>,
-    pub parent: Option<Box<Environment>>
+    pub parent: Option<Rc<Environment>>
 }
 
-impl Environment {
-    pub fn new_global() -> Environment {
-        Environment { symbols:  HashMap::new(), parent: None }
+impl<'a> Environment {
+    pub fn new_global() -> Rc<Environment> {
+        Rc::new(Environment { symbols: HashMap::new(), parent: None })
     }
 
-    pub fn new_frame(par: &mut Environment) -> Environment {
-        Environment { symbols: HashMap::new(), parent: Some(box par.clone()) }
+    pub fn new_frame(par: &mut Rc<Environment>) -> Rc<Environment> {
+        Rc::new(Environment { symbols: HashMap::new(), parent: Some(par.make_unique()) })
     }
 
-    pub fn lookup(&self, var: &String) -> CalcResult<LiteralType> {
+    pub fn lookup(&'a self, var: &String) -> CalcResult<&'a LiteralType> {
         match self.symbols.find(var) {
-            Some(val) => Ok(val.clone()),
-            None      => {
-                if self.parent.is_some() {
-                    self.parent.clone().unwrap().lookup(var)
-                } else {
-                    Err(UnboundArg(var.clone()))
-                }
+            Some(ref val) => Ok(*val),
+            None      => match self.parent {
+                Some(ref par) => par.lookup(var),
+                None => Err(UnboundArg(var.clone()))
             }
         }
     }
