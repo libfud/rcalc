@@ -81,30 +81,29 @@ impl<'a> Environment {
         match self.symbols.find(var) {
             Some(ref val) => Ok(*val),
             None      => match self.parent {
-                Some(ref par) => par.borrow().lookup(var),
+                Some(ref par) => par.lookup(var),
                 None => Err(UnboundArg(var.clone()))
             }
         }
     }
 }
-/*
+
 pub trait Lookup<'a, T> {
     fn lookup(&'a self, var: &String) -> CalcResult<&'a T>;
 }
 
 impl<'a> Lookup<'a, LiteralType> for rc::Rc<RefCell<Environment>> {
-    pub fn lookup(&'a self, var: &String) -> CalcResult<&'a LiteralType> {
-        match *self.symbols.find(var) {
+    fn lookup(&'a self, var: &String) -> CalcResult<&'a LiteralType> {
+        match self.borrow().symbols.find(var) {
             Some(ref val) => Ok(*val),
-            None      => match self.parent {
+            None      => match self.borrow().parent {
                 Some(ref par) => par.lookup(var),
                 None => Err(UnboundArg(var.clone()))
             }
         }
-        self.loo
     }
 }
-*/
+
 impl fmt::Show for Environment {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
