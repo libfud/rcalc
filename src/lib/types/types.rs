@@ -78,10 +78,20 @@ impl<'a> Environment {
     }
 
     pub fn lookup(&'a self, var: &String) -> CalcResult<&'a LiteralType> {
+        /*
         match self.symbols.borrow().find(var) {
-            Some(ref val) => Ok(*val),
+            Some(val) => Ok(val),
             None      => match self.parent {
                 Some(ref par) => par.lookup(var),
+                None => Err(UnboundArg(var.clone()))
+            }
+        }
+         */
+        let maybe = self.symbols.borrow();
+        match maybe.find(var) {
+            Some(val) => Ok(val),
+            None => match self.parent {
+                Some(par) => par.lookup(var),
                 None => Err(UnboundArg(var.clone()))
             }
         }
