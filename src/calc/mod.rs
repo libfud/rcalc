@@ -4,6 +4,8 @@ extern crate num;
 extern crate types;
 extern crate parse;
 
+pub use std::rc::Rc;
+pub use std::cell::RefCell;
 pub use self::num::rational::{BigRational, Ratio};
 pub use self::num::bigint;
 pub use self::types::{CalcResult, Environment, 
@@ -25,7 +27,7 @@ pub mod pretty;
 
 /// A structure to allow persistence of variables and functions
 
-pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn define(args: &Vec<ArgType>, env: &mut Rc<Environment>) -> CalcResult {
     if args.len() < 2 {
         return Err(BadNumberOfArgs("define".to_string(), "only".to_string(), 2))
     }
@@ -94,14 +96,14 @@ pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 }
 
 pub trait Evaluate {
-    fn eval(&self, env: &mut Environment) -> CalcResult;
-    fn arg_to_literal(&self, env: &mut Environment) -> CalcResult<LiteralType>;
-    fn desymbolize(&self, env: &mut Environment) -> CalcResult<LiteralType>;
+    fn eval(&self, env: &mut Rc<Environment>) -> CalcResult;
+    fn arg_to_literal(&self, env: &mut Rc<Environment>) -> CalcResult<LiteralType>;
+    fn desymbolize(&self, env: &mut Rc<Environment>) -> CalcResult<LiteralType>;
 }
 
 impl Evaluate for ArgType {
     #[inline]
-    fn eval(&self, env: &mut Environment) -> CalcResult {
+    fn eval(&self, env: &mut Rc<Environment>) -> CalcResult {
         match self {
             &Atom(_) => Ok(self.clone()),
             &SExpr(ref s) =>  match s.expr_type {
@@ -112,7 +114,7 @@ impl Evaluate for ArgType {
     }
 
     #[inline]
-    fn arg_to_literal(&self, env: &mut Environment) -> CalcResult<LiteralType> {
+    fn arg_to_literal(&self, env: &mut Rc<Environment>) -> CalcResult<LiteralType> {
         match self {
             &Atom(ref x) => Ok(x.clone()),
             &SExpr(_) => try!(self.eval(env)).arg_to_literal(env)
@@ -120,7 +122,7 @@ impl Evaluate for ArgType {
     }
 
     #[inline]
-    fn desymbolize(&self, env: &mut Environment) -> CalcResult<LiteralType> {
+    fn desymbolize(&self, env: &mut Rc<Environment>) -> CalcResult<LiteralType> {
         match self {
             &Atom(Symbol(ref x)) => Atom(try!(env.lookup(x)).clone()).desymbolize(env),
             &Atom(ref x) => Ok(x.clone()),
@@ -131,7 +133,7 @@ impl Evaluate for ArgType {
 
 impl Evaluate for Expression {
     #[inline]
-    fn eval(&self, env: &mut Environment) -> CalcResult {
+    fn eval(&self, env: &mut Rc<Environment>) -> CalcResult {
         match self.expr_type {
             BuiltIn(x) => operator::eval(x, &self.args, env),
             Function(ref f) => function::eval(f, &self.args, env)
@@ -139,13 +141,13 @@ impl Evaluate for Expression {
     }
 
     #[inline]
-    fn arg_to_literal(&self, env: &mut Environment) -> CalcResult<LiteralType> {
+    fn arg_to_literal(&self, env: &mut Rc<Environment>) -> CalcResult<LiteralType> {
         let res = try!(self.eval(env)).arg_to_literal(env);
         res
     }
 
     #[inline]
-    fn desymbolize(&self, env: &mut Environment) -> CalcResult<LiteralType> {
+    fn desymbolize(&self, env: &mut Rc<Environment>) -> CalcResult<LiteralType> {
         let res = try!(self.eval(env)).desymbolize(env);
         res
     }
@@ -153,7 +155,7 @@ impl Evaluate for Expression {
 
 /// Evaluates a string by creating a stream of tokens, translating those tokens
 /// recursively, and then evaluating the top expression.
-pub fn eval(s: &str, env: &mut Environment) -> CalcResult {
+pub fn eval(s: &str, env: &mut Rc<Environment>) -> CalcResult {
     let expr = try!(self::parse::parse(s, env));
 
     expr.eval(env)

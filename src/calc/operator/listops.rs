@@ -1,12 +1,13 @@
 //!List operations.
 
+use std::rc::Rc;
 use super::super::{Expression, Evaluate, LiteralType, List, Boolean};
 use super::{Atom, ArgType, CalcResult, Environment};
 use super::super::{BadArgType, BadNumberOfArgs};
 
 pub type Lit = LiteralType;
 pub type LitRes = CalcResult<Lit>;
-pub type Env = Environment;
+pub type Env = Rc<Environment>;
 pub type Expr = Expression;
 
 /// Map can handle mapping a function to each element of one or more lists.
@@ -39,7 +40,7 @@ pub fn map(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
             temp.push(list_vec.as_slice()[y][x].clone());
         }
 
-        let mut child_env = Environment::new_frame(env);
+        let mut child_env = Environment::new_frame(env.clone());
         for (name_key, list_val) in names.iter().zip(temp.iter()) {
             child_env.symbols.insert(name_key.clone(), list_val.clone());
         }
@@ -49,7 +50,7 @@ pub fn map(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     Ok(Atom(List(result)))
 }
 
-pub fn reduce(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn reduce(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     if args.len() < 3 {
         return Err(BadNumberOfArgs("reduce".to_string(), "at least".to_string(), 3))
     }
@@ -76,7 +77,7 @@ pub fn reduce_helper(x: String, y: String, initval: &Lit, list: &[Lit],
         return Err(BadArgType("Cannot fold empty lists!".to_string()))
     }
     
-    let mut child_env = Environment::new_frame(env);
+    let mut child_env = Environment::new_frame(env.clone());
 
     child_env.symbols.insert(x.clone(), list[0].clone());
     child_env.symbols.insert(y.clone(), initval.clone());
@@ -93,7 +94,7 @@ pub fn reduce_helper(x: String, y: String, initval: &Lit, list: &[Lit],
 }
 
 
-pub fn filter(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn filter(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     if args.len() < 2 {
         return Err(BadNumberOfArgs("filter".to_string(), "at least".to_string(), 3))
     }
@@ -109,7 +110,7 @@ pub fn filter(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         _ => return Err(BadArgType("Invalid type for filter".to_string()))
     };
 
-    let mut child_env = Environment::new_frame(env);
+    let mut child_env = Environment::new_frame(env.clone());
 
     let mut new_list: Vec<LiteralType> = Vec::new();
 
@@ -126,7 +127,7 @@ pub fn filter(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     Ok(Atom(List(new_list)))
 }
 
-pub fn rangelist(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn rangelist(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     use std::iter::range_step;
     use std::num;
 
@@ -134,13 +135,8 @@ pub fn rangelist(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("rangelist".to_string(),"at least".to_string(), 2))
     }
 
-//    let (a, b) = (try!(try!(args[0].desymbolize(env)).to_int()),
-//                  try!(try!(args[1].desymbolize(env)).to_int()));
-
     let (a, b) = (try!(args[0].desymbolize(env)), try!(args[1].desymbolize(env)));
-
     let step = if args.len() == 3 {
-//        try!(try!(args[2].desymbolize(env)).to_int())
         try!(args[2].desymbolize(env))
     } else {
         num::one()

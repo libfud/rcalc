@@ -3,13 +3,15 @@
 extern crate matrix;
 extern crate types;
 
+use std::rc::Rc;
+use std::cell::RefCell;
 use self::matrix::{Matrice, MatrixErrors, BadDimensionality};
 use self::types::MatrixErr;
 use self::types::operator::*;
 use self::types::literal::{Lit, List, Matrix};
 use super::{ArgType, Atom, CalcResult, Environment, Evaluate, BadArgType, BadNumberOfArgs};
 
-type Env<T = Environment> = T;
+type Env = Rc<Environment>;
 type Args<T = ArgType> = Vec<T>;
 
 #[inline]
@@ -102,7 +104,7 @@ pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
     let mut matrix_vec: Vec<Lit> = Vec::new();
 
     for column in range(0, lists[0].len()) {
-        let mut child_env = Environment::new_frame(env);
+        let mut child_env = Environment::new_frame(env.clone());
 
         let values: Vec<Lit> = lists.iter().map(|x| x[column].clone()).collect();
         matrix_vec.push_all(values.as_slice());
@@ -111,7 +113,7 @@ pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
             child_env.symbols.insert(arg.clone(), val.clone());
         }
 
-        matrix_vec.push(try!(try!(func.eval(&mut child_env)).desymbolize(env)));
+        matrix_vec.push(try!(try!(func.eval(&child_env)).desymbolize(env)));
     }
 
     match Matrice::from_vec(matrix_vec, lists.len() + 1, lists[0].len()) {
@@ -137,9 +139,9 @@ pub fn scalar(args: &Args, env: &mut Env) -> CalcResult {
     let mut new_elems = Vec::with_capacity(matrix_elems.len());
 
     for elem in matrix_elems.iter() {
-        let mut child_env = Environment::new_frame(env);
+        let mut child_env = Environment::new_frame(env.clone());
         child_env.symbols.insert(names[0].clone(), elem.clone());
-        new_elems.push(try!(try!(func.eval(&mut child_env)).desymbolize(env)));
+        new_elems.push(try!(try!(func.eval(&child_env)).desymbolize(env)));
     }
 
     match Matrice::from_vec(new_elems, matrix.cols(), matrix.rows()) {

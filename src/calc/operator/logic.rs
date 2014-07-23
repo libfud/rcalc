@@ -2,6 +2,7 @@
 
 extern crate types;
 
+use std::rc::Rc;
 use self::types::sexpr::BuiltIn;
 use self::types::literal::Boolean;
 use self::types::operator::{OrderEq, RoundId, Logic, If, Even};
@@ -9,7 +10,7 @@ use super::super::{Evaluate, LiteralType, CalcResult, Environment, BadNumberOfAr
 use super::{ArgType, Atom, SExpr};
 
 pub type Args<T = Vec<ArgType>> = T;
-pub type Env<T = Environment> = T;
+pub type Env = Rc<Environment>;
 
 /// Loop through nested conditional statements until a non-conditional expression
 /// is reached.

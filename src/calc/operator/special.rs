@@ -2,12 +2,13 @@
 
 extern crate types;
 
+use std::rc::Rc;
 use self::types::literal::{List, Matrix, Symbol, Void, LiteralType};
 use super::super::{Expression, Evaluate, BadArgType, BadNumberOfArgs};
 use super::{Environment, CalcResult, ArgType, Atom};
 
 type Lit = LiteralType;
-type Env = Environment;
+type Env = Rc<Environment>;
 type Expr = Expression;
 pub type Table = Vec<(Vec<String>, String)>;
 type Lists = Vec<Vec<Lit>>;
@@ -23,7 +24,7 @@ fn make_table(lists: Lists, names: Vec<String>, func: Expr, fun_str: String,
     table.push((names.clone(), fun_str));
 
     for column in range(0, lists[0].len()) {
-        let mut child_env = Environment::new_frame(env);
+        let mut child_env = Environment::new_frame(env.clone());
 
         let values: Vec<Lit> = lists.iter().map(|x| x[column].clone()).collect();
         let mut t_names: Vec<String> = Vec::with_capacity(values.len());
@@ -80,7 +81,7 @@ fn table_writer(table: Table, name_lens: Vec<uint>, fn_len: uint) {
     }
 }
 
-pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {    
+pub fn table(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {    
     if args.len() < 2 {
         return Err(BadNumberOfArgs("table".to_string(), "at least".to_string(), 2))
     }
@@ -115,7 +116,7 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     Ok(Atom(Void))
 }
 
-pub fn table_from_matrix(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn table_from_matrix(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     if args.len() != 2 {
         return Err(BadNumberOfArgs("table-from-matrix".to_string(), "only".to_string(), 2))
     }
@@ -197,7 +198,7 @@ pub fn merge<T: PartialOrd>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
 */
 
 #[inline]
-pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn sort(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     if args.len() != 1 {
         return Err(BadNumberOfArgs("Sort".to_string(), "only".to_string(), 1))
     }
@@ -209,7 +210,7 @@ pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     Ok(Atom(List(list)))
 }
 
-pub fn sort_by(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn sort_by(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     use self::types::operator;
     use self::types::operator::{Lt, Gt};
     use self::types::sexpr::BuiltIn;

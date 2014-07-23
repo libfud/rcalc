@@ -5,6 +5,7 @@
 extern crate num;
 extern crate types;
 
+use std::rc::Rc;
 pub use num::rational::{BigRational, Ratio};
 pub use types::{CalcResult, Environment, BadToken, BadExpr, BadArgType,
                 Expression, ArgType, Atom, SExpr, LiteralType};
@@ -128,7 +129,7 @@ pub fn get_num_encoding(num_str: &str) -> NumEncoding {
     }
 }
 
-pub fn parse(s: &str, env: &mut Environment) -> CalcResult {
+pub fn parse(s: &str, env: &Rc<Environment>) -> CalcResult {
     let rules = vec!(is_paren, is_op, is_bool, is_var, is_number);
     let mut tokens = TokenStream::new(s.to_string(), rules, /*Token, */
                                       BadToken("Unrecognized token".to_string()));

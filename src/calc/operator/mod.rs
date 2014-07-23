@@ -3,6 +3,7 @@
 extern crate types;
 extern crate num;
 
+use std::rc::Rc;
 pub use self::num::bigint;
 pub use super::{BigRational, Ratio, CalcResult, Environment, ArgType, Atom, SExpr};
 pub use super::{LiteralType, Lit, LitRes, Symbol, Void};
@@ -20,8 +21,10 @@ pub mod logic;
 pub mod listops;
 pub mod trig;
 
+pub type Env = Rc<Environment>;
+
 #[inline]
-pub fn list_ops(args: &Vec<ArgType>, env: &mut Environment, lop: ListOps) -> CalcResult {
+pub fn list_ops(args: &Vec<ArgType>, env: &mut Env, lop: ListOps) -> CalcResult {
     use self::types::operator::{List, Cons, Car, Cdr, Cadr, Cddr, Caddr, Cdddr};
     match lop {
         List => list(args, env),
@@ -36,7 +39,7 @@ pub fn list_ops(args: &Vec<ArgType>, env: &mut Environment, lop: ListOps) -> Cal
 }
 
 #[inline]
-pub fn transform_ops(args: &Vec<ArgType>, env: &mut Environment, top: XForms) -> CalcResult {
+pub fn transform_ops(args: &Vec<ArgType>, env: &mut Env, top: XForms) -> CalcResult {
     use self::types::operator::{Map, Reduce, Filter, RangeList, Sort, SortBy};
     use self::listops::{map, filter, reduce, rangelist};
     use self::special::{sort, sort_by};
@@ -52,7 +55,7 @@ pub fn transform_ops(args: &Vec<ArgType>, env: &mut Environment, top: XForms) ->
 }
 
 #[inline]   
-pub fn handle_logic(args: &Vec<ArgType>, env: &mut Environment, log: Gate) -> CalcResult {
+pub fn handle_logic(args: &Vec<ArgType>, env: &mut Env, log: Gate) -> CalcResult {
     use self::types::operator::{If, And, Or, Not, Xor};
     use self::logic::{and_or, not, xor};
     match log {
@@ -66,7 +69,7 @@ pub fn handle_logic(args: &Vec<ArgType>, env: &mut Environment, log: Gate) -> Ca
 
 #[inline]
 pub fn eval(op_type: OperatorType, args: &Vec<ArgType>, 
-            env: &mut Environment) -> CalcResult {
+            env: &mut Env) -> CalcResult {
 
     use self::arithmetic::arith;
     use self::special::{table};

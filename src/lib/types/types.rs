@@ -11,7 +11,7 @@ pub use sexpr::{ArgType, Atom, SExpr, Expression};
 pub use operator::OperatorType;
 use std::collections::hashmap::HashMap;
 use std::fmt;
-use std::rc;
+use std::rc::Rc;
 use std::cell::RefCell;
 
 pub mod sexpr;
@@ -62,41 +62,25 @@ pub type CalcResult<T = ArgType> = Result<T, ErrorKind>;
 
 #[deriving(Clone)]
 pub struct Environment {
-    pub symbols: HashMap<String, LiteralType>,
-    pub parent: Option<rc::Rc<RefCell<Environment>>>
+    pub symbols: RefCell<HashMap<String, LiteralType>>,
+    pub parent: Option<Rc<Environment>>
 }
 
 impl<'a> Environment {
-    pub fn new_global() -> rc::Rc<RefCell<Environment>> {
-        rc::Rc::new(RefCell::new(Environment { 
-            symbols: HashMap::new(), parent: None }))
+    pub fn new_global() -> Rc<Environment> {
+        Rc::new(Environment { 
+            symbols: RefCell::new(HashMap::new()), parent: None })
     }
 
-    pub fn new_frame(par: rc::Rc<RefCell<Environment>>) -> rc::Rc<RefCell<Environment>> {
-        rc::Rc::new(RefCell::new(Environment { 
-            symbols: HashMap::new(), parent: Some(par) }))
+    pub fn new_frame(par: Rc<Environment>) -> Rc<Environment> {
+        Rc::new(Environment { 
+            symbols: RefCell::new(HashMap::new()), parent: Some(par) })
     }
 
     pub fn lookup(&'a self, var: &String) -> CalcResult<&'a LiteralType> {
-        match self.symbols.find(var) {
+        match self.symbols.borrow().find(var) {
             Some(ref val) => Ok(*val),
             None      => match self.parent {
-                Some(ref par) => par.lookup(var),
-                None => Err(UnboundArg(var.clone()))
-            }
-        }
-    }
-}
-
-pub trait Lookup<'a, T> {
-    fn lookup(&'a self, var: &String) -> CalcResult<&'a T>;
-}
-
-impl<'a> Lookup<'a, LiteralType> for rc::Rc<RefCell<Environment>> {
-    fn lookup(&'a self, var: &String) -> CalcResult<&'a LiteralType> {
-        match self.borrow().symbols.find(var) {
-            Some(ref val) => Ok(*val),
-            None      => match self.borrow().parent {
                 Some(ref par) => par.lookup(var),
                 None => Err(UnboundArg(var.clone()))
             }
@@ -107,7 +91,7 @@ impl<'a> Lookup<'a, LiteralType> for rc::Rc<RefCell<Environment>> {
 impl fmt::Show for Environment {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        try!(writeln!(fmt, "{}", self.symbols));
+        try!(writeln!(fmt, "{}", self.symbols.borrow()));
         try!(write!(fmt, "Has {} parent.", if self.parent.is_some() { "a" } else { "no" }));
         Ok(())
     }
