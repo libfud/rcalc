@@ -1,6 +1,5 @@
 //! Expressions
 
-use std::rc::Rc;
 use super::{LiteralType, Environment, OperatorType};
 
 #[deriving(Show, Clone, PartialEq, PartialOrd, Eq, Ord)]
@@ -19,7 +18,7 @@ impl Expression {
     pub fn new(e: ExprType, a: Vec<ArgType>) -> Expression {
         Expression { expr_type: e, args: a }
     }
-    pub fn to_symbol(&self, env: &Rc<Environment>) -> String {
+    pub fn to_symbol(&self, env: &Environment) -> String {
         let mut symbols = String::new();
         symbols = symbols.append("(");
         match self.expr_type {

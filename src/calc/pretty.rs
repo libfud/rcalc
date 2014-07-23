@@ -2,10 +2,8 @@
 
 use super::types::literal::{LiteralType, Symbol, Void};
 use super::{Environment, Evaluate, CalcResult};
-use std::rc::Rc;
-use std::cell::RefCell;
 
-pub fn pretty_print(result: &CalcResult, env: &Rc<Environment>) -> String {
+pub fn pretty_print(result: &CalcResult, env: &Environment) -> String {
     let res = match result {
         &Ok(ref v) => v.clone(),
         &Err(ref m) => return m.to_string()
@@ -23,7 +21,7 @@ pub fn pretty_print(result: &CalcResult, env: &Rc<Environment>) -> String {
     pretty(&success, env)
 }
 
-pub fn pretty(arg: &LiteralType, env: &Rc<Environment>) -> String {
+pub fn pretty(arg: &LiteralType, env: &Environment) -> String {
     let s = match arg {
         &Symbol(ref s) => match env.lookup(s) {
             Ok(x) => pretty(x, env),

@@ -3,13 +3,12 @@
 extern crate types;
 extern crate matrix;
 
-use std::rc::Rc;
 use self::types::literal::{LiteralType, List};
 use self::types::sexpr::{ArgType, Atom};
 use self::types::{BadArgType, BadNumberOfArgs};
 use super::{CalcResult, Environment, Evaluate};
 
-pub fn list(args: &Vec<ArgType>, env: &Rc<Environment>) -> CalcResult {
+pub fn list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     let mut list: Vec<LiteralType> = Vec::new();
     for arg in args.iter() {
         list.push(try!(arg.arg_to_literal(env)));
@@ -17,7 +16,7 @@ pub fn list(args: &Vec<ArgType>, env: &Rc<Environment>) -> CalcResult {
     Ok(Atom(List(list)))
 }
 
-pub fn cons(args: &Vec<ArgType>, env: &Rc<Environment>) -> CalcResult {
+pub fn cons(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 2 {
         return Err(BadNumberOfArgs("cons".to_string(), "only".to_string(), 2))
     }
@@ -31,7 +30,7 @@ pub fn cons(args: &Vec<ArgType>, env: &Rc<Environment>) -> CalcResult {
     }
 }
 
-pub fn car(args: &Vec<ArgType>, env: &Rc<Environment>) -> CalcResult {
+pub fn car(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 1 {
         return Err(BadNumberOfArgs("car".to_string(), "only".to_string(), 1))
     }
@@ -48,7 +47,7 @@ pub fn car(args: &Vec<ArgType>, env: &Rc<Environment>) -> CalcResult {
     }
 }
 
-pub fn cdr(args: &Vec<ArgType>, env: &Rc<Environment>) -> CalcResult {
+pub fn cdr(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 1 {
         return Err(BadNumberOfArgs("cdr".to_string(), "only".to_string(), 1))
     }

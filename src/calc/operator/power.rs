@@ -2,7 +2,6 @@
 
 extern crate types;
 
-use std::rc::Rc;
 use std::num;
 use super::super::{BigNum, CalcResult, Environment, Evaluate, BadArgType,
                    BadNumberOfArgs, BadPowerRange};
@@ -10,7 +9,7 @@ use super::{BigRational, ArgType, Atom};
 use super::trig::float_ops;
 use self::types::operator::{Ln, Exp};
 
-pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Rc<Environment>) -> CalcResult {
+pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 2 {
         return Err(BadNumberOfArgs("pow".to_string(), "only".to_string(), 2))
     } 
@@ -25,7 +24,7 @@ pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Rc<Environment>) -> CalcResult
 }
 
 pub fn pow(base: &BigRational, exponent: &BigRational, 
-           env: &mut Rc<Environment>) -> CalcResult<BigRational> {
+           env: &mut Environment) -> CalcResult<BigRational> {
 
     let one: BigRational = num::one();
 

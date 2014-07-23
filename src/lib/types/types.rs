@@ -11,8 +11,6 @@ pub use sexpr::{ArgType, Atom, SExpr, Expression};
 pub use operator::OperatorType;
 use std::collections::hashmap::HashMap;
 use std::fmt;
-use std::rc::Rc;
-use std::cell::RefCell;
 
 pub mod sexpr;
 pub mod literal;
@@ -62,36 +60,24 @@ pub type CalcResult<T = ArgType> = Result<T, ErrorKind>;
 
 #[deriving(Clone)]
 pub struct Environment {
-    pub symbols: RefCell<HashMap<String, LiteralType>>,
-    pub parent: Option<Rc<Environment>>
+    pub symbols: HashMap<String, LiteralType>,
+    pub parent: Option<Box<Environment>>
 }
 
 impl<'a> Environment {
-    pub fn new_global() -> Rc<Environment> {
-        Rc::new(Environment { 
-            symbols: RefCell::new(HashMap::new()), parent: None })
+    pub fn new_global() -> Environment {
+        Environment { symbols: HashMap::new(), parent: None }
     }
 
-    pub fn new_frame(par: Rc<Environment>) -> Rc<Environment> {
-        Rc::new(Environment { 
-            symbols: RefCell::new(HashMap::new()), parent: Some(par) })
+    pub fn new_frame(par: &Environment) -> Environment {
+        Environment { symbols: HashMap::new(), parent: Some(box par.clone()) }
     }
 
     pub fn lookup(&'a self, var: &String) -> CalcResult<&'a LiteralType> {
-        /*
-        match self.symbols.borrow().find(var) {
+        match self.symbols.find(var) {
             Some(val) => Ok(val),
             None      => match self.parent {
                 Some(ref par) => par.lookup(var),
-                None => Err(UnboundArg(var.clone()))
-            }
-        }
-         */
-        let maybe = self.symbols.borrow();
-        match maybe.find(var) {
-            Some(val) => Ok(val),
-            None => match self.parent {
-                Some(par) => par.lookup(var),
                 None => Err(UnboundArg(var.clone()))
             }
         }
@@ -101,7 +87,7 @@ impl<'a> Environment {
 impl fmt::Show for Environment {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        try!(writeln!(fmt, "{}", self.symbols.borrow()));
+        try!(writeln!(fmt, "{}", self.symbols));
         try!(write!(fmt, "Has {} parent.", if self.parent.is_some() { "a" } else { "no" }));
         Ok(())
     }

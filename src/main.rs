@@ -22,7 +22,7 @@ pub use calc::eval;
 #[cfg(not(test))]
 use calc::pretty::pretty_print;
 
-use std::task;
+use std::task::TaskBuilder;
 
 #[cfg(test)]
 mod test;
@@ -123,7 +123,29 @@ fn main() {
             _   => { },
         }
 
-        let result = eval(expr.as_slice(), &mut env);
+        let (exp_tx, exp_rx) = channel();
+        let (env_tx, env_rx) = channel();
+        env_tx.send(env.clone());
+        exp_tx.send(expr.as_slice().trim().to_string());
+
+        let ok = TaskBuilder::new().stack_size(10_000_000).try(proc() {
+            let mut temp_env = env_rx.recv();
+            let expr = exp_rx.recv();
+            let ok = eval(expr.as_slice(), &mut temp_env);
+            (ok, temp_env)
+        });
+
+        let result = match ok {
+            Ok((res, new_env)) => {
+                env = new_env;
+                res
+            },
+            Err(_) => {
+                println!("Expression caused task failure.");
+                continue
+            }
+        };
+        
         println!("{}", pretty_print(&result, &env));
     }
 }

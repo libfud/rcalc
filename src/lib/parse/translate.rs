@@ -2,7 +2,6 @@
 
 extern crate types;
 
-use std::rc::Rc;
 use self::types::{ErrorKind, BadExpr, BadToken, BadArgType};
 use super::{CalcResult, Environment, Expression, ArgType, Atom, SExpr, LiteralType};
 use super::{Literal, LParen, RParen, Operator, Variable, Token};
@@ -12,7 +11,7 @@ use super::literal::{List, Symbol, Proc};
 use super::sexpr::{BuiltIn, Function, ExprType};
 use super::operator::{Define, Lambda, Quote, Help, OperatorType};
 
-pub type Env = Rc<Environment>;
+pub type Env = Environment;
 pub type Expr = CalcResult<ArgType>;
 
 pub fn token_to_expr(token: Token) -> CalcResult<ExprType> {

@@ -1,13 +1,11 @@
 //!List operations.
 
-use std::rc::Rc;
-use super::super::{Expression, Evaluate, LiteralType, List, Boolean};
 use super::{Atom, ArgType, CalcResult, Environment};
 use super::super::{BadArgType, BadNumberOfArgs};
 
 pub type Lit = LiteralType;
 pub type LitRes = CalcResult<Lit>;
-pub type Env = Rc<Environment>;
+pub type Env = Environment;
 pub type Expr = Expression;
 
 /// Map can handle mapping a function to each element of one or more lists.
@@ -40,7 +38,7 @@ pub fn map(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
             temp.push(list_vec.as_slice()[y][x].clone());
         }
 
-        let mut child_env = Environment::new_frame(env.clone());
+        let mut child_env = Environment::new_frame(env);
         for (name_key, list_val) in names.iter().zip(temp.iter()) {
             child_env.symbols.insert(name_key.clone(), list_val.clone());
         }
@@ -77,7 +75,7 @@ pub fn reduce_helper(x: String, y: String, initval: &Lit, list: &[Lit],
         return Err(BadArgType("Cannot fold empty lists!".to_string()))
     }
     
-    let mut child_env = Environment::new_frame(env.clone());
+    let mut child_env = Environment::new_frame(env);
 
     child_env.symbols.insert(x.clone(), list[0].clone());
     child_env.symbols.insert(y.clone(), initval.clone());
@@ -110,7 +108,7 @@ pub fn filter(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
         _ => return Err(BadArgType("Invalid type for filter".to_string()))
     };
 
-    let mut child_env = Environment::new_frame(env.clone());
+    let mut child_env = Environment::new_frame(env);
 
     let mut new_list: Vec<LiteralType> = Vec::new();
 

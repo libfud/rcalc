@@ -2,14 +2,13 @@
 
 extern crate types;
 
-use std::rc::Rc;
 use std::num;
 use self::types::operator::{Add, Sub, Mul, Div, Rem, Arith};
 use super::super::{CalcResult, Environment, BadNumberOfArgs, Evaluate};
 use super::{ArgType, Atom, Lit};
 
-pub type Args<T = ArgType> = Vec<T>;
-pub type Env = Rc<Environment>;
+pub type Args = Vec<ArgType>;
+pub type Env = Environment;
 
 #[inline]
 fn minlen_op_ident(op: &Arith) -> (uint, |Lit, &Lit| -> Lit,  Lit) {

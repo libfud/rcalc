@@ -2,13 +2,12 @@
 
 extern crate types;
 
-use std::rc::Rc;
 use self::types::literal::{List, Matrix, Symbol, Void, LiteralType};
 use super::super::{Expression, Evaluate, BadArgType, BadNumberOfArgs};
 use super::{Environment, CalcResult, ArgType, Atom};
 
 type Lit = LiteralType;
-type Env = Rc<Environment>;
+type Env = Environment;
 type Expr = Expression;
 pub type Table = Vec<(Vec<String>, String)>;
 type Lists = Vec<Vec<Lit>>;
@@ -24,7 +23,7 @@ fn make_table(lists: Lists, names: Vec<String>, func: Expr, fun_str: String,
     table.push((names.clone(), fun_str));
 
     for column in range(0, lists[0].len()) {
-        let mut child_env = Environment::new_frame(env.clone());
+        let mut child_env = Environment::new_frame(env);
 
         let values: Vec<Lit> = lists.iter().map(|x| x[column].clone()).collect();
         let mut t_names: Vec<String> = Vec::with_capacity(values.len());

@@ -3,7 +3,6 @@
 extern crate num;
 extern crate types;
 
-use std::rc::Rc;
 use self::num::rational::Ratio;
 use self::types::operator::{Sin, Cos, Tan, ASin, ACos, ATan, SinH, CosH, TanH,
                             ASinH, ACosH, ATanH, Log, Ln, Exp, Transcendental};
@@ -11,7 +10,7 @@ use self::types::literal::BigNum;
 use self::types::sexpr::{Atom, ArgType};
 use super::super::{CalcResult, Environment, Evaluate, BadNumberOfArgs, BadFloatRange};
 
-pub fn float_ops(args: &Vec<ArgType>, env: &mut Rc<Environment>, fop: Transcendental) -> CalcResult {
+pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: Transcendental) -> CalcResult {
     if args.len() > 1 {
         return Err(BadNumberOfArgs(fop.to_string(), "only".to_string(), 1))
     }

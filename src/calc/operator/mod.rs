@@ -3,15 +3,11 @@
 extern crate types;
 extern crate num;
 
-use std::rc::Rc;
 pub use self::num::bigint;
 pub use super::{BigRational, Ratio, CalcResult, Environment, ArgType, Atom, SExpr};
 pub use super::{LiteralType, Lit, LitRes, Symbol, Void};
 pub use super::literal::{cons, car, cdr, list};
-pub use self::types::operator::{OperatorType, Arithmetic, Transcend, Ordering,
-                                Pow, RoundIdent, Logic, Quote, Listings, ListOps,
-                                TransForms, XForms, Define, Lambda, Table, TableFromMatrix,
-                                Gate, MatrixStuff, MatrixOps, Help};
+pub use self::types::operator::*;
 use super::matrice;
 
 pub mod special;
@@ -21,7 +17,7 @@ pub mod logic;
 pub mod listops;
 pub mod trig;
 
-pub type Env = Rc<Environment>;
+pub type Env = Environment;
 
 #[inline]
 pub fn list_ops(args: &Vec<ArgType>, env: &mut Env, lop: ListOps) -> CalcResult {
