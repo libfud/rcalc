@@ -6,12 +6,12 @@ use super::{Environment, Evaluate, CalcResult};
 pub fn pretty_print(result: &CalcResult, env: &Environment) -> String {
     let res = match result {
         &Ok(ref v) => v.clone(),
-        &Err(ref m) => return m.clone().to_symbol()
+        &Err(ref m) => return m.to_string()
     };
 
     let success = match res.arg_to_literal(&mut env.clone()) {
         Ok(v) => v.clone(),
-        Err(m) => return m.to_symbol()
+        Err(m) => return m.to_string()
     };
 
     if success == Void {

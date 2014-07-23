@@ -3,8 +3,9 @@
 extern crate num;
 extern crate matrix;
 
+use self::num::{BigRational, BigInt};
 use self::matrix::{Matrice, SquareRoot};
-use super::{BigRational, CalcResult, Expression, Environment};
+use super::{CalcResult, UnexpectedVal, Expression, Environment};
 use std::num;
 use std::num::{Zero, One};
 use std::fmt;
@@ -26,6 +27,7 @@ pub struct WithEnv<'a> {
 }
 
 impl<'a> fmt::Show for WithEnv<'a> {
+    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match self.data {
             &Boolean(ref x) => try!(write!(fmt, "{}", x)),
@@ -47,6 +49,7 @@ impl<'a> fmt::Show for WithEnv<'a> {
 }
 
 impl fmt::Show for LiteralType {
+    #[inline]   
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Boolean(ref x) => try!(write!(fmt, "{}", x)),
@@ -64,16 +67,168 @@ impl fmt::Show for LiteralType {
     }
 }
 
+impl<'a> LiteralType {
+    #[inline]
+    pub fn to_bool(&self) -> CalcResult<bool> {
+        use super::NonBoolean;
+
+        match self {
+            &Boolean(ref b) => Ok(*b),
+            _ => Err(NonBoolean)
+        }
+    }
+
+    #[inline]
+    pub fn to_bignum(&self) -> CalcResult<BigRational> {
+        match self {
+            &BigNum(ref bignum) => Ok(bignum.clone()),
+            x => Err(UnexpectedVal("BigNum".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn to_int(&self) -> CalcResult<int> {
+        match self {
+            &BigNum(ref bignum) => match bignum.to_integer().to_int() {
+                Some(x) => Ok(x),
+                None => Err(super::BadArgType("Couldn't convert to int".to_string()))
+            },
+            x => Err(UnexpectedVal("BigNum".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn to_uint(&self) -> CalcResult<uint> {
+        match self {
+            &BigNum(ref bignum) => match bignum.to_integer().to_uint() {
+                Some(x) => Ok(x),
+                None => Err(super::BadArgType("Couldn't convert to uint".to_string()))
+            },
+            x => Err(UnexpectedVal("BigNum".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn to_f64(&self) -> CalcResult<f64> {
+        match self {
+            &BigNum(ref big) => match (big.numer().to_f64(), big.denom().to_f64()) {
+                (Some(x), Some(y)) => Ok((x / y)),
+                (_, _) => return Err(super::BadFloatRange)
+            },
+            x => Err(UnexpectedVal("BigNum".to_string(), x.to_string()))
+        }
+    }        
+
+    #[inline]
+    pub fn to_vec(&self) -> CalcResult<Vec<LiteralType>> {
+        match self {
+            &List(ref list) => Ok(list.clone()),
+            x => Err(UnexpectedVal("List".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn to_matrix(&self) -> CalcResult<Matrice<LiteralType>> {
+        match self {
+            &Matrix(ref matrix) => Ok(matrix.clone()),
+            x => Err(UnexpectedVal("List".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn to_proc(&self) -> CalcResult<(Vec<String>, Expression)> {
+        match self {
+            &Proc(ref args, ref expr) => Ok((args.clone(), expr.clone())),
+            x => Err(UnexpectedVal("Proc".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn to_sym_string(&self) -> CalcResult<String> {
+        match self {
+            &Symbol(ref s) => Ok(s.clone()),
+            x => Err(UnexpectedVal("Symbol".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn recip(&self) -> LitRes {
+        match self {
+            &BigNum(ref x) => Ok(BigNum(x.recip())),
+            x => Err(UnexpectedVal("BigNum".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn numer(&'a self) -> CalcResult<&'a BigInt> {
+        match self {
+            &BigNum(ref x) => Ok(x.numer()),
+            x => Err(UnexpectedVal("BigNum".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn denom(&'a self) -> CalcResult<&'a BigInt> {
+        match self {
+            &BigNum(ref x) => Ok(x.denom()),
+            x => Err(UnexpectedVal("BigNum".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn is_integer(&self) -> CalcResult<bool> {
+        match self {
+            &BigNum(ref x) => Ok(x.is_integer()),
+            x => Err(UnexpectedVal("BigNum".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn abs(&self) -> Lit {
+        if *self < num::zero() {
+            -self
+        } else {
+            self.clone()
+        }
+    }
+
+    #[inline]
+    pub fn floor(&self) -> LitRes {
+        match self {
+            &BigNum(ref x) => Ok(BigNum(x.floor())),
+            x => Err(UnexpectedVal("BigNum".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn ceil(&self) -> LitRes {
+        match self {
+            &BigNum(ref x) => Ok(BigNum(x.ceil())),
+            x => Err(UnexpectedVal("BigNum".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn round(&self) -> LitRes {
+        let one: BigRational = num::one();
+        let half = one / (one + one);
+        let x = try!(self.to_bignum());
+        Ok(BigNum((x + half).floor()))
+    }
+}
+
 pub type Lit = LiteralType;
 pub type LitRes =  CalcResult<LiteralType>;
 
 impl Num for Lit { }
 
 impl Zero for Lit {
+    #[inline]
     fn zero() -> Lit {
         BigNum(num::zero())
     }
 
+    #[inline]
     fn is_zero(&self) -> bool {
         match self {
             &BigNum(ref x) => x.is_zero(),
@@ -83,12 +238,14 @@ impl Zero for Lit {
 }
 
 impl One for Lit {
+    #[inline]
     fn one() -> Lit {
         BigNum(num::one())
     }
 }
 
 impl Neg<Lit> for Lit {
+    #[inline]
     fn neg(&self) -> Lit {
         match self {
             &BigNum(ref x) => BigNum(-x),
@@ -99,7 +256,8 @@ impl Neg<Lit> for Lit {
 }
 
 impl Add<Lit, Lit> for Lit {
-    fn add(&self, rhs: &LiteralType) -> Lit {
+    #[inline]
+    fn add(&self, rhs: &Lit) -> Lit {
         match (self, rhs) {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x + *y),
             (&Matrix(ref x), &Matrix(ref y)) => Matrix(*x + *y),
@@ -110,7 +268,15 @@ impl Add<Lit, Lit> for Lit {
     }
 }
 
+impl CheckedAdd for Lit {
+    #[inline]
+    fn checked_add(&self, rhs: &Lit) -> Option<Lit> {
+        Some(self.add(rhs))
+    }
+}
+
 impl Sub<Lit, Lit> for Lit {
+    #[inline]
     fn sub(&self, rhs: &Lit) -> Lit {
         match (self, rhs) {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x - *y),
@@ -122,6 +288,7 @@ impl Sub<Lit, Lit> for Lit {
 }
 
 impl Mul<Lit, Lit> for Lit {
+    #[inline]
     fn mul(&self, rhs: &Lit) -> Lit {
         match (self, rhs) {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x * *y),
@@ -135,6 +302,7 @@ impl Mul<Lit, Lit> for Lit {
 }
 
 impl Div<Lit, Lit> for Lit {
+    #[inline]
     fn div(&self, rhs: &Lit) -> Lit {
         match (self, rhs) {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x / *y),
@@ -146,6 +314,7 @@ impl Div<Lit, Lit> for Lit {
 }
 
 impl Rem<Lit, Lit> for Lit {
+    #[inline]
     fn rem(&self, rhs: &Lit) -> Lit {
         match (self, rhs) {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x % *y),
@@ -153,27 +322,6 @@ impl Rem<Lit, Lit> for Lit {
             _ => fail!("Rem is only defined for numbers".to_string())
         }
     }
-}
-
-fn abs(x: &Lit) -> Lit {
-    if *x < num::zero() {
-        -x
-    } else {
-        x.clone()
-    }
-}
-
-fn floor(x: &Lit) -> Lit {
-    match *x {
-        BigNum(ref y) => BigNum(y.floor()),
-        _ => fail!("Undefined")
-    }
-}
-
-fn round(x: &Lit) -> Lit {
-    let one: Lit = num::one();
-    let half = one / (one + one);
-    floor(&(x + half))
 }
 
 impl SquareRoot<Lit> for Lit {
@@ -193,14 +341,17 @@ impl SquareRoot<Lit> for Lit {
         let mut guess = one.clone();
             
         loop {
-            if abs(&(*self - guess * guess)) < epsilon {
+            if (*self - guess * guess).abs() < epsilon {
                 break
             }
 
             guess = (*self / guess + guess ) / (one + one);
         }
 
-        let rounded = round(&guess);
+        let rounded = match guess.round() {
+            Ok(x) => x,
+            Err(f) => fail!(f.to_string())
+        };
         if rounded * rounded == *self {
             rounded
         } else {

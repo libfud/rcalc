@@ -30,6 +30,7 @@ pub enum Arith {
 }
 
 impl fmt::Show for Arith {
+    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
             &Add => "+",
@@ -43,6 +44,7 @@ impl fmt::Show for Arith {
 }
 
 impl from_str::FromStr for Arith {
+    #[inline]
     fn from_str(s: &str) -> Option<Arith> {
         match s {
             "+" => Some(Add),
@@ -65,6 +67,7 @@ pub enum Transcendental {
 }
 
 impl fmt::Show for Transcendental {
+    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
             &Log => "log", &Ln => "ln", &Exp => "exp",
@@ -78,6 +81,7 @@ impl fmt::Show for Transcendental {
 }
 
 impl from_str::FromStr for Transcendental {
+    #[inline]
     fn from_str(s: &str) -> Option<Transcendental> {
         match s {
             "log" => Some(Log), "ln" => Some(Ln), "exp" => Some(Exp),
@@ -101,6 +105,7 @@ pub enum OrderEq {
 }
 
 impl fmt::Show for OrderEq {
+    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
             &Eq => "=", &NEq => "!=",
@@ -112,6 +117,7 @@ impl fmt::Show for OrderEq {
 }
 
 impl from_str::FromStr for OrderEq {
+    #[inline]
     fn from_str(s: &str) -> Option<OrderEq> {
         match s {
             "<" => Some(Lt), "<=" => Some(LtEq),
@@ -123,6 +129,7 @@ impl from_str::FromStr for OrderEq {
 }
 
 impl<'a> OrderEq {
+    #[inline]
     pub fn to_ord<'a, T: PartialOrd + PartialEq>(self) -> |T, T|:'a -> bool {
         match self {
             Eq => |a: T, b: T| a == b,
@@ -147,6 +154,7 @@ pub enum RoundId {
 }
 
 impl fmt::Show for RoundId {
+    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
             &Round => "round",
@@ -162,6 +170,7 @@ impl fmt::Show for RoundId {
 }
 
 impl from_str::FromStr for RoundId {
+    #[inline]
     fn from_str(s: &str) -> Option<RoundId> {
         match s {
             "round" => Some(Round),
@@ -177,6 +186,7 @@ impl from_str::FromStr for RoundId {
 }
 
 impl RoundId {
+    #[inline]
     pub fn idea(self) -> String {
         let s = match self {
             Round => "be rounded",
@@ -202,6 +212,7 @@ pub enum Gate {
 }
 
 impl fmt::Show for Gate {
+    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
             &If => "if",
@@ -213,6 +224,7 @@ impl fmt::Show for Gate {
 }
 
 impl from_str::FromStr for Gate {
+    #[inline]
     fn from_str(s: &str) -> Option<Gate> {
         match s {
             "if" => Some(If), "and" => Some(And),
@@ -233,6 +245,7 @@ pub enum ListOps {
 }
 
 impl fmt::Show for ListOps {
+    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
             &List => "list", &Cons => "cons",
@@ -245,6 +258,7 @@ impl fmt::Show for ListOps {
 }
 
 impl from_str::FromStr for ListOps {
+    #[inline]
     fn from_str(s: &str) -> Option<ListOps> {
         match s {
             "list" => Some(List),
@@ -268,6 +282,7 @@ pub enum XForms {
 }
 
 impl from_str::FromStr for XForms {
+    #[inline]
     fn from_str(s: &str) -> Option<XForms> {
         match s {
             "map" => Some(Map),
@@ -282,6 +297,7 @@ impl from_str::FromStr for XForms {
 }
 
 impl fmt::Show for XForms {
+    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
             &Map => "map",
@@ -297,25 +313,25 @@ impl fmt::Show for XForms {
 
 #[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
 pub enum MatrixOps {
-    MakeMatrix,
-    MatrixSetRow,
-    MatrixSetCol,
-    MatrixAppendRows,
-    MatrixAppendCols,
-    MatrixConcatRows,
-    MatrixConcatCols,
-    MatrixGetElem,
-    MatrixGetRow,
-    MatrixGetCol,
-    Determ,
-    Scalar,
-    Transpose,
-    MatrixInv,
-    MatrixFromFn,
+    MakeMatrix, MatrixFromFn,
+
+    MatrixSetRow, MatrixSetCol,
+
+    MatrixAppendRows, MatrixAppendCols,
+
+    MatrixConcatRows, MatrixConcatCols,
+
+    MatrixGetElem, MatrixGetRow, MatrixGetCol,
+
+    Scalar, CrossProd, DotProd, Transpose,
+
+    Determ, MatrixInv,
+
     PolygonArea,
 }
 
 impl fmt::Show for MatrixOps {
+    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match *self {
             MakeMatrix => "make-matrix",
@@ -330,6 +346,8 @@ impl fmt::Show for MatrixOps {
             MatrixGetCol => "matrix-get-col",
             Determ => "matrix-det",
             Scalar => "matrix-scalar",
+            CrossProd => "cross-*",
+            DotProd => "dot-*",
             Transpose => "matrix-transpose",
             MatrixInv => "matrix-inv",
             MatrixFromFn => "matrix-from-fn",
@@ -340,6 +358,7 @@ impl fmt::Show for MatrixOps {
 }
 
 impl from_str::FromStr for MatrixOps {
+    #[inline]
     fn from_str(s: &str) -> Option<MatrixOps> {
         match s {
             "make-matrix" => Some(MakeMatrix),
@@ -354,6 +373,8 @@ impl from_str::FromStr for MatrixOps {
             "matrix-get-col" => Some(MatrixGetCol),
             "matrix-det" => Some(Determ),
             "matrix-scalar" => Some(Scalar),
+            "cross-*" => Some(CrossProd),
+            "dot-*" => Some(DotProd),
             "matrix-inv" => Some(MatrixInv),
             "matrix-transpose" => Some(Transpose),
             "matrix-from-fn" => Some(MatrixFromFn),
@@ -383,6 +404,7 @@ pub enum OperatorType {
 }
 
 impl fmt::Show for OperatorType {
+    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match *self {
             Arithmetic(ref x) => x.to_string(),
@@ -406,6 +428,7 @@ impl fmt::Show for OperatorType {
 }
 
 impl from_str::FromStr for OperatorType {
+    #[inline]
     fn from_str(s: &str) -> Option<OperatorType> {
         match from_str::<Arith>(s) {
             Some(x) => return Some(Arithmetic(x)),

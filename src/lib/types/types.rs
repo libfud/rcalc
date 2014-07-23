@@ -29,31 +29,12 @@ pub enum ErrorKind {
     BadArgType(String),
     DivByZero,
     NonBoolean,
+    UnexpectedVal(String, String),
     UnboundArg(String),
 }
 
-impl ErrorKind {
-    pub fn to_symbol(self) -> String {
-        match self {
-            BadArgType(x) => x.clone(),
-            BadExpr => "Malformed expression".to_string(),
-            BadToken(x) => x.clone(),
-            BadPowerRange => "Exponent too large for builtin `pow'!".to_string(),
-            BadFloatRange => "Number too large or precise for `exp' and `log'".to_string(),
-            MatrixErr(x) => x.to_string(),
-            BadNumberOfArgs(x, y, args) => 
-                format!("`{} requires {} {} {}.", x, y, args, match args {
-                    1 => "argument",
-                    _ => "arguments"
-                }),
-            DivByZero => "Attempted division by zero!".to_string(),
-            NonBoolean => "Non boolean condition".to_string(),
-            UnboundArg(x) => format!("Error: Unbound variable `{}'", x),
-        }
-    }
-}
-
 impl fmt::Show for ErrorKind {
+    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let res = match self {
             &BadArgType(ref x) => x.clone(),
@@ -69,6 +50,7 @@ impl fmt::Show for ErrorKind {
                 }),
             &DivByZero => "Attempted division by zero!".to_string(),
             &NonBoolean => "Non boolean condition".to_string(),
+            &UnexpectedVal(ref x, ref y) => format!("Expected {} but found {}", x, y),
             &UnboundArg(ref x) => format!("Error: Unbound variable `{}'", x),
         };
         try!(write!(fmt, "{}", res));
@@ -108,6 +90,7 @@ impl Environment {
 }
 
 impl fmt::Show for Environment {
+    #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(writeln!(fmt, "{}", self.symbols));
         try!(write!(fmt, "Has {} parent.", if self.parent.is_some() { "a" } else { "no" }));

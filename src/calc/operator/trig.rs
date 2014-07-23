@@ -8,18 +8,14 @@ use self::types::operator::{Sin, Cos, Tan, ASin, ACos, ATan, SinH, CosH, TanH,
                             ASinH, ACosH, ATanH, Log, Ln, Exp, Transcendental};
 use self::types::literal::BigNum;
 use self::types::sexpr::{Atom, ArgType};
-use super::super::{CalcResult, Environment, Evaluate, BadNumberOfArgs,
-                   BigRational, BadArgType, BadFloatRange};
+use super::super::{CalcResult, Environment, Evaluate, BadNumberOfArgs, BadFloatRange};
 
 pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: Transcendental) -> CalcResult {
     if args.len() > 1 {
         return Err(BadNumberOfArgs(fop.to_string(), "only".to_string(), 1))
     }
 
-    let floated = match try!(args[0].desymbolize(env)) {
-        BigNum(ref x)   => try!(rational_to_f64(x)),
-        _  => return Err(BadArgType("Only numbers can use trigonometric functions".to_string()))
-    };
+    let floated = try!(try!(args[0].desymbolize(env)).to_f64());
 
     let answer = match fop {
         Sin => floated.sin(),
@@ -43,18 +39,4 @@ pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: Transcendental
         Some(x) => Ok(Atom(BigNum(x))),
         None => Err(BadFloatRange)
     }
-}
-
-pub fn rational_to_f64(big: &BigRational) -> CalcResult<f64> {
-    let numer = match big.numer().to_f64() {
-        Some(x) => x,
-        None => return Err(BadFloatRange)
-    };
-
-    let denom = match big.denom().to_f64() {
-        Some(x) => x,
-        None => return Err(BadFloatRange)
-    };
-
-    Ok(numer / denom)
 }

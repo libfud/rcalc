@@ -2,16 +2,9 @@
 
 extern crate types;
 
-use self::types::literal::{BigNum, List, Matrix, Symbol, Void, LiteralType};
+use self::types::literal::{List, Matrix, Symbol, Void, LiteralType};
 use super::super::{Expression, Evaluate, BadArgType, BadNumberOfArgs};
-use super::listops::proc_getter;
 use super::{Environment, CalcResult, ArgType, Atom};
-pub fn range_getter(arg: LiteralType) -> CalcResult<int> {
-    match arg {
-        BigNum(x) => Ok(x.to_integer().to_int().unwrap()),
-        _ => Err(BadArgType("Range and step must be integers!".to_string()))
-    }
-}
 
 type Lit = LiteralType;
 type Env = Environment;
@@ -53,7 +46,6 @@ fn make_table(lists: Lists, names: Vec<String>, func: Expr, fun_str: String,
         }
 
         table.push((t_names, result));
-
     }
 
     Ok((table, names_len, fn_len))
@@ -93,7 +85,7 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("table".to_string(), "at least".to_string(), 2))
     }
 
-    let (names, func) = try!(proc_getter(args, env));
+    let (names, func) = try!(try!(args[0].desymbolize(env)).to_proc());
     if names.len() < 1 {
         return Err(BadArgType("At least one variable must be supplied".to_string()))
     }
@@ -109,10 +101,7 @@ pub fn table(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 
     let mut lists: Vec<Vec<Lit>> = Vec::with_capacity(args.tail().len());
     for arg in args.tail().iter() {
-        match try!(arg.desymbolize(env)) {
-            List(x) => lists.push(x),
-            _ => return Err(BadArgType("Arguments to function given as lists.".to_string()))
-        }
+        lists.push(try!(try!(arg.desymbolize(env)).to_vec()));
     }
 
     if lists.tail().iter().any(|x| x.len() != lists[0].len()) {
@@ -140,8 +129,7 @@ pub fn table_from_matrix(args: &Vec<ArgType>, env: &mut Environment) -> CalcResu
         return Err(BadArgType("Expeted at least one variable".to_string()))
     }
 
-    let (names, func) = try!(proc_getter(&args.tail().to_owned(), env));
-
+    let (names, func) = try!(try!(args[1].desymbolize(env)).to_proc());
     let fun_str = match args[1] {
         Atom(Symbol(ref x)) => x.clone(),
         _ => func.to_symbol(env)
@@ -207,16 +195,14 @@ pub fn merge<T: PartialOrd>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
                      b: right.move_iter().peekable()}).collect()
 }
 */
-            
+
+#[inline]
 pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 1 {
         return Err(BadNumberOfArgs("Sort".to_string(), "only".to_string(), 1))
     }
 
-    let mut list = match try!(args[0].desymbolize(env)) {
-        List(x) => x.clone(),
-        _ => return Err(BadArgType("Cannot sort items which aren't in a list!".to_string()))
-    };
+    let mut list = try!(try!(args[0].desymbolize(env)).to_vec());
 
     list.sort();
 
@@ -224,26 +210,21 @@ pub fn sort(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 }
 
 pub fn sort_by(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
-    use self::types::literal::Proc;
     use self::types::operator;
-    use self::types::operator::{Lt, Gt, Eq};
+    use self::types::operator::{Lt, Gt};
     use self::types::sexpr::BuiltIn;
 
     if args.len() != 2 {
         return Err(BadNumberOfArgs("sort-by".to_string(), "only".to_string(), 2))
     }
 
-    let mut list = match try!(args[0].desymbolize(env)) {
-        List(x) => x.clone(),
-        _ => return Err(BadArgType("Cannot sort items which aren't in a list!".to_string()))
-    };
+    let mut list = try!(try!(args[0].desymbolize(env)).to_vec());
 
-    let order = match try!(args[1].desymbolize(env)) {
-        Proc(_, procedure) => match procedure.expr_type { 
+    let order = match try!(try!(args[1].desymbolize(env)).to_proc()) {
+        (_, procedure) => match procedure.expr_type { 
             BuiltIn(operator::Ordering(cmp)) => cmp,
             _ => return Err(BadArgType("Use only builtin".to_string()))
-        },
-        _ => return Err(BadArgType("Please use a lambda".to_string()))
+        }
     };
 
     match order {

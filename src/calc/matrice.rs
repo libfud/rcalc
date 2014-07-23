@@ -8,25 +8,30 @@ use self::types::MatrixErr;
 use self::types::operator::{MatrixOps, MakeMatrix, MatrixSetRow, MatrixSetCol, PolygonArea,
                             MatrixConcatRows, MatrixConcatCols, MatrixAppendRows,
                             MatrixInv, MatrixAppendCols, Determ, Transpose, Scalar,
+                            CrossProd, DotProd,
                             MatrixGetElem, MatrixGetRow, MatrixGetCol, MatrixFromFn};
 use super::{ArgType, Atom, CalcResult, Environment, Evaluate};
 use super::{BadArgType, BadNumberOfArgs};
-use super::{Lit, List, BigNum, Matrix, Symbol};
+use super::{Lit, List, Matrix, Symbol};
 
 type Env<T = Environment> = T;
 type Args<T = ArgType> = Vec<T>;
 
+#[inline]
 pub fn matrix_ops(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     match mop {
         MakeMatrix => make_matrix(args, env),
+        MatrixFromFn => matrix_from_fn(args, env),
         MatrixSetRow | MatrixSetCol => matrix_set(args, env, mop),
         MatrixAppendRows | MatrixAppendCols => matrix_append(args, env, mop),
-        MatrixConcatRows | MatrixConcatCols => matrix_concat(args, env, mop),
         MatrixGetElem => get_elem(args, env),
         MatrixGetRow | MatrixGetCol => get_row_col(args,env, mop),
         Determ | MatrixInv | Transpose | PolygonArea => single(args, env, mop),
         Scalar => scalar(args, env),
-        MatrixFromFn => matrix_from_fn(args, env),
+
+        MatrixConcatRows | 
+        MatrixConcatCols |
+        CrossProd | DotProd => double(args, env, mop),
     }
 }        
 
@@ -83,14 +88,12 @@ pub fn make_matrix(args: &Args, env: &mut Env) -> CalcResult {
 }
 
 pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
-    use super::operator::listops::proc_getter;
-
     if args.len() < 2 {
         return Err(BadNumberOfArgs("matrix-from-fn".to_string(), 
                                    "at least".to_string(), 2))
     }
 
-    let (names, func) = try!(proc_getter(args, env));
+    let (names, func) = try!(try!(args[0].desymbolize(env)).to_proc());
     if names.len() < 1 {
         return Err(BadArgType("At least one variable must be supplied".to_string()))
     }
@@ -133,20 +136,14 @@ pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
     }
 }
 
-
 pub fn scalar(args: &Args, env: &mut Env) -> CalcResult {
-    use super::operator::listops::proc_getter;
-
     if args.len() != 2 {
         return Err(BadNumberOfArgs("matrix-scalar".to_string(), "only".to_string(), 2))
     }
 
-    let matrix = match try!(args[0].desymbolize(env)) {
-        Matrix(x) => x.clone(),
-        _ => return Err(BadArgType("Not a matrix".to_string()))
-    };
+    let matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
 
-    let (names, func) = try!(proc_getter(&args.tail().to_vec(), env));
+    let (names, func) = try!(try!(args[1].desymbolize(env)).to_proc());
     if names.len() != 1 {
         return Err(BadArgType("Only one variable expected".to_string()))
     };
@@ -167,28 +164,15 @@ pub fn scalar(args: &Args, env: &mut Env) -> CalcResult {
     }
 }
 
-pub fn arg_to_uint(arg: Lit) -> CalcResult<uint> {
-    match arg {
-        BigNum(x) => match x.to_integer().to_uint() {
-            Some(num) => Ok(num),
-            None => Err(BadArgType("Number must be a positive integer".to_string()))
-        },
-        _ => Err(BadArgType("Number must be a positive integer".to_string()))
-    }
-}
-
 pub fn get_elem(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() != 3 {
         return Err(BadNumberOfArgs("matrix-get-elem".to_string(), "only".to_string(), 3))
     }
 
-    let matrix = match try!(args[0].desymbolize(env)) {
-        Matrix(x) => x.clone(),
-        _ => return Err(BadArgType("Not a matrix".to_string()))
-    };
+    let matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
 
-    let mut row = try!(arg_to_uint(try!(args[1].desymbolize(env))));
-    let mut col = try!(arg_to_uint(try!(args[2].desymbolize(env))));
+    let mut row = try!((try!(args[1].desymbolize(env))).to_uint());
+    let mut col = try!((try!(args[2].desymbolize(env))).to_uint());
 
     if row == 0 || col == 0 {
         return Err(BadArgType("Matrices are indexed starting from 1".to_string()))
@@ -208,13 +192,8 @@ pub fn get_row_col(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
         return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 2))
     }
 
-    let matrix = match try!(args[0].desymbolize(env)) {
-        Matrix(x) => x.clone(),
-        y => return Err(BadArgType(format!("{} is not a matrix", y)))
-    };
-
-    let mut row_col = try!(arg_to_uint(try!(args[1].desymbolize(env))));
-
+    let matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
+    let mut row_col = try!((try!(args[1].desymbolize(env))).to_uint());
     if row_col == 0 {
         return Err(BadArgType("Matrices are indexed starting from 1".to_string()))
     }
@@ -241,13 +220,8 @@ pub fn matrix_set(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
         return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 3))
     }
 
-    let mut matrix = match try!(args[0].desymbolize(env)) {
-        Matrix(x) => x.clone(),
-        _ => return Err(BadArgType("Not a matrix".to_string()))
-    };
-
-    let old_item = try!(arg_to_uint(try!(args[1].desymbolize(env))));
- 
+    let mut matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
+    let old_item = try!((try!(args[1].desymbolize(env))).to_uint());
     let (new_items, _) = try!(list_to_1d(try!(args[2].desymbolize(env)), env));
 
     match mop {
@@ -268,62 +242,26 @@ pub fn matrix_append(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
         return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 2))
     }
 
-    let mut matrix = match try!(args[0].desymbolize(env)) {
-        Matrix(x) => x.clone(),
-        _ => return Err(BadArgType("Not a matrix".to_string()))
-    };
-
+    let mut matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
     let (new_items,(len, count)) = try!(list_to_2d(try!(args[1].desymbolize(env)), env));
 
     match mop {
-        MatrixAppendRows => {
-            for list in range(0, count) {
-                match matrix.append_row(new_items.slice(list * len, (list + 1) * len).to_vec()) {
-                    Ok(_) =>  { },
-                    Err(m) => return Err(MatrixErr(m))
-                }
+        MatrixAppendRows => for list in range(0, count) {
+            match matrix.append_row(new_items.slice(list * len, (list + 1) * len).to_vec()) {
+                Ok(_) =>  { },
+                Err(m) => return Err(MatrixErr(m))
             }
-        }
-        MatrixAppendCols => {
-            for list in range(0, count) {
-                match matrix.append_col(new_items.slice(list * len, (list + 1) * len).to_vec()) {
-                    Ok(_) =>  { },
-                    Err(m) => return Err(MatrixErr(m))
-                }
+        },
+        MatrixAppendCols => for list in range(0, count) {
+            match matrix.append_col(new_items.slice(list * len, (list + 1) * len).to_vec()) {
+                Ok(_) =>  { },
+                Err(m) => return Err(MatrixErr(m))
             }
-        }
+        },
         _ => fail!("Undefined")
     }
 
     Ok(Atom(Matrix(matrix)))
-}
-
-pub fn matrix_concat(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
-    if args.len() != 2 {
-        return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 2))
-    }
-
-    let matrix_a = match try!(args[0].desymbolize(env)) {
-        Matrix(x) => x.clone(),
-        _ => return Err(BadArgType("Not a matrix".to_string()))
-    };
-
-    let matrix_b = match try!(args[1].desymbolize(env)) {
-        Matrix(x) => x.clone(),
-        _ => return Err(BadArgType("Not a matrix".to_string()))
-    };
-
-    match mop {
-        MatrixConcatCols => match matrix_a.concat_cols(&matrix_b) {
-            Some(x) => Ok(Atom(Matrix(x))),
-            None => Err(BadArgType("could not concatentate matrices".to_string()))
-        },
-        MatrixConcatRows => match matrix_a.concat_rows(&matrix_b) {
-            Some(x) => Ok(Atom(Matrix(x))),
-            None => Err(BadArgType("could not concatentate matrices".to_string()))
-        },
-        _ => fail!("undefined")
-    }
 }
 
 pub fn single(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
@@ -331,10 +269,7 @@ pub fn single(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
         return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 1))
     }
 
-    let matrix = match try!(args[0].desymbolize(env)) {
-        Matrix(x) => x.clone(),
-        _ => return Err(BadArgType("Not a matrix".to_string()))
-    };
+    let matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
 
     match mop {
         Determ => match matrix.determinant() {
@@ -351,5 +286,33 @@ pub fn single(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
             None => Err(BadArgType("invalid matrix to use with shoelace".to_string()))
         },
         _ => fail!("Undefined!")
+    }
+}
+
+pub fn double(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
+    if args.len() != 2 {
+        return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 2))
+    }
+
+    let matrix_a = try!((try!(args[0].desymbolize(env))).to_matrix());
+    let matrix_b = try!((try!(args[1].desymbolize(env))).to_matrix());
+    match mop {
+        CrossProd => match matrix_a.cross_prod(&matrix_b) {
+            Some(x) => Ok(Atom(Matrix(x))),
+            None => Err(BadArgType("Mismatched matrices".to_string()))
+        },
+        DotProd => match matrix_a.kronecker_prod(&matrix_b) {
+            Some(x) => Ok(Atom(Matrix(x))),
+            None => Err(BadArgType("Mismatched matrices".to_string()))
+        },
+        MatrixConcatCols => match matrix_a.concat_cols(&matrix_b) {
+            Some(x) => Ok(Atom(Matrix(x))),
+            None => Err(BadArgType("could not concatentate matrices".to_string()))
+        },
+        MatrixConcatRows => match matrix_a.concat_rows(&matrix_b) {
+            Some(x) => Ok(Atom(Matrix(x))),
+            None => Err(BadArgType("could not concatentate matrices".to_string()))
+        },
+        _ => fail!("undefined")
     }
 }

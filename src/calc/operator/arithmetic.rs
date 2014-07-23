@@ -12,6 +12,7 @@ pub type Args<T = ArgType> = Vec<T>;
 pub type BigR = BigRational;
 pub type Env = Environment;
 
+#[inline]
 fn minlen_op_ident(op: &Arith) -> (uint, |Lit, &Lit| -> Lit,  Lit) {
     match op {
         &Add => (0, |a: Lit, b: &Lit| a + *b, num::zero()),
@@ -22,6 +23,7 @@ fn minlen_op_ident(op: &Arith) -> (uint, |Lit, &Lit| -> Lit,  Lit) {
     }
 }
 
+#[inline]
 pub fn arith(args: &Args, env: &mut Env, oper: Arith) -> CalcResult {
     let (min_len, op, ident) = minlen_op_ident(&oper);
 
@@ -32,17 +34,7 @@ pub fn arith(args: &Args, env: &mut Env, oper: Arith) -> CalcResult {
     if args.len() == 0 {
         Ok(Atom(ident))
     } else if args.len() == 1 {
-        match oper {
-            Sub => Ok(Atom(-try!(args[0].desymbolize(env)))),
-            Div => match try!(args[0].desymbolize(env)) {
-                Matrix(x) => match x.inverse() {
-                        Some(inverted) => Ok(Atom(Matrix(inverted))),
-                        None => Err(BadArgType("Inversion failed".to_string()))
-                },
-                x => Ok(Atom(op(ident, &x)))
-            },                    
-            _ => Ok(Atom(op(ident, &try!(args[0].desymbolize(env)))))
-        }
+        Ok(Atom(op(ident, &try!(args[0].desymbolize(env)))))
     } else {
         let mut answer = try!(args[0].desymbolize(env));
         for x in args.tail().iter() {

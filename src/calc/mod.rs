@@ -100,6 +100,7 @@ pub trait Evaluate {
 }
 
 impl Evaluate for ArgType {
+    #[inline]
     fn eval(&self, env: &mut Environment) -> CalcResult {
         match self {
             &Atom(_) => Ok(self.clone()),
@@ -110,6 +111,7 @@ impl Evaluate for ArgType {
         }
     }
 
+    #[inline]
     fn arg_to_literal(&self, env: &mut Environment) -> CalcResult<LiteralType> {
         match self {
             &Atom(ref x) => Ok(x.clone()),
@@ -117,6 +119,7 @@ impl Evaluate for ArgType {
         }
     }
 
+    #[inline]
     fn desymbolize(&self, env: &mut Environment) -> CalcResult<LiteralType> {
         match self {
             &Atom(Symbol(ref x)) => Atom(try!(env.lookup(x))).desymbolize(env),
@@ -127,6 +130,7 @@ impl Evaluate for ArgType {
 }
 
 impl Evaluate for Expression {
+    #[inline]
     fn eval(&self, env: &mut Environment) -> CalcResult {
         match self.expr_type {
             BuiltIn(x) => operator::eval(x, &self.args, env),
@@ -134,17 +138,18 @@ impl Evaluate for Expression {
         }
     }
 
+    #[inline]
     fn arg_to_literal(&self, env: &mut Environment) -> CalcResult<LiteralType> {
         let res = try!(self.eval(env)).arg_to_literal(env);
         res
     }
 
+    #[inline]
     fn desymbolize(&self, env: &mut Environment) -> CalcResult<LiteralType> {
         let res = try!(self.eval(env)).desymbolize(env);
         res
     }
 }
-        
 
 /// Evaluates a string by creating a stream of tokens, translating those tokens
 /// recursively, and then evaluating the top expression.

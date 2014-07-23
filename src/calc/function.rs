@@ -3,6 +3,7 @@
 use super::{CalcResult, Environment, Evaluate, ArgType, Atom, Proc, BadNumberOfArgs};
 
 ///Returns the value of the function for the arguments given
+#[inline]
 pub fn eval(fn_name: &String, args: &Vec<ArgType>,
             env: &mut Environment) -> CalcResult {
     

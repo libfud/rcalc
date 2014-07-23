@@ -20,6 +20,7 @@ pub mod logic;
 pub mod listops;
 pub mod trig;
 
+#[inline]
 pub fn list_ops(args: &Vec<ArgType>, env: &mut Environment, lop: ListOps) -> CalcResult {
     use self::types::operator::{List, Cons, Car, Cdr, Cadr, Cddr, Caddr, Cdddr};
     match lop {
@@ -34,6 +35,7 @@ pub fn list_ops(args: &Vec<ArgType>, env: &mut Environment, lop: ListOps) -> Cal
     }
 }
 
+#[inline]
 pub fn transform_ops(args: &Vec<ArgType>, env: &mut Environment, top: XForms) -> CalcResult {
     use self::types::operator::{Map, Reduce, Filter, RangeList, Sort, SortBy};
     use self::listops::{map, filter, reduce, rangelist};
@@ -49,6 +51,7 @@ pub fn transform_ops(args: &Vec<ArgType>, env: &mut Environment, top: XForms) ->
     }
 }
 
+#[inline]   
 pub fn handle_logic(args: &Vec<ArgType>, env: &mut Environment, log: Gate) -> CalcResult {
     use self::types::operator::{If, And, Or, Not, Xor};
     use self::logic::{and_or, not, xor};
@@ -61,6 +64,7 @@ pub fn handle_logic(args: &Vec<ArgType>, env: &mut Environment, log: Gate) -> Ca
     }
 }
 
+#[inline]
 pub fn eval(op_type: OperatorType, args: &Vec<ArgType>, 
             env: &mut Environment) -> CalcResult {
 
@@ -73,7 +77,7 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         Arithmetic(op) => arith(args, env, op),
         Pow => power::pow_wrapper(args, env),
         Transcend(op) => float_ops(args, env, op),
-        Ordering(ord) => ordering(args, env, ord.to_ord()),
+        Ordering(ord) => ordering(args, env, ord),
         RoundIdent(ri) => num_op(args, env, ri),
         Logic(gate) => handle_logic(args, env, gate),
         Define  => super::define(args, env),
@@ -87,3 +91,5 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         Help => super::common::help(args),
     }
 }
+
+
