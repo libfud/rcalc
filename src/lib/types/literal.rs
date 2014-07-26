@@ -292,7 +292,6 @@ impl Mul<Lit, Lit> for Lit {
     fn mul(&self, rhs: &Lit) -> Lit {
         match (self, rhs) {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x * *y),
-            (&Matrix(ref x), &Matrix(ref y)) => Matrix(*x * *y),
             (&Matrix(ref x), &BigNum(_)) => Matrix(x.scalar(rhs, |a, b| a * *b)),
             (&BigNum(_), &Matrix(ref x)) => Matrix(x.scalar(self, |a, b| a * *b)),
             _ => fail!(format!("Arithmetic not defined for {} {}", self, rhs))
@@ -306,7 +305,6 @@ impl Div<Lit, Lit> for Lit {
     fn div(&self, rhs: &Lit) -> Lit {
         match (self, rhs) {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x / *y),
-            (&Matrix(ref x), &Matrix(ref y)) => Matrix(*x / *y),
             (&Matrix(ref x), &BigNum(_)) => Matrix(x.scalar(rhs, |a, b| a / *b)),
              _ => fail!("Division is only defined for numbers".to_string())
         }

@@ -323,7 +323,7 @@ pub enum MatrixOps {
 
     MatrixGetElem, MatrixGetRow, MatrixGetCol,
 
-    Scalar, CrossProd, DotProd, Transpose,
+    Scalar, CrossProd, DotProd, Transpose, Translate,
 
     Determ, MatrixInv,
 
@@ -349,6 +349,7 @@ impl fmt::Show for MatrixOps {
             CrossProd => "cross-*",
             DotProd => "dot-*",
             Transpose => "matrix-transpose",
+            Translate => "matrix-translate",
             MatrixInv => "matrix-inv",
             MatrixFromFn => "matrix-from-fn",
             PolygonArea => "polygon-area",
@@ -377,6 +378,7 @@ impl from_str::FromStr for MatrixOps {
             "dot-*" => Some(DotProd),
             "matrix-inv" => Some(MatrixInv),
             "matrix-transpose" => Some(Transpose),
+            "matrix-translate" => Some(Translate),
             "matrix-from-fn" => Some(MatrixFromFn),
             "polygon-area" => Some(PolygonArea),
             _ => None

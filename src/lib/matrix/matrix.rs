@@ -560,7 +560,7 @@ impl<T: Num + PartialOrd + Clone + fmt::Show> Matrice<T> {
     }
 
     #[inline]
-    pub fn translate_by(&self, other: &Vec<T>) -> Option<Matrice<T>> {
+    pub fn translate_by(&self, other: &[T]) -> Option<Matrice<T>> {
         if other.len() != self.rows { 
             return None
         }
@@ -571,7 +571,7 @@ impl<T: Num + PartialOrd + Clone + fmt::Show> Matrice<T> {
             new_elems.extend(self.get_row(row).map(|x| *x + other[row]))
         }
 
-        Some(Matrice { rows: self.rows, columns: self.rows, elems: new_elems })
+        Some(Matrice { rows: self.rows, columns: self.columns, elems: new_elems })
     }
 
     /// Returns a matrix of minors.
@@ -759,37 +759,6 @@ impl<T: Sub<T, T>> Sub<Matrice<T>, Matrice<T>> for Matrice<T> {
 
 
         Matrice { columns: self.columns, rows: self.rows, elems: new_elems }
-    }
-}
-
-impl<T: Num + Clone + fmt::Show> Mul<Matrice<T>, Matrice<T>> for Matrice<T> {
-    #[inline]
-    fn mul(&self, other: &Matrice<T>) -> Matrice<T> {
-        if self.columns != other.rows {
-            fail!(MismatchedAxes.to_string())
-        }
-
-        let mut new_elems: Vec<T> = Vec::with_capacity(self.columns * other.rows);
-        for row in range(0, self.rows) {
-            for col in range(0, other.columns) {
-                new_elems.push(self.get_row(row).zip(other.get_col(col))
-                               .map(|(lhs, rhs)| *lhs * *rhs).sum());
-            }
-        }
-
-        Matrice { columns: other.columns, rows: self.rows, elems: new_elems }
-    }
-}
-
-impl<T: Num + PartialOrd + Clone + fmt::Show> Div<Matrice<T>, Matrice<T>> for Matrice<T> {
-    #[inline]
-    fn div(&self, other: &Matrice<T>) -> Matrice<T> {
-        let inverse = match other.inverse() {
-            Some(x) => x,
-            None => fail!("rhs does not have an inverse!".to_string())
-        };
-
-        *self * inverse
     }
 }
 

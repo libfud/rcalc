@@ -16,17 +16,33 @@ type Args<T = ArgType> = Vec<T>;
 pub fn matrix_ops(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     match mop {
         MakeMatrix => make_matrix(args, env),
+
         MatrixFromFn => matrix_from_fn(args, env),
-        MatrixSetRow | MatrixSetCol => matrix_set(args, env, mop),
-        MatrixAppendRows | MatrixAppendCols => matrix_append(args, env, mop),
+
+        MatrixSetRow | 
+        MatrixSetCol => matrix_set(args, env, mop),
+
+        MatrixAppendRows | 
+        MatrixAppendCols => matrix_append(args, env, mop),
+
         MatrixGetElem => get_elem(args, env),
-        MatrixGetRow | MatrixGetCol => get_row_col(args,env, mop),
-        Determ | MatrixInv | Transpose | PolygonArea => single(args, env, mop),
+
+        MatrixGetRow | 
+        MatrixGetCol => get_row_col(args,env, mop),
+
+        Determ | 
+        MatrixInv | 
+        Transpose | 
+        PolygonArea => single(args, env, mop),
+
         Scalar => scalar(args, env),
 
+        Translate => translate_by(args, env),
+
+        DotProd |
+        CrossProd | 
         MatrixConcatRows | 
-        MatrixConcatCols |
-        CrossProd | DotProd => double(args, env, mop),
+        MatrixConcatCols => double(args, env, mop),
     }
 }        
 
@@ -83,16 +99,12 @@ pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
     }
 
     if args.len() - 1 != names.len() {
-        return Err(BadNumberOfArgs(func.to_string(), "only".to_string(), 
-                                   names.len()))
+        return Err(BadNumberOfArgs(func.to_string(), "only".to_string(), names.len()))
     }
 
     let mut lists: Vec<Vec<Lit>> = Vec::with_capacity(args.tail().len());
     for arg in args.tail().iter() {
-        match try!(arg.desymbolize(env)) {
-            List(x) => lists.push(x),
-            _ => return Err(BadArgType("Arguments to function given as lists.".to_string()))
-        }
+        lists.push(try!(try!(arg.desymbolize(env)).to_vec()));
     }
 
     if lists.tail().iter().any(|x| x.len() != lists[0].len()) {
@@ -177,25 +189,21 @@ pub fn get_row_col(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     }
 
     let matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
-    let mut row_col = try!((try!(args[1].desymbolize(env))).to_uint());
-    if row_col == 0 {
-        return Err(BadArgType("Matrices are indexed starting from 1".to_string()))
-    }
+    let row_col = match try!((try!(args[1].desymbolize(env))).to_uint()) {
+        0 => return Err(BadArgType("Matrices are indexed starting from 1".to_string())),
+        x => x - 1
+    };
 
-    row_col -= 1;
-
-    match mop {
-        MatrixGetRow => if row_col > matrix.rows() {
-            Err(MatrixErr(BadDimensionality))
-        } else {
-            Ok(Atom(List(matrix.get_row(row_col).map(|x| x.clone()).collect())))
-        },
-        MatrixGetCol => if row_col > matrix.cols() {
-            Err(MatrixErr(BadDimensionality))
-        } else {
-            Ok(Atom(List(matrix.get_col(row_col).map(|x| x.clone()).collect())))
-        },
+    let (iterator, num) = match mop {
+        MatrixGetRow => (matrix.get_row(row_col), matrix.rows()),
+        MatrixGetCol => (matrix.get_col(row_col), matrix.cols()),
         _ => fail!("Undefined")
+    };
+
+    if row_col >  num {
+            Err(MatrixErr(BadDimensionality))
+    } else {
+        Ok(Atom(List(iterator.map(|x| x.clone()).collect())))
     }
 }
 
@@ -278,8 +286,8 @@ pub fn double(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
         return Err(BadNumberOfArgs(mop.to_string(), "only".to_string(), 2))
     }
 
-    let matrix_a = try!((try!(args[0].desymbolize(env))).to_matrix());
-    let matrix_b = try!((try!(args[1].desymbolize(env))).to_matrix());
+    let matrix_a = try!(try!(args[0].desymbolize(env)).to_matrix());
+    let matrix_b = try!(try!(args[1].desymbolize(env)).to_matrix());
     match mop {
         CrossProd => match matrix_a.cross_prod(&matrix_b) {
             Some(x) => Ok(Atom(Matrix(x))),
@@ -298,5 +306,24 @@ pub fn double(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
             None => Err(BadArgType("could not concatentate matrices".to_string()))
         },
         _ => fail!("undefined")
+    }
+}
+
+pub fn translate_by(args: &Args, env: &mut Env) -> CalcResult {
+    if args.len() < 2 {
+        return Err(BadNumberOfArgs("matrix-translate".to_string(),
+                                   "at least".to_string(), 2))
+    }
+
+    let matrix = try!(try!(args[0].desymbolize(env)).to_matrix());
+    let mut translations = Vec::with_capacity(args.len() - 1);
+    for arg in args.tail().iter() {
+        translations.push(try!(arg.desymbolize(env)));
+    }
+
+    match matrix.translate_by(translations.as_slice()) {
+        Some(x) => Ok(Atom(Matrix(x))),
+        None => Err(BadArgType(
+            "Number of arguments does not match number of rows in matrix".to_string()))
     }
 }
