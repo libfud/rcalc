@@ -1,10 +1,11 @@
 //!List operations.
 
-use super::{Atom, ArgType, CalcResult, Environment};
-use super::super::{BadArgType, BadNumberOfArgs};
+extern crate types;
 
-pub type Lit = LiteralType;
-pub type LitRes = CalcResult<Lit>;
+use self::types::{Atom, ArgType, CalcResult, Environment, Expression, LiteralType};
+use self::types::literal::{Boolean, List, Lit, LitRes};
+use super::super::{Evaluate, BadArgType, BadNumberOfArgs};
+
 pub type Env = Environment;
 pub type Expr = Expression;
 

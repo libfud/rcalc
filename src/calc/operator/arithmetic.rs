@@ -41,4 +41,3 @@ pub fn arith(args: &Args, env: &mut Env, oper: Arith) -> CalcResult {
         Ok(Atom(answer))
     }
 }
-

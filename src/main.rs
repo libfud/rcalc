@@ -128,7 +128,7 @@ fn main() {
         env_tx.send(env.clone());
         exp_tx.send(expr.as_slice().trim().to_string());
 
-        let ok = TaskBuilder::new().stack_size(10_000_000).try(proc() {
+        let ok = TaskBuilder::new().stack_size(9_000_000).try(proc() {
             let mut temp_env = env_rx.recv();
             let expr = exp_rx.recv();
             let ok = eval(expr.as_slice(), &mut temp_env);
