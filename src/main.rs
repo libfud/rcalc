@@ -52,9 +52,9 @@ pub mod r_readline {
         let c_buf = prompt.to_c_str();
 
         unsafe {
-            let ret_str = CString::new(readline(c_buf.as_ptr()), true);
+            let ret_str = readline(c_buf.as_ptr());
             if ret_str.is_not_null() {
-                ret_str.as_str().map(|ret_str| ret_str.to_string())
+                CString::new(ret_str, true).as_str().map(|ret_str| ret_str.to_string())
             } else {
                 None
             }
