@@ -29,7 +29,7 @@ pub struct Procedure {
     body: Expression
 }
 
-impl Procedure {
+impl<'a> Procedure {
     #[inline]
     pub fn new(params: &Vec<String>, body: &Expression) -> Procedure {
         Procedure { params: params.clone(), body: body.clone() }
@@ -38,6 +38,11 @@ impl Procedure {
     #[inline]
     pub fn to_lit(&self) -> Lit {
         Proc(self.params.clone(), self.body.clone())
+    }
+
+    #[inline]
+    pub fn destruct(&'a self) -> (&'a Vec<String>, &'a Expression) {
+        (&self.params, &self.body)
     }
 }
 

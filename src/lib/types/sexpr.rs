@@ -1,17 +1,45 @@
 //! Expressions
 
+use std::fmt;
+
 use super::{LiteralType, Environment, OperatorType};
 
-#[deriving(Show, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[deriving(Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub enum ExprType {
     BuiltIn(OperatorType),
     Function(String)
 }
 
-#[deriving(Clone, Show, PartialEq, PartialOrd, Eq, Ord)]
+impl fmt::Show for ExprType {
+    #[inline]
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(fmt, "{}", match *self {
+            BuiltIn(ref op) => op.to_string(),
+            Function(ref s) => s.clone(),
+        }));
+        Ok(())
+    }
+}
+
+#[deriving(Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub struct Expression {
     pub expr_type: ExprType,
     pub args: Vec<ArgType>,
+}
+
+impl fmt::Show for Expression {
+    #[inline]
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(fmt, "({} ", self.expr_type));
+        for arg in self.args.init().iter() {
+            try!(write!(fmt, "{} ", arg));
+        }
+        try!(write!(fmt, "{})", match self.args.last() {
+            Some(x) => x.to_string(),
+            None => "".to_string()
+        }));
+        Ok(())
+    }
 }
 
 impl Expression {
@@ -41,8 +69,19 @@ impl Expression {
     }
 }
 
-#[deriving(Clone, Show, PartialEq, PartialOrd, Eq, Ord)]
+#[deriving(Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub enum ArgType {
     Atom(LiteralType),
     SExpr(Expression),
+}
+
+impl fmt::Show for ArgType {
+    #[inline]
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(fmt, "{}", match self {
+            &Atom(ref x)  => x.to_string(),
+            &SExpr(ref x) => x.to_string()
+        }));
+        Ok(())
+    }
 }
