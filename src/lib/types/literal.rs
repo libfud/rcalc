@@ -5,6 +5,7 @@ extern crate matrix;
 
 use self::num::{BigRational, BigInt};
 use self::matrix::{Matrice, SquareRoot};
+use super::record::Record;
 use super::{CalcResult, UnexpectedVal, Expression, Environment};
 use std::num;
 use std::num::{Zero, One};
@@ -17,8 +18,35 @@ pub enum LiteralType {
     List(Vec<LiteralType>),
     Matrix(Matrice<LiteralType>),
     Proc(Vec<String>, Expression),
+    Structure(Record),
     Symbol(String),
     Void
+}
+
+#[deriving(PartialOrd, PartialEq, Eq, Ord, Clone)]
+pub struct Procedure {
+    params: Vec<String>,
+    body: Expression
+}
+
+impl Procedure {
+    #[inline]
+    pub fn new(params: &Vec<String>, body: &Expression) -> Procedure {
+        Procedure { params: params.clone(), body: body.clone() }
+    }
+
+    #[inline]
+    pub fn to_lit(&self) -> Lit {
+        Proc(self.params.clone(), self.body.clone())
+    }
+}
+
+impl<'a> fmt::Show for Procedure {
+    #[inline]
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(fmt, "Procedure: parameters: {}, body: {}", self.params, self.body));
+        Ok(())
+    }
 }
 
 pub struct WithEnv<'a> {
@@ -32,11 +60,21 @@ impl<'a> fmt::Show for WithEnv<'a> {
         match self.data {
             &Boolean(ref x) => try!(write!(fmt, "{}", x)),
             &BigNum(ref x) => try!(write!(fmt, "{}", x)),
-            &List(ref list) => try!(write!(fmt, "{}", list)),
+            &List(ref list) => {
+                try!(write!(fmt, "("));
+                for elt in list.init().iter() {
+                    try!(write!(fmt, "{} ", elt));
+                }
+                try!(write!(fmt, "{})", match list.last() {
+                    Some(x) => x.to_string(),
+                    None => "".to_string()
+                }));
+            },
             &Matrix(ref m) => try!(write!(fmt, "{}", m)),
             &Proc(ref args, ref expr) => {
                 try!(write!(fmt, "Procedure: parameters: {}, body: {}", args, expr))
             },
+            &Structure(ref rec) => try!(write!(fmt, "{}", rec)),
             &Symbol(ref s) => try!(write!(fmt, "{} {}", s, match self.env.lookup(s) {
                 Ok(x) => format!("= {}", x),
                 Err(m) => m.to_string(),
@@ -54,8 +92,18 @@ impl fmt::Show for LiteralType {
         match *self {
             Boolean(ref x) => try!(write!(fmt, "{}", x)),
             BigNum(ref x) => try!(write!(fmt, "{}", x)),
-            List(ref list) => try!(write!(fmt, "{}", list)),
+            List(ref list) => {
+                try!(write!(fmt, "("));
+                for elt in list.init().iter() {
+                    try!(write!(fmt, "{} ", elt));
+                }
+                try!(write!(fmt, "{})", match list.last() {
+                    Some(x) => x.to_string(),
+                    None => "".to_string()
+                }));
+            }
             Matrix(ref m) => try!(write!(fmt, "{}", m)),
+            Structure(ref rec) => try!(write!(fmt, "{}", rec)),
             Proc(ref args, ref expr) => {
                 try!(write!(fmt, "Procedure: parameters: {}, body: {}", args, expr))
             },
@@ -79,10 +127,26 @@ impl<'a> LiteralType {
     }
 
     #[inline]
+    pub fn is_bool(&self) -> bool {
+        match self {
+            &Boolean(_) => true,
+            _ => false
+        }
+    }
+
+    #[inline]
     pub fn to_bignum(&self) -> CalcResult<BigRational> {
         match self {
             &BigNum(ref bignum) => Ok(bignum.clone()),
             x => Err(UnexpectedVal("BigNum".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn is_num(&self) -> bool {
+        match self {
+            &BigNum(_) => true,
+            _ => false
         }
     }
 
@@ -128,10 +192,26 @@ impl<'a> LiteralType {
     }
 
     #[inline]
+    pub fn is_list(&self) -> bool {
+        match self {
+            &List(_) => true,
+            _ => false
+        }
+    }
+
+    #[inline]
     pub fn to_matrix(&self) -> CalcResult<Matrice<LiteralType>> {
         match self {
             &Matrix(ref matrix) => Ok(matrix.clone()),
             x => Err(UnexpectedVal("List".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn is_matrix(&self) -> bool {
+        match self {
+            &Matrix(_) => true,
+            _ => false
         }
     }
 
@@ -144,10 +224,58 @@ impl<'a> LiteralType {
     }
 
     #[inline]
+    pub fn is_proc(&self) -> bool {
+        match self {
+            &Proc(_, _) => true,
+            _ => false
+        }
+    }
+
+    #[inline]
+    pub fn to_procedure(&self) -> CalcResult<Procedure> {
+        match self {
+            &Proc(ref args, ref expr) => Ok(Procedure { params: args.clone(), body: expr.clone() }),
+            x => Err(UnexpectedVal("Proc".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn to_structure(&self) -> CalcResult<Record> {
+        match self {
+            &Structure(ref rec) => Ok(rec.clone()),
+            x => Err(UnexpectedVal("Structure".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn is_structure(&self) -> bool {
+        match self {
+            &Structure(_) => true,
+            _ => false
+        }
+    }
+
+    #[inline]
     pub fn to_sym_string(&self) -> CalcResult<String> {
         match self {
             &Symbol(ref s) => Ok(s.clone()),
             x => Err(UnexpectedVal("Symbol".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn is_symbol(&self) -> bool {
+        match self {
+            &Symbol(_) => true,
+            _ => false
+        }
+    }
+
+    #[inline]
+    pub fn is_void(&self) -> bool {
+        match self {
+            &Void => true,
+            _ => false
         }
     }
 
@@ -263,7 +391,7 @@ impl Add<Lit, Lit> for Lit {
             (&Matrix(ref x), &Matrix(ref y)) => Matrix(*x + *y),
             (&Matrix(ref x), &BigNum(_)) => Matrix(x.scalar(rhs, |a, b| a + *b)),
             (&BigNum(_), &Matrix(ref x)) => Matrix(x.scalar(self, |a, b| a + *b)),
-            _ => fail!(format!("Arithmetic not defined for {} {}", self, rhs))
+            _ => fail!(format!("Addition not defined for {} {}", self, rhs))
         }
     }
 }
@@ -282,7 +410,7 @@ impl Sub<Lit, Lit> for Lit {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x - *y),
             (&Matrix(ref x), &Matrix(ref y)) => Matrix(*x - *y),
             (&Matrix(ref x), &BigNum(_)) => Matrix(x.scalar(rhs, |a, b| a - *b)),
-            _ => fail!(format!("Arithmetic not defined for {} {}", self, rhs))
+            _ => fail!(format!("Subtraction not defined for {} {}", self, rhs))
         }
     }
 }
@@ -294,7 +422,7 @@ impl Mul<Lit, Lit> for Lit {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x * *y),
             (&Matrix(ref x), &BigNum(_)) => Matrix(x.scalar(rhs, |a, b| a * *b)),
             (&BigNum(_), &Matrix(ref x)) => Matrix(x.scalar(self, |a, b| a * *b)),
-            _ => fail!(format!("Arithmetic not defined for {} {}", self, rhs))
+            _ => fail!(format!("Multiplication not defined for {} {}", self, rhs))
         }
 
     }
@@ -306,7 +434,7 @@ impl Div<Lit, Lit> for Lit {
         match (self, rhs) {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x / *y),
             (&Matrix(ref x), &BigNum(_)) => Matrix(x.scalar(rhs, |a, b| a / *b)),
-             _ => fail!("Division is only defined for numbers".to_string())
+             _ => fail!(format!("Division not defined for {} {}", self, rhs))
         }
     }
 }
@@ -317,7 +445,7 @@ impl Rem<Lit, Lit> for Lit {
         match (self, rhs) {
             (&BigNum(ref x), &BigNum(ref y)) => BigNum(x % *y),
             (&Matrix(ref x), &BigNum(_)) => Matrix(x.scalar(rhs, |a, b| a % *b)),
-            _ => fail!("Rem is only defined for numbers".to_string())
+            _ => fail!(format!("Remainder not defined for {} for {}", self, rhs))
         }
     }
 }
@@ -327,6 +455,10 @@ impl SquareRoot<Lit> for Lit {
         match self {
             &BigNum(_) => { },
             _ => fail!("Undefined")
+        }
+
+        if *self < num::zero() {
+            fail!("Undefined")
         }
 
         let one: Lit = num::one();

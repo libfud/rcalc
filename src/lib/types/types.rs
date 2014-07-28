@@ -15,6 +15,7 @@ use std::fmt;
 pub mod sexpr;
 pub mod literal;
 pub mod operator;
+pub mod record;
 
 #[deriving(Clone, PartialEq)]
 pub enum ErrorKind {

@@ -1,7 +1,7 @@
 //! Operators
 
-use std::fmt;
-use std::from_str;
+use std::{from_str, fmt};
+use super::record::RecordOps;
 
 #[cfg(use_fancy)]
 use self::fancy::{LessThanEq, GreaterThanEq};
@@ -402,6 +402,8 @@ pub enum OperatorType {
     Table, 
     TableFromMatrix,
     MatrixStuff(MatrixOps),
+    RecOps(RecordOps),
+    TextGraph,
     Help,
 }
 
@@ -417,12 +419,14 @@ impl fmt::Show for OperatorType {
             Listings(ref x) => x.to_string(),
             TransForms(ref x) => x.to_string(),
             MatrixStuff(ref x) => x.to_string(),
+            RecOps(ref x) => x.to_string(),
             Pow => "pow".to_string(),
             Quote => "'".to_string(),
             Define => "define".to_string(),
             Lambda => "lambda".to_string(),
             Table => "table".to_string(),
             TableFromMatrix => "table-from-matrix".to_string(),
+            TextGraph => "text-graph".to_string(),
             Help => "help".to_string(),
         }));
         Ok(())
@@ -471,6 +475,11 @@ impl from_str::FromStr for OperatorType {
             Some(x) => return Some(RoundIdent(x)),
             None => { }
         }
+
+        match from_str::<RecordOps>(s) {
+            Some(x) => return Some(RecOps(x)),
+            None => { }
+        }
     
         match s {
             "pow" => Some(Pow),
@@ -479,6 +488,7 @@ impl from_str::FromStr for OperatorType {
             "quote" | "'" => Some(Quote),
             "table" => Some(Table),
             "table-from-matrix" => Some(TableFromMatrix),
+            "text-graph" => Some(TextGraph),
             "help" => Some(Help),
             _ => None
         }

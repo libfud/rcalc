@@ -16,12 +16,13 @@ pub use self::types::literal::{Lit, LitRes, LiteralType,
 pub use self::common::help;
 pub use self::literal::{cons, car, cdr, list};
 
-pub mod matrice;
-pub mod literal;
-pub mod operator;
-pub mod function;
 pub mod common;
+pub mod function;
+pub mod literal;
+pub mod matrice;
+pub mod operator;
 pub mod pretty;
+pub mod record;
 
 /// A structure to allow persistence of variables and functions
 

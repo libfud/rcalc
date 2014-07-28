@@ -46,4 +46,3 @@ pub enum ArgType {
     Atom(LiteralType),
     SExpr(Expression),
 }
-

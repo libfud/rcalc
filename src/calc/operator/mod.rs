@@ -21,7 +21,6 @@ pub type Env = Environment;
 
 #[inline]
 pub fn list_ops(args: &Vec<ArgType>, env: &mut Env, lop: ListOps) -> CalcResult {
-    use self::types::operator::{List, Cons, Car, Cdr, Cadr, Cddr, Caddr, Cdddr};
     match lop {
         List => list(args, env),
         Cons => cons(args, env), 
@@ -36,7 +35,6 @@ pub fn list_ops(args: &Vec<ArgType>, env: &mut Env, lop: ListOps) -> CalcResult 
 
 #[inline]
 pub fn transform_ops(args: &Vec<ArgType>, env: &mut Env, top: XForms) -> CalcResult {
-    use self::types::operator::{Map, Reduce, Filter, RangeList, Sort, SortBy};
     use self::listops::{map, filter, reduce, rangelist};
     use self::special::{sort, sort_by};
 
@@ -54,6 +52,7 @@ pub fn transform_ops(args: &Vec<ArgType>, env: &mut Env, top: XForms) -> CalcRes
 pub fn handle_logic(args: &Vec<ArgType>, env: &mut Env, log: Gate) -> CalcResult {
     use self::types::operator::{If, And, Or, Not, Xor};
     use self::logic::{and_or, not, xor};
+
     match log {
         If  => logic::cond(args, env),
         And => and_or(args, env, false), 
@@ -64,9 +63,7 @@ pub fn handle_logic(args: &Vec<ArgType>, env: &mut Env, log: Gate) -> CalcResult
 }
 
 #[inline]
-pub fn eval(op_type: OperatorType, args: &Vec<ArgType>, 
-            env: &mut Env) -> CalcResult {
-
+pub fn eval(op_type: OperatorType, args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     use self::arithmetic::arith;
     use self::special::{table};
     use self::logic::{ordering, num_op};
@@ -86,9 +83,9 @@ pub fn eval(op_type: OperatorType, args: &Vec<ArgType>,
         TransForms(top) => transform_ops(args, env, top),
         Table => special::table(args, env),
         TableFromMatrix => special::table_from_matrix(args, env),
+        TextGraph => special::text_graph(args, env),
         MatrixStuff(mop) => matrice::matrix_ops(args, env, mop),
+        RecOps(rop) => super::record::record_ops(args, env, rop),
         Help => super::common::help(args),
     }
 }
-
-

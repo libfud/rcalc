@@ -2,15 +2,128 @@
 
 extern crate types;
 
-use self::types::literal::{List, Matrix, Symbol, Void, LiteralType};
+use self::types::literal::{Lit, List, Symbol, Void};
 use super::super::{Expression, Evaluate, BadArgType, BadNumberOfArgs};
 use super::{Environment, CalcResult, ArgType, Atom};
 
-type Lit = LiteralType;
 type Env = Environment;
 type Expr = Expression;
-pub type Table = Vec<(Vec<String>, String)>;
 type Lists = Vec<Vec<Lit>>;
+pub type Table = Vec<(Vec<String>, String)>;
+
+
+pub fn text_graph(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
+    use self::types::literal::LitRes;
+    use std::num;
+    use std::iter::range_step_inclusive;
+
+    if args.len() < 5 {
+        return Err(BadNumberOfArgs("text-graph".to_string(), "at least".to_string(), 5))
+    } else if args.len() > 7 {
+        return Err(BadNumberOfArgs("text-graph".to_string(), "at most".to_string(), 7))
+    }
+
+    let (names, fun) = try!(try!(args[0].desymbolize(env)).to_proc());
+    if names.len() != 1 {
+        return Err(BadArgType("Only single variable funcs".to_string()))
+    }
+
+    let (x_begin, y_begin) = (try!(args[1].desymbolize(env)), try!(args[2].desymbolize(env)));
+    let (width, height) = (try!(args[3].desymbolize(env)), try!(args[4].desymbolize(env)));
+
+    if !x_begin.is_num() || !y_begin.is_num() || !width.is_num() || !height.is_num() {
+        return Err(BadArgType("Must use numbers as beginning points".to_string()))
+    }
+
+    let (x_interval, y_interval) = match args.len() {
+        5 => (num::one(), num::one()),
+        6 => (try!(args[5].desymbolize(env)), num::one()),
+        _ => (try!(args[5].desymbolize(env)), try!(args[6].desymbolize(env)))
+    };
+
+    if width <= num::zero() || height <= num::zero() {
+        return Err(BadArgType("Width and height must be positive".to_string()))
+    }
+
+    let total_results = try!((width / x_interval).to_uint()) + 2;
+    let mut results: Vec<Lit> = Vec::with_capacity(total_results);
+
+    fn round_to(x: Lit, place: &Lit) -> LitRes {
+        if x == num::zero() {
+            return Ok(x)
+        }
+        let one: Lit = num::one();
+        let half = one / (one + one);
+        let nearest = try!(place.recip());
+
+        Ok(try!((x * nearest + half).floor()) / nearest)
+    };
+
+    for x in range_step_inclusive(x_begin.clone(), x_begin + width, x_interval.clone()) {
+        let mut child_env = Environment::new_frame(env);
+        child_env.symbols.insert(names[0].clone(), x);
+        let result = try!(round_to(try!(try!(fun.eval(&mut child_env)).desymbolize(env)),
+                                   &y_interval));
+        results.push(result);
+    }
+
+    for row in range_step_inclusive(y_begin + height, y_begin, -y_interval) {
+        let mut i = 0;
+        for col in range_step_inclusive(x_begin.clone(), x_begin + width, x_interval.clone()) {
+            if results[i] == row {
+                if i == 0 {
+                    print!("{}", if results[i] < results[i + 1] {
+                        "/"
+                    } else if results[i] == results[i + 1] {
+                        "-"
+                    } else {
+                        "\\"
+                    });
+                } else if i + 1 == results.len() {
+                    print!("{}", if results[i - 1] < results[i] {
+                        "/"
+                    } else if results[i - 1] == results[i] {
+                        "-"
+                    } else {
+                        "\\"
+                    });
+                } else {
+                    print!("{}", match (results[i - 1] < results[i], results[i - 1] == results[i],
+                                        results[i] < results[i + 1], results[i + 1] == results[i]) {
+                        //prior is less, next is less
+                        ( true, false, false, false) => '^',
+                        //prior is less, next is equal
+                        ( true, false, false,  true) => '┌',
+                        //prior is less, next is greater
+                        ( true, false,  true, false) => '/',
+                        //prior is equal, next is less
+                        (false,  true, false, false) => '┐',
+                        //prior is equal, next is equal
+                        (false,  true, false,  true) => '-',
+                        //prior is equal, next is greater
+                        (false,  true,  true, false) => '┘',
+                        //prior is greater, next is less
+                        (false, false,  true, false) => '\\',
+                        //prior is greater, next is equal
+                        (false, false, false,  true) => '└',
+                        //prior is greater, next is greater
+                        (false, false, false, false) => 'v',
+                        //imposible
+                        (true, true, _, _) | (_, _, true, true) => fail!("nope")
+                    });
+                }
+            } else {
+                print!(" ")
+            }
+            i += 1;
+        }
+        println!("");
+    }
+
+    Ok(Atom(Void))
+}
+
+
 
 fn make_table(lists: Lists, names: Vec<String>, func: Expr, fun_str: String,
               env: &mut Env) -> CalcResult<(Table, Vec<uint>, uint)> {
@@ -120,10 +233,7 @@ pub fn table_from_matrix(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
         return Err(BadNumberOfArgs("table-from-matrix".to_string(), "only".to_string(), 2))
     }
 
-    let matrix = match try!(args[0].desymbolize(env)) {
-        Matrix(x) => x.clone(),
-        x => return Err(BadArgType(format!("Expected matrix but found {}", x)))
-    };
+    let matrix = try!(try!(args[0].desymbolize(env)).to_matrix());
 
     if matrix.cols() < 2 {
         return Err(BadArgType("Expeted at least one variable".to_string()))
