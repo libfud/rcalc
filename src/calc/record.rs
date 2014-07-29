@@ -1,7 +1,7 @@
 extern crate types;
 
 use self::types::record::*;
-use self::types::literal::{Lit, Structure, Procedure};
+use self::types::literal::{Lit, Structure, Procedure, Void};
 use super::{Atom, ArgType, BadNumberOfArgs, BadArgType, CalcResult, 
             Environment, Evaluate};
 
@@ -13,30 +13,23 @@ pub fn record_ops(args: &Args, env: &mut Env, rop: RecordOps) -> CalcResult {
         MakeStruct => make_struct(args, env),
         SetFields => add_fields(args, env),
         SetMethods => add_methods(args, env),
-        SetName => set_name(args, env),
         GetField => get_field(args, env), 
         CallMethod => call_method(args, env),
         DelField |
         DelMethod => del_attrib(args, env, rop),
+        DefineRecord => define_record(args, env),
     }
 }
 
-pub fn list_to_field(mut list: Vec<Lit>, env: &mut Env) -> CalcResult<(String, Field)> {
-    if list.len() != 3 {
-        return Err(BadArgType(
-            "Supply a name for the field, its visibility, and value".to_string()))
+pub fn list_to_field(mut list: Vec<Lit>, env: &mut Env) -> CalcResult<(String, Lit)> {
+    if list.len() != 2 {
+        return Err(BadArgType("Supply a name for the field, and value".to_string()))
     }
 
-    let vis = match from_str::<Vis>(try!(list[0].to_sym_string()).as_slice()) {
-        Some(x) => x,
-        None => return Err(BadArgType("Must give visibility of field".to_string()))
-    };
-    let name = try!(list[1].to_sym_string());
+    let name = try!(list[0].to_sym_string());
     let data = try!(Atom(list.pop().unwrap()).desymbolize(env));
 
-    let field = Field::new(vis, data);
-
-    Ok((name, field))
+    Ok((name, data))
 }
 
 pub fn list_to_method(mut list: Vec<Lit>, env: &mut Env) -> CalcResult<(String, Procedure)> {
@@ -50,11 +43,11 @@ pub fn list_to_method(mut list: Vec<Lit>, env: &mut Env) -> CalcResult<(String, 
     Ok((name, procedure))
 }
 
-pub fn make_struct(args: &Args, env: &mut Env) -> CalcResult {
-    if args.len() < 1 {
-        return Err(BadNumberOfArgs("make-struct".to_string(), "at least".to_string(), 1))
+pub fn define_record(args: &Args, env: &mut Env) -> CalcResult {
+    if args.len() < 2 {
+        return Err(BadNumberOfArgs("define-record".to_string(), "at least".to_string(), 2))
     } else if args.len() > 3 {
-        return Err(BadNumberOfArgs("make-struct".to_string(), "at most".to_string(), 3))
+        return Err(BadNumberOfArgs("define-record".to_string(), "at most".to_string(), 3))
     }
 
     let mut record = Record::new(&try!(try!(args[0].arg_to_literal(env)).to_sym_string()));
@@ -77,7 +70,8 @@ pub fn make_struct(args: &Args, env: &mut Env) -> CalcResult {
         }
     }
 
-    Ok(Atom(Structure(record)))
+    env.symbols.insert(record.name().clone(), Structure(record));
+    Ok(Atom(Void))
 }
 
 pub fn add_fields(args: &Args, env: &mut Env) -> CalcResult {
@@ -110,17 +104,6 @@ pub fn add_methods(args: &Args, env: &mut Env) -> CalcResult {
     Ok(Atom(Structure(record)))
 }
 
-pub fn set_name(args: &Args, env: &mut Env) -> CalcResult {
-    if args.len() != 2 {
-        return Err(BadNumberOfArgs("set-name".to_string(), "only".to_string(), 2))
-    }
-
-    let mut record = try!(try!(args[0].desymbolize(env)).to_structure());
-    record.set_name(&try!(try!(args[1].arg_to_literal(env)).to_sym_string()));
-
-    Ok(Atom(Structure(record)))
-}
-
 pub fn get_field(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() != 2 {
         return Err(BadNumberOfArgs("get-field".to_string(), "only".to_string(), 2))
@@ -128,7 +111,7 @@ pub fn get_field(args: &Args, env: &mut Env) -> CalcResult {
 
     let record = try!(try!(args[0].desymbolize(env)).to_structure());
     let field = try!(try!(args[1].arg_to_literal(env)).to_sym_string());
-    Ok(Atom(try!(record.field_to_lit(&field))))
+    Ok(Atom(try!(record.get_field(&field)).clone()))
 }
 
 pub fn call_method(args: &Args, env: &mut Env) -> CalcResult {
@@ -151,7 +134,7 @@ pub fn call_method(args: &Args, env: &mut Env) -> CalcResult {
 
     for (name, field) in record.fields().iter() {
         child_env.symbols.insert(format!("{}.{}", record.name(), name), 
-                                 field.data().clone());
+                                 field.clone());
     }
 
     fun.eval(&mut child_env)
@@ -169,6 +152,21 @@ pub fn del_attrib(args: &Args, env: &mut Env, rop: RecordOps) -> CalcResult {
         DelField => try!(record.del_field(&name)),
         DelMethod => try!(record.del_method(&name)),
         _ => fail!("undefined")
+    }
+
+    Ok(Atom(Structure(record)))
+}
+
+pub fn make_struct(args: &Args, env: &mut Env) -> CalcResult {
+    if args.len() < 1 {
+        return Err(BadNumberOfArgs("make-struct".to_string(), "at least".to_string(), 1))
+    }
+
+    let mut record = try!(try!(args[0].desymbolize(env)).to_structure());
+    for arg in args.tail().iter() {
+        let (name, field) = try!(list_to_field(try!(try!(arg.desymbolize(env)).to_vec()), env));
+        let val = try!(record.get_mut_field(&name));
+        *val = field;
     }
 
     Ok(Atom(Structure(record)))
