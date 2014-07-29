@@ -180,16 +180,32 @@ impl Ord for Record {
 
 #[deriving(Clone, Show)]
 pub struct ProtoRecord {
-    name String,
+    name: String,
     fields: Vec<String>,
     methods: MethodTable
 }
 
-impl ProtoRecord {
+impl<'a> ProtoRecord {
     #[inline]
     pub fn new(name: &String) -> ProtoRecord {
         ProtoRecord { name: name.clone(), fields: Vec::new(), methods: HashMap::new() }
     }
+
+    pub fn to_record(&self, field_vals: &[Lit]) -> CalcResult<Record> {
+        if field_vals.len() != self.fields.len() {
+            return Err(super::BadArgType("Mismatched fields".to_string()))
+        }
+
+        let mut fields = HashMap::new();
+        for (name, val) in self.fields.iter().zip(field_vals.iter()) {
+            fields.insert(name.clone(), val.clone());
+        }
+
+        let mut record = Record::new(&self.name);
+        record.set_fields(&fields);
+        record.set_methods(&self.methods);
+        Ok(record)
+    }        
 
     #[inline]
     pub fn name(&'a self) -> &'a String {
@@ -204,14 +220,6 @@ impl ProtoRecord {
     #[inline]
     pub fn methods(&'a self) -> &'a MethodTable {
         &self.methods
-    }
-
-    #[inline]
-    pub fn privates_to_lit(&self, field: &String) -> CalcResult<Lit> {
-        match self.fields.find(field) {
-            Some(f) => Ok(f.data.clone()),
-            None => Err(UnboundArg(field.clone()))
-        }
     }
 
     #[inline]
@@ -236,21 +244,7 @@ impl ProtoRecord {
     }
 
     #[inline]
-    pub fn set_field(&mut self, name: &String, val: &Field) {
-        self.fields.insert(name.clone(), val.clone());
-    }
-
-    #[inline]
-    pub fn del_field(&mut self, name: &String) -> CalcResult<()> {
-        if self.fields.remove(name) {
-            Ok(())
-        } else {
-            Err(UnboundArg(name.clone()))
-        }
-    }
-
-    #[inline]
-    pub fn set_fields(&mut self, fields: &FieldTable) {
+    pub fn set_fields(&mut self, fields: &Vec<String>) {
         self.fields = fields.clone();
     }
 

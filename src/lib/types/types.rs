@@ -4,9 +4,8 @@
 
 extern crate matrix;
 
-pub use self::matrix::{Matrice, MatrixErrors};
-//pub use self::num::rational::{BigRational, Ratio};
-pub use literal::{LiteralType};
+pub use self::matrix::MatrixErrors;
+pub use literal::{LiteralType, WithEnv};
 pub use sexpr::{ArgType, Atom, SExpr, Expression};
 pub use operator::OperatorType;
 use std::collections::hashmap::HashMap;

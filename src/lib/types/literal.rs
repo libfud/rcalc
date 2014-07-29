@@ -24,7 +24,7 @@ pub enum LiteralType {
     Void
 }
 
-#[deriving(PartialOrd, PartialEq, Eq, Ord, Clone)]
+#[deriving(Show, PartialOrd, PartialEq, Eq, Ord, Clone)]
 pub struct Procedure {
     params: Vec<String>,
     body: Expression
@@ -47,17 +47,9 @@ impl<'a> Procedure {
     }
 }
 
-impl<'a> fmt::Show for Procedure {
-    #[inline]
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(fmt, "Procedure: parameters: {}, body: {}", self.params, self.body));
-        Ok(())
-    }
-}
-
 pub struct WithEnv<'a> {
-    env: &'a Environment,
-    data: &'a LiteralType
+    pub env: &'a Environment,
+    pub data: &'a LiteralType
 }
 
 impl<'a> fmt::Show for WithEnv<'a> {

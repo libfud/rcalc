@@ -6,7 +6,7 @@
 #[cfg(not(test))]
 extern crate types;
 #[cfg(not(test))]
-use types::Environment;
+use types::{Environment, WithEnv, Atom, SExpr};
 
 #[cfg(target_os = "linux" , not(test))]
 use r_readline::*;
@@ -18,9 +18,6 @@ use rust_no_readline::*;
 use calc::eval;
 #[cfg(test)]
 pub use calc::eval;
-
-#[cfg(not(test))]
-use calc::pretty::pretty_print;
 
 use std::task::TaskBuilder;
 
@@ -135,17 +132,19 @@ fn main() {
             (ok, temp_env)
         });
 
-        let result = match ok {
+        match ok {
             Ok((res, new_env)) => {
                 env = new_env;
-                res
+                match res {
+                    Ok(Atom(x)) => println!("{}", WithEnv { data: &x, env: &env }),
+                    Ok(SExpr(x)) => println!("{}", x),
+                    Err(f) => {
+                        println!("{}", f);
+                        continue
+                    }
+                }
             },
-            Err(_) => {
-                println!("Expression caused task failure.");
-                continue
-            }
-        };
-        
-        println!("{}", pretty_print(&result, &env));
+            Err(_) => continue,
+        }
     }
 }
