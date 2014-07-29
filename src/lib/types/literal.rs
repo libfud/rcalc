@@ -5,7 +5,7 @@ extern crate matrix;
 
 use self::num::{BigRational, BigInt};
 use self::matrix::{Matrice, SquareRoot};
-use super::record::Record;
+use super::record::{ProtoRecord, Record};
 use super::{CalcResult, UnexpectedVal, Expression, Environment};
 use std::num;
 use std::num::{Zero, One};
@@ -18,6 +18,7 @@ pub enum LiteralType {
     List(Vec<LiteralType>),
     Matrix(Matrice<LiteralType>),
     Proc(Vec<String>, Expression),
+    Proto(ProtoRecord),
     Structure(Record),
     Symbol(String),
     Void
@@ -79,6 +80,7 @@ impl<'a> fmt::Show for WithEnv<'a> {
             &Proc(ref args, ref expr) => {
                 try!(write!(fmt, "Procedure: parameters: {}, body: {}", args, expr))
             },
+            &Proto(ref p) => try!(write!(fmt, "{}", p)),
             &Structure(ref rec) => try!(write!(fmt, "{}", rec)),
             &Symbol(ref s) => try!(write!(fmt, "{} {}", s, match self.env.lookup(s) {
                 Ok(x) => format!("= {}", x),
@@ -112,6 +114,7 @@ impl fmt::Show for LiteralType {
             Proc(ref args, ref expr) => {
                 try!(write!(fmt, "Procedure: parameters: {}, body: {}", args, expr))
             },
+            Proto(ref p) => try!(write!(fmt, "{}", p)),
             Symbol(ref s) => try!(write!(fmt, "{}", s)),
             Void => ()
         }
@@ -241,6 +244,22 @@ impl<'a> LiteralType {
         match self {
             &Proc(ref args, ref expr) => Ok(Procedure { params: args.clone(), body: expr.clone() }),
             x => Err(UnexpectedVal("Proc".to_string(), x.to_string()))
+        }
+    }
+    
+    #[inline]
+    pub fn to_proto(&self) -> CalcResult<ProtoRecord> {
+        match self {
+            &Proto(ref p) => Ok(p.clone()),
+            x => Err(UnexpectedVal("ProtoRecord".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
+    pub fn is_proto(&self) -> bool {
+        match self {
+            &Proto(_) => true,
+            _ => false
         }
     }
 

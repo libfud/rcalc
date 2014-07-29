@@ -1,7 +1,7 @@
 extern crate types;
 
 use self::types::record::*;
-use self::types::literal::{Lit, Structure, Procedure, Void};
+use self::types::literal::{Lit, Structure, Proto, Procedure, Void};
 use super::{Atom, ArgType, BadNumberOfArgs, BadArgType, CalcResult, 
             Environment, Evaluate};
 
@@ -50,27 +50,26 @@ pub fn define_record(args: &Args, env: &mut Env) -> CalcResult {
         return Err(BadNumberOfArgs("define-record".to_string(), "at most".to_string(), 3))
     }
 
-    let mut record = Record::new(&try!(try!(args[0].arg_to_literal(env)).to_sym_string()));
+    let mut proto = ProtoRecord::new(&try!(try!(args[0].arg_to_literal(env)).to_sym_string()));
+    let field_list = try!(try!(args[1].desymbolize(env)).to_vec());
+    let mut fields = Vec::with_capacity(field_list.len());
 
-    if args.len() >= 2 {
-        let fields = try!(try!(args[1].desymbolize(env)).to_vec());
-        for field_list in fields.move_iter() {
-            let arguments = try!(try!(Atom(field_list).desymbolize(env)).to_vec());
-            let (name, field) = try!(list_to_field(arguments, env));
-            record.set_field(&name, &field);
-        }
+    for name in field_list.move_iter() {
+        fields.push(try!(name.to_sym_string()));
     }
+
+    proto.set_fields(&fields);
 
     if args.len() == 3 {
         let methods = try!(try!(args[2].desymbolize(env)).to_vec());
         for method_list in methods.move_iter() {
             let list = try!(try!(Atom(method_list).desymbolize(env)).to_vec());
             let (name, method) = try!(list_to_method(list, env));
-            record.set_method(&name, &method);
+            proto.set_method(&name, &method);
         }
     }
 
-    env.symbols.insert(record.name().clone(), Structure(record));
+    env.symbols.insert(proto.name().clone(), Proto(proto));
     Ok(Atom(Void))
 }
 
@@ -162,12 +161,14 @@ pub fn make_struct(args: &Args, env: &mut Env) -> CalcResult {
         return Err(BadNumberOfArgs("make-struct".to_string(), "at least".to_string(), 1))
     }
 
-    let mut record = try!(try!(args[0].desymbolize(env)).to_structure());
+    let proto = try!(try!(args[0].desymbolize(env)).to_proto());
+    let mut field_vals = Vec::with_capacity(args.tail().len());
+
     for arg in args.tail().iter() {
-        let (name, field) = try!(list_to_field(try!(try!(arg.desymbolize(env)).to_vec()), env));
-        let val = try!(record.get_mut_field(&name));
-        *val = field;
+        field_vals.push(try!(arg.desymbolize(env)));
     }
+
+    let record = try!(proto.to_record(field_vals.as_slice()));
 
     Ok(Atom(Structure(record)))
 }
