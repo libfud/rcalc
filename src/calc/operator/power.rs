@@ -3,30 +3,23 @@
 extern crate types;
 
 use std::num;
-use super::super::{BigNum, CalcResult, Environment, Evaluate, BadArgType,
-                   BadNumberOfArgs, BadPowerRange};
-use super::{BigRational, ArgType, Atom};
+use super::super::{Atom, ArgType, CalcResult, Environment, Evaluate, BadNumberOfArgs};
 use super::trig::float_ops;
 use self::types::operator::{Ln, Exp};
+use self::types::literal::Lit;
 
 pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() != 2 {
         return Err(BadNumberOfArgs("pow".to_string(), "only".to_string(), 2))
     } 
 
-    let (base, exponent) = match (try!(args[0].desymbolize(env)),
-                                  try!(args[1].desymbolize(env))) {
-        (BigNum(x), BigNum(y)) => (x, y),
-        _ => return Err(BadArgType("Only numbers can be raised to a power".to_string()))
-    };
+    let (base, exponent) = (try!(args[0].desymbolize(env)), try!(args[1].desymbolize(env)));
 
-    Ok(Atom(BigNum(try!(pow(&base, &exponent, env)))))
+    Ok(Atom(try!(pow(&base, &exponent, env))))
 }
 
-pub fn pow(base: &BigRational, exponent: &BigRational, 
-           env: &mut Environment) -> CalcResult<BigRational> {
-
-    let one: BigRational = num::one();
+pub fn pow(base: &Lit, exponent: &Lit, env: &mut Environment) -> CalcResult<Lit> {
+    let one: Lit = num::one();
 
     if *base == one || *exponent == one {
         return Ok(base.clone())
@@ -35,25 +28,15 @@ pub fn pow(base: &BigRational, exponent: &BigRational,
     }
 
     let positive = *exponent > num::zero();
+    let power = try!(exponent.abs().to_uint()) as u64;
 
-    let power = match exponent.abs().to_integer().to_u64() {
-        Some(x) => x,
-        None    => return Err(BadPowerRange)
-    };
-
-    let maybe_radix = exponent - exponent.floor();
+    let maybe_radix = exponent - try!(exponent.floor());
     let root  = if maybe_radix == num::zero() {
         num::one()
     } else {
-        let root_log = match try!(float_ops(&vec!(Atom(BigNum(base.clone()))), env, Ln)) {
-            Atom(BigNum(x)) => x,
-            _ => fail!("impossible")
-        };
+        let root_log = try!(try!(float_ops(&vec!(Atom(base.clone())), env, Ln)).desymbolize(env));
         let r_log_mul = root_log * maybe_radix;
-        match try!(float_ops(&vec!(Atom(BigNum(r_log_mul))), env, Exp)) {
-            Atom(BigNum(x)) => x,
-            _ => fail!("Impossible")
-        }
+        try!(try!(float_ops(&vec!(Atom(r_log_mul)), env, Exp)).desymbolize(env))
     };
 
     let powered = exp_by_sq(base, power);
@@ -61,13 +44,13 @@ pub fn pow(base: &BigRational, exponent: &BigRational,
     if positive {
         Ok(powered * root)
     } else { 
-        Ok(powered.recip() * root)
+        Ok(try!(powered.recip()) * root)
     }
 }
 
-pub fn exp_by_sq(base_orig: &BigRational, mut power: u64) -> BigRational {
+pub fn exp_by_sq(base_orig: &Lit, mut power: u64) -> Lit {
     let mut base = base_orig.clone();
-    let mut result: BigRational = num::one();
+    let mut result: Lit = num::one();
 
     while power > 0 {
         if power % 2 == 1 {

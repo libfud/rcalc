@@ -49,24 +49,17 @@ pub fn matrix_ops(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
 pub fn list_to_2d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, (uint, uint))> {
     let mut length = 0u;
     let mut width = 0u;
-    match arg {
-        List(list) => {
-            let mut arg_list = Vec::new();
-            for x in list.move_iter() {
-                match try!(Atom(x).desymbolize(env)) {
-                    List(y) => {
-                        let sub_list = y.clone();
-                        length = sub_list.len();
-                        arg_list.push_all(sub_list.as_slice());
-                    },
-                    _ => return Err(BadArgType("Matrices only take numbers".to_string()))
-                }
-                width += 1;
-            }
-            Ok((arg_list, (length, width)))
-        }
-        _ =>  Err(BadArgType("Elements to extend a matrix must be given in a list".to_string()))
+    let list = try!(arg.to_vec());
+    let mut arg_list = Vec::new();
+
+    for x in list.move_iter() {
+        let sub_list = try!(try!(Atom(x).desymbolize(env)).to_vec());
+        length = sub_list.len();
+        arg_list.push_all(sub_list.as_slice());
+        width += 1;
     }
+
+    Ok((arg_list, (length, width)))
 }
 
 pub fn make_matrix(args: &Args, env: &mut Env) -> CalcResult {
@@ -166,7 +159,6 @@ pub fn get_elem(args: &Args, env: &mut Env) -> CalcResult {
     }
 
     let matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
-
     let mut row = try!((try!(args[1].desymbolize(env))).to_uint());
     let mut col = try!((try!(args[2].desymbolize(env))).to_uint());
 
@@ -263,21 +255,19 @@ pub fn single(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
 
     let matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
 
-    match mop {
-        Determ => match matrix.determinant() {
-            Some(x) => Ok(Atom(x)),
-            None =>  Err(BadArgType("No determinant for this matrix".to_string()))
-        },
+    let res = match mop {
+        Determ => matrix.determinant(),
         MatrixInv => match matrix.inverse() {
-            Some(x) => Ok(Atom(Matrix(x))),
-            None =>  Err(BadArgType("No determinant for this matrix".to_string()))
+            Some(x) => return Ok(Atom(Matrix(x))),
+            None => return Err(BadArgType("No invsere for this matrix".to_string()))
         },
-        Transpose => Ok(Atom(Matrix(matrix.transpose()))),
-        PolygonArea => match matrix.polygon_area() {
-            Some(x) => Ok(Atom(x)),
-            None => Err(BadArgType("invalid matrix to use with shoelace".to_string()))
-        },
-        _ => fail!("Undefined!")
+        Transpose => return Ok(Atom(Matrix(matrix.transpose()))),
+        _ => matrix.polygon_area(),
+    };
+
+    match res {
+        Some(x) => Ok(Atom(x)),
+        None => Err(BadArgType(format!("{} failed", mop)))
     }
 }
 
@@ -288,31 +278,22 @@ pub fn double(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
 
     let matrix_a = try!(try!(args[0].desymbolize(env)).to_matrix());
     let matrix_b = try!(try!(args[1].desymbolize(env)).to_matrix());
-    match mop {
-        CrossProd => match matrix_a.cross_prod(&matrix_b) {
-            Some(x) => Ok(Atom(Matrix(x))),
-            None => Err(BadArgType("Mismatched matrices".to_string()))
-        },
-        DotProd => match matrix_a.kronecker_prod(&matrix_b) {
-            Some(x) => Ok(Atom(Matrix(x))),
-            None => Err(BadArgType("Mismatched matrices".to_string()))
-        },
-        MatrixConcatCols => match matrix_a.concat_cols(&matrix_b) {
-            Some(x) => Ok(Atom(Matrix(x))),
-            None => Err(BadArgType("could not concatentate matrices".to_string()))
-        },
-        MatrixConcatRows => match matrix_a.concat_rows(&matrix_b) {
-            Some(x) => Ok(Atom(Matrix(x))),
-            None => Err(BadArgType("could not concatentate matrices".to_string()))
-        },
-        _ => fail!("undefined")
+    let matrix = match mop {
+        CrossProd => matrix_a.cross_prod(&matrix_b),
+        DotProd => matrix_a.kronecker_prod(&matrix_b),
+        MatrixConcatCols => matrix_a.concat_cols(&matrix_b),
+        MatrixConcatRows | _ => matrix_a.concat_rows(&matrix_b) 
+    };
+
+    match matrix {
+        Some(x) => Ok(Atom(Matrix(x))),
+        None => Err(BadArgType("Mismatched matrices".to_string()))
     }
 }
 
 pub fn translate_by(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() < 2 {
-        return Err(BadNumberOfArgs("matrix-translate".to_string(),
-                                   "at least".to_string(), 2))
+        return Err(BadNumberOfArgs("matrix-translate".to_string(), "at least".to_string(), 2))
     }
 
     let matrix = try!(try!(args[0].desymbolize(env)).to_matrix());
@@ -323,7 +304,6 @@ pub fn translate_by(args: &Args, env: &mut Env) -> CalcResult {
 
     match matrix.translate_by(translations.as_slice()) {
         Some(x) => Ok(Atom(Matrix(x))),
-        None => Err(BadArgType(
-            "Number of arguments does not match number of rows in matrix".to_string()))
+        None => Err(BadArgType("Number of args does not match rows in matrix".to_string()))
     }
 }

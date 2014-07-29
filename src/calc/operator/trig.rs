@@ -4,8 +4,7 @@ extern crate num;
 extern crate types;
 
 use self::num::rational::Ratio;
-use self::types::operator::{Sin, Cos, Tan, ASin, ACos, ATan, SinH, CosH, TanH,
-                            ASinH, ACosH, ATanH, Log, Ln, Exp, Transcendental};
+use self::types::operator::*;
 use self::types::literal::BigNum;
 use self::types::sexpr::{Atom, ArgType};
 use super::super::{CalcResult, Environment, Evaluate, BadNumberOfArgs, BadFloatRange};

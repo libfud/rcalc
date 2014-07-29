@@ -4,7 +4,7 @@ extern crate types;
 
 use self::types::operator::*;
 use self::types::{Atom, ArgType, CalcResult, Environment, Expression};
-use self::types::literal::{Boolean, List, Lit, LitRes};
+use self::types::literal::{List, Lit, LitRes};
 use super::super::{Evaluate, BadArgType, BadNumberOfArgs};
 
 pub type Env = Environment;
@@ -130,22 +130,16 @@ pub fn filter(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
         return Err(BadArgType("Expected 1 name for predicate".to_string()))
     }
 
-    let list = match try!(args[1].desymbolize(env)) {
-        List(x) => x.clone(),
-        _ => return Err(BadArgType("Invalid type for filter".to_string()))
-    };
+    let list = try!(try!(args[1].desymbolize(env)).to_vec());
 
     let mut child_env = Environment::new_frame(env);
-
     let mut new_list: Vec<Lit> = Vec::new();
 
     for item in list.iter() {
         child_env.symbols.insert(names[0].clone(), item.clone());
 
-        match try!(func.eval(&mut child_env)) {
-            Atom(Boolean(true)) => new_list.push(item.clone()),
-            Atom(Boolean(false)) => { },
-            _ => return Err(BadArgType("Invalid predicate type!".to_string()))
+        if try!(try!(try!(func.eval(&mut child_env)).desymbolize(env)).to_bool()) {
+            new_list.push(item.clone())
         }
     }
 
