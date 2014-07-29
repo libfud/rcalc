@@ -1,9 +1,7 @@
 //! Operators
 
 extern crate types;
-extern crate num;
 
-pub use self::num::bigint;
 pub use super::{BigRational, Ratio, CalcResult, Environment, ArgType, Atom, SExpr};
 pub use super::{LiteralType, Lit, LitRes, Symbol, Void};
 pub use super::literal::{cons, car, cdr, list};
@@ -35,12 +33,14 @@ pub fn list_ops(args: &Vec<ArgType>, env: &mut Env, lop: ListOps) -> CalcResult 
 
 #[inline]
 pub fn transform_ops(args: &Vec<ArgType>, env: &mut Env, top: XForms) -> CalcResult {
-    use self::listops::{map, filter, reduce, rangelist};
+    use self::listops::{map, filter, fold, reduce, rangelist};
     use self::special::{sort, sort_by};
 
     match top {
         Map => map(args, env),
         Reduce => reduce(args, env),
+        Fold | 
+        FoldR => fold(args, env, top),
         Filter => filter(args, env),
         RangeList => rangelist(args, env), 
         Sort => sort(args, env),
@@ -48,25 +48,11 @@ pub fn transform_ops(args: &Vec<ArgType>, env: &mut Env, top: XForms) -> CalcRes
     }
 }
 
-#[inline]   
-pub fn handle_logic(args: &Vec<ArgType>, env: &mut Env, log: Gate) -> CalcResult {
-    use self::types::operator::{If, And, Or, Not, Xor};
-    use self::logic::{and_or, not, xor};
-
-    match log {
-        If  => logic::cond(args, env),
-        And => and_or(args, env, false), 
-        Or  => and_or(args, env, true),
-        Not => not(args, env), 
-        Xor => xor(args, env),
-    }
-}
-
 #[inline]
 pub fn eval(op_type: OperatorType, args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     use self::arithmetic::arith;
     use self::special::{table};
-    use self::logic::{ordering, num_op};
+    use self::logic::{handle_logic, ordering, num_op};
     use self::trig::float_ops;
 
     match op_type {

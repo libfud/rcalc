@@ -2,7 +2,8 @@
 
 extern crate types;
 
-use self::types::{Atom, ArgType, CalcResult, Environment, Expression, LiteralType};
+use self::types::operator::*;
+use self::types::{Atom, ArgType, CalcResult, Environment, Expression};
 use self::types::literal::{Boolean, List, Lit, LitRes};
 use super::super::{Evaluate, BadArgType, BadNumberOfArgs};
 
@@ -16,13 +17,11 @@ pub fn map(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     }
 
     let (names, func) = try!(try!(args[0].desymbolize(env)).to_proc());
-
     if names.len() == 0 || names.len() != args.tail().len() {
         return Err(BadArgType("Wrong number of arguments for lists supplied".to_string()))
     }
 
     let mut list_vec: Vec<Vec<Lit>> = Vec::with_capacity(args.tail().len());
-
     for list in args.tail().iter() {
         list_vec.push(try!(try!(list.desymbolize(env)).to_vec()));
     }
@@ -49,13 +48,12 @@ pub fn map(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     Ok(Atom(List(result)))
 }
 
-pub fn reduce(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
+pub fn fold(args: &Vec<ArgType>, env: &mut Env, top: XForms) -> CalcResult {
     if args.len() < 3 {
-        return Err(BadNumberOfArgs("reduce".to_string(), "at least".to_string(), 3))
+        return Err(BadNumberOfArgs(top.to_string(), "at least".to_string(), 3))
     }
 
     let (names, fun) = try!(try!(args[0].desymbolize(env)).to_proc());
-
     let (x, y) = if names.len() != 2 {
         return Err(BadArgType("Expected 2 names".to_string()))
     } else {
@@ -64,9 +62,37 @@ pub fn reduce(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
 
     let initval = try!(args[1].desymbolize(env));
 
-    let list = try!(try!(args[2].desymbolize(env)).to_vec());
+    let mut list =  try!(try!(args[2].desymbolize(env)).to_vec());
+
+    if list.len() == 0 {
+        return Ok(Atom(initval))
+    }
+
+    if top == FoldR { list.reverse(); }
 
     Ok(Atom(try!(reduce_helper(x, y, &initval, list.as_slice(), env, &fun))))
+}
+
+pub fn reduce(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
+    if args.len() < 2 {
+        return Err(BadNumberOfArgs("reduce".to_string(), "at least".to_string(), 2))
+    }
+
+    let (names, fun) = try!(try!(args[0].desymbolize(env)).to_proc());
+    let (x, y) = if names.len() != 2 {
+        return Err(BadArgType("Expected 2 names".to_string()))
+    } else {
+        (names[0].clone(), names[1].clone())
+    };
+
+    let list =  try!(try!(args[1].desymbolize(env)).to_vec());
+    if list.len() == 0 {
+        Err(BadArgType("Cannot reduce empty lists!".to_string()))
+    } else if list.len() == 1 {
+        Ok(Atom(list[0].clone()))
+    } else {
+        Ok(Atom(try!(reduce_helper(x, y, &list[0], list.tail(), env, &fun))))
+    }
 }
 
 pub fn reduce_helper(x: String, y: String, initval: &Lit, list: &[Lit], 
@@ -111,7 +137,7 @@ pub fn filter(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
 
     let mut child_env = Environment::new_frame(env);
 
-    let mut new_list: Vec<LiteralType> = Vec::new();
+    let mut new_list: Vec<Lit> = Vec::new();
 
     for item in list.iter() {
         child_env.symbols.insert(names[0].clone(), item.clone());

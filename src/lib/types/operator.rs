@@ -274,6 +274,8 @@ impl from_str::FromStr for ListOps {
 #[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
 pub enum XForms {
     Map,
+    Fold,
+    FoldR,
     Reduce,
     Filter,
     Sort,
@@ -286,6 +288,8 @@ impl from_str::FromStr for XForms {
     fn from_str(s: &str) -> Option<XForms> {
         match s {
             "map" => Some(Map),
+            "fold" => Some(Fold),
+            "foldr" => Some(FoldR),
             "reduce" => Some(Reduce),
             "filter" => Some(Filter),
             "sort" => Some(Sort),
@@ -301,6 +305,8 @@ impl fmt::Show for XForms {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
             &Map => "map",
+            &Fold => "fold",
+            &FoldR => "foldr",
             &Reduce => "reduce",
             &Filter => "filter",
             &Sort => "sort",

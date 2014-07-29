@@ -7,23 +7,18 @@
 extern crate types;
 #[cfg(not(test))]
 use types::{Environment, WithEnv, Atom, SExpr};
-
 #[cfg(target_os = "linux" , not(test))]
 use r_readline::*;
-
 #[cfg(not(target_os = "linux"), not(test))]
 use rust_no_readline::*;
-
 #[cfg(not(test))]
 use calc::eval;
 #[cfg(test)]
 pub use calc::eval;
-
 use std::task::TaskBuilder;
 
 #[cfg(test)]
 mod test;
-
 mod calc;
 
 #[cfg(target_os = "linux")]
@@ -64,7 +59,6 @@ pub mod r_readline {
         if line.len() == 0 {
             return
         }
-
         let c_line = line.to_c_str();
         unsafe {
             add_history(c_line.as_ptr());
@@ -80,7 +74,7 @@ pub mod rust_no_readline {
         let mut reader = io::stdin();
         match reader.read_line() {
             Ok(x) => Some(x),
-            Err(m) => None
+            Err(_) => None
         }
     }
 
@@ -95,15 +89,12 @@ pub mod rust_no_readline {
 
 #[cfg(not(test))]
 fn main() {
-    //env will hold all user defined variables and functions in hashmaps,
-    //to be looked up when called. They're in the main function for
-    //persistence.
     let mut env = Environment::new_global();
 
     loop {
         let expr = match rust_readline(">>> ") {
-            Some(val)   => { val.to_string() }
-            None        => { continue }
+            Some(val)   => val.to_string(),
+            None        => continue,
         };
         rust_add_history(expr.as_slice());
 
@@ -120,16 +111,14 @@ fn main() {
             _   => { },
         }
 
-        let (exp_tx, exp_rx) = channel();
-        let (env_tx, env_rx) = channel();
+        let ((exp_tx, exp_rx), (env_tx, env_rx)) = (channel(), channel());
         env_tx.send(env.clone());
         exp_tx.send(expr.as_slice().trim().to_string());
 
         let ok = TaskBuilder::new().stack_size(9_000_000).try(proc() {
             let mut temp_env = env_rx.recv();
             let expr = exp_rx.recv();
-            let ok = eval(expr.as_slice(), &mut temp_env);
-            (ok, temp_env)
+            (eval(expr.as_slice(), &mut temp_env), temp_env)
         });
 
         match ok {
@@ -138,10 +127,7 @@ fn main() {
                 match res {
                     Ok(Atom(x)) => println!("{}", WithEnv { data: &x, env: &env }),
                     Ok(SExpr(x)) => println!("{}", x),
-                    Err(f) => {
-                        println!("{}", f);
-                        continue
-                    }
+                    Err(f) => println!("{}", f),
                 }
             },
             Err(_) => continue,

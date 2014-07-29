@@ -21,7 +21,6 @@ pub mod function;
 pub mod literal;
 pub mod matrice;
 pub mod operator;
-pub mod pretty;
 pub mod record;
 
 /// A structure to allow persistence of variables and functions
@@ -50,10 +49,7 @@ pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     } else {
         let mut string_vec = Vec::new();
         for arg in name_and_vars.tail().iter() {
-            match arg {
-                &Symbol(ref x) => string_vec.push(x.clone()),
-                _ => return Err(BadArgType("Variables can only be symbols".to_string()))
-            }
+            string_vec.push(try!(arg.to_sym_string()));
         }
         string_vec
     };
@@ -61,37 +57,25 @@ pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     if args.len() == 2 {
         let arg = args.last().unwrap();
         match arg {
-            &Atom(ref x) => {
-                env.symbols.insert(name, x.clone());
-                return Ok(Atom(Void))
-            }
-            &SExpr(ref x) => {
-                match arg.eval(env) {
-                    Ok(res) => { 
-                        env.symbols.insert(name, match res {
-                            Atom(y) => y,
-                            _ => fail!("Impossible!")
-                        });
-                    }
-                    Err(_) => { env.symbols.insert(name, Proc(vars, x.clone())); }
-                }
-                return Ok(Atom(Void))
+            &Atom(ref x) => { env.symbols.insert(name, x.clone()); },
+            &SExpr(ref x) => match arg.eval(env) {
+                Ok(Atom(y)) => { env.symbols.insert(name, y); },
+                Ok(_) => fail!("Impossible!"),
+                Err(_) => { env.symbols.insert(name, Proc(vars, x.clone())); }
             }
         }
+        return Ok(Atom(Void))
     }
 
     //there's multiple expressions involved, so we just pack them all that way
     match args.last().unwrap() {
-        &Atom(ref x) => {
-            env.symbols.insert(name, x.clone());
-            Ok(Atom(Void))
-        }
-        &SExpr(ref x) => {
-            let expr = Expression::new(x.expr_type.clone(), args.tail().to_vec());
-            env.symbols.insert(name, Proc(vars, expr));
-            Ok(Atom(Void))
+        &Atom(ref x)  => { env.symbols.insert(name, x.clone()); }
+        &SExpr(ref x) => { 
+            env.symbols.insert(name, Proc(vars, Expression::new(x.expr_type.clone(),
+                                                                args.tail().to_vec())));
         }
     }
+    Ok(Atom(Void))
 }
 
 pub trait Evaluate {
@@ -152,8 +136,6 @@ impl Evaluate for Expression {
     }
 }
 
-/// Evaluates a string by creating a stream of tokens, translating those tokens
-/// recursively, and then evaluating the top expression.
 pub fn eval(s: &str, env: &mut Environment) -> CalcResult {
     let expr = try!(self::parse::parse(s, env));
 

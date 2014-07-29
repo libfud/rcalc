@@ -3,13 +3,24 @@
 extern crate types;
 
 use self::types::sexpr::BuiltIn;
-use self::types::literal::Boolean;
-use self::types::operator::{OrderEq, RoundId, Logic, If, Even};
-use super::super::{Evaluate, LiteralType, CalcResult, Environment, BadNumberOfArgs};
+use self::types::literal::{Boolean, Lit};
+use self::types::operator::*;
+use super::super::{Evaluate, CalcResult, Environment, BadNumberOfArgs};
 use super::{ArgType, Atom, SExpr};
 
 pub type Args = Vec<ArgType>;
 pub type Env = Environment;
+
+#[inline]   
+pub fn handle_logic(args: &Vec<ArgType>, env: &mut Env, log: Gate) -> CalcResult {
+    match log {
+        If  => cond(args, env),
+        And => and_or(args, env, false), 
+        Or  => and_or(args, env, true),
+        Not => not(args, env), 
+        Xor => xor(args, env),
+    }
+}
 
 /// Loop through nested conditional statements until a non-conditional expression
 /// is reached.
@@ -30,18 +41,14 @@ pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
 
         match result {
             Atom(_) => return Ok(result),
-            SExpr(ref x) => {
-                if x.expr_type == BuiltIn(Logic(If)) {
-                    arguments = x.args.clone();
-                } else {
-                    return x.eval(env)
-                }
+            SExpr(ref x) => if x.expr_type == BuiltIn(Logic(If)) {
+                arguments = x.args.clone();
+            } else {
+                return x.eval(env)
             }
         }
     }
 }
-
-pub type Lit = LiteralType;
 
 #[inline]
 pub fn ordering(args: &Args, env: &mut Env, ord: OrderEq) -> CalcResult {
@@ -71,7 +78,6 @@ pub fn xor(args: &Args, env: &mut Env) -> CalcResult {
     }
 
     let mut result = try!(try!(args[0].desymbolize(env)).to_bool());
-
     for val in args.tail().iter() {
         result = result ^ try!(try!(val.desymbolize(env)).to_bool());
     }
@@ -85,9 +91,7 @@ pub fn not(args: &Args, env: &mut Env) -> CalcResult {
         return Err(BadNumberOfArgs("Not".to_string(), "only".to_string(), 1))
     }
 
-    let val = try!(try!(args[0].desymbolize(env)).to_bool());
-
-    Ok(Atom(Boolean(!val)))
+    Ok(Atom(Boolean(!try!(try!(args[0].desymbolize(env)).to_bool()))))
 }
 
 pub fn num_op(args: &Args, env: &mut Env, op: RoundId) -> CalcResult {
