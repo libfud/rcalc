@@ -118,7 +118,6 @@ pub fn reduce_helper(x: String, y: String, initval: &Lit, list: &[Lit],
     Ok(result)
 }
 
-
 pub fn filter(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     if args.len() < 2 {
         return Err(BadNumberOfArgs("filter".to_string(), "at least".to_string(), 3))
@@ -135,17 +134,47 @@ pub fn filter(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     let mut child_env = Environment::new_frame(env);
     let mut new_list: Vec<Lit> = Vec::new();
 
-    for item in list.iter() {
+    for item in list.move_iter() {
         child_env.symbols.insert(names[0].clone(), item.clone());
 
         if try!(try!(try!(func.eval(&mut child_env)).desymbolize(env)).to_bool()) {
-            new_list.push(item.clone())
+            new_list.push(item)
         }
     }
 
     Ok(Atom(List(new_list)))
 }
 
+pub fn filter_map(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
+    if args.len() < 3 {
+        return Err(BadNumberOfArgs("filter-map".to_string(), "only".to_string(), 3))
+    }
+
+    let (filter_names, filter) = try!(try!(args[0].desymbolize(env)).to_proc());
+    let (map_names, map) = try!(try!(args[1].desymbolize(env)).to_proc());
+
+    if map_names.len() != 1 || filter_names.len() != 1 {
+        return Err(BadArgType("Expected 1 variable for predicate and map".to_string()))
+    }
+
+    let list = try!(try!(args[2].desymbolize(env)).to_vec());
+
+    let mut child_env = Environment::new_frame(env);
+    let mut new_list: Vec<Lit> = Vec::new();
+
+    for item in list.iter() {
+        child_env.symbols.insert(filter_names[0].clone(), item.clone());
+
+        if try!(try!(try!(filter.eval(&mut child_env)).desymbolize(env)).to_bool()) {
+            child_env.symbols.insert(map_names[0].clone(), item.clone());
+            new_list.push(try!(try!(map.eval(&mut child_env)).desymbolize(env)));
+        }
+    }
+
+    Ok(Atom(List(new_list)))
+}
+
+#[inline]
 pub fn rangelist(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     use std::iter::range_step;
     use std::num;
@@ -162,4 +191,51 @@ pub fn rangelist(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     };
 
     Ok(Atom(List(range_step(a, b, step).collect())))
+}
+
+
+#[inline]
+pub fn sort(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
+    if args.len() != 1 {
+        return Err(BadNumberOfArgs("Sort".to_string(), "only".to_string(), 1))
+    }
+    let mut list = try!(try!(args[0].desymbolize(env)).to_vec());
+    list.sort();
+    Ok(Atom(List(list)))
+}
+
+pub fn sort_by(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
+    use self::types::operator;
+
+    if args.len() != 2 {
+        return Err(BadNumberOfArgs("sort-by".to_string(), "only".to_string(), 2))
+    }
+
+    let mut list = try!(try!(args[0].desymbolize(env)).to_vec());
+
+    let order = match try!(try!(args[1].desymbolize(env)).to_proc()) {
+        (_, procedure) => match procedure.expr_type { 
+            ::types::sexpr::BuiltIn(operator::Ordering(cmp)) => cmp,
+            _ => return Err(BadArgType("Use only builtin".to_string()))
+        }
+    };
+
+    match order {
+        operator::Lt => list.sort_by(|a, b| a.cmp(b)),
+        operator::Gt => list.sort_by(|a, b| b.cmp(a)),
+        _ => return Err(BadArgType("Use only < and >".to_string()))
+    }
+
+    Ok(Atom(List(list)))
+}
+
+#[inline]
+pub fn reverse(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
+    if args.len() != 1 {
+        return Err(BadNumberOfArgs("reverse".to_string(), "only".to_string(), 1))
+    }
+
+    let mut list =  try!(try!(args[0].desymbolize(env)).to_vec());
+    list.reverse();
+    Ok(Atom(List(list)))
 }

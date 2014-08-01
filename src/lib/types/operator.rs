@@ -278,9 +278,11 @@ pub enum XForms {
     FoldR,
     Reduce,
     Filter,
+    FilterMap,
     Sort,
     SortBy,
-    RangeList
+    RangeList,
+    Reverse
 }
 
 impl from_str::FromStr for XForms {
@@ -292,9 +294,11 @@ impl from_str::FromStr for XForms {
             "foldr" => Some(FoldR),
             "reduce" => Some(Reduce),
             "filter" => Some(Filter),
+            "fitler-map" => Some(FilterMap),
             "sort" => Some(Sort),
             "sort-by" => Some(SortBy),
             "range-list" => Some(RangeList),
+            "reverse" => Some(Reverse),
             _ => None
         }
     }
@@ -303,15 +307,17 @@ impl from_str::FromStr for XForms {
 impl fmt::Show for XForms {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(fmt, "{}", match self {
-            &Map => "map",
-            &Fold => "fold",
-            &FoldR => "foldr",
-            &Reduce => "reduce",
-            &Filter => "filter",
-            &Sort => "sort",
-            &SortBy => "sort-by",
-            &RangeList => "range-list",
+        try!(write!(fmt, "{}", match *self {
+            Map => "map",
+            Fold => "fold",
+            FoldR => "foldr",
+            Reduce => "reduce",
+            Filter => "filter",
+            FilterMap => "filter-map",
+            Sort => "sort",
+            SortBy => "sort-by",
+            RangeList => "range-list",
+            Reverse => "reverse",
         }));
         Ok(())
     }

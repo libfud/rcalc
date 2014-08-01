@@ -2,7 +2,7 @@
 
 extern crate types;
 
-use self::types::literal::{Lit, List, Symbol, Void};
+use self::types::literal::{Lit, Symbol, Void};
 use super::super::{Expression, Evaluate, BadArgType, BadNumberOfArgs};
 use super::{Environment, CalcResult, ArgType, Atom};
 
@@ -10,7 +10,6 @@ type Env = Environment;
 type Expr = Expression;
 type Lists = Vec<Vec<Lit>>;
 pub type Table = Vec<(Vec<String>, String)>;
-
 
 pub fn text_graph(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     println!("Deprecated. {}, {}", args.len(), env);
@@ -170,65 +169,4 @@ pub fn table_from_matrix(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     println!("{} {}", name_lens, fn_len);
     table_writer(table, name_lens, fn_len);
     Ok(Atom(Void))
-}
-
-/*        
-pub fn merge<T: PartialOrd>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
-    struct OrderedIterator<T, A, B> {
-        a: iter::Peekable<T, A>,
-        b: iter::Peekable<T, B>,
-    }
-    impl<T: PartialOrd, A: Iterator<T>, B: Iterator<T>> Iterator<T> for OrderedIterator<T, A, B> {
-        fn next(&mut self) -> Option<T> {
-            if self.a.peek().is_none() || 
-                self.b.peek().is_none() { self.a.next().or_else(|| self.b.next()) }
-            else if self.a.peek() < self.b.peek() { self.a.next() }
-            else { self.b.next() }
-        }
-
-        fn size_hint(&self) -> (uint, Option<uint>) {
-            let (a_min, a_max) = self.a.size_hint();
-            let (b_min, b_max) = self.b.size_hint();
-            (cmp::max(a_min, b_min), cmp::max(a_max, b_max))
-        }
-    }
-
-    (OrderedIterator{a:left.move_iter().peekable(), 
-                     b: right.move_iter().peekable()}).collect()
-}
-*/
-
-#[inline]
-pub fn sort(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
-    if args.len() != 1 {
-        return Err(BadNumberOfArgs("Sort".to_string(), "only".to_string(), 1))
-    }
-    let mut list = try!(try!(args[0].desymbolize(env)).to_vec());
-    list.sort();
-    Ok(Atom(List(list)))
-}
-
-pub fn sort_by(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
-    use self::types::operator;
-
-    if args.len() != 2 {
-        return Err(BadNumberOfArgs("sort-by".to_string(), "only".to_string(), 2))
-    }
-
-    let mut list = try!(try!(args[0].desymbolize(env)).to_vec());
-
-    let order = match try!(try!(args[1].desymbolize(env)).to_proc()) {
-        (_, procedure) => match procedure.expr_type { 
-            ::types::sexpr::BuiltIn(operator::Ordering(cmp)) => cmp,
-            _ => return Err(BadArgType("Use only builtin".to_string()))
-        }
-    };
-
-    match order {
-        operator::Lt => list.sort_by(|a, b| a.cmp(b)),
-        operator::Gt => list.sort_by(|a, b| b.cmp(a)),
-        _ => return Err(BadArgType("Use only < and >".to_string()))
-    }
-
-    Ok(Atom(List(list)))
 }

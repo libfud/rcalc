@@ -33,8 +33,7 @@ pub fn list_ops(args: &Vec<ArgType>, env: &mut Env, lop: ListOps) -> CalcResult 
 
 #[inline]
 pub fn transform_ops(args: &Vec<ArgType>, env: &mut Env, top: XForms) -> CalcResult {
-    use self::listops::{map, filter, fold, reduce, rangelist};
-    use self::special::{sort, sort_by};
+    use self::listops::*;
 
     match top {
         Map => map(args, env),
@@ -42,9 +41,11 @@ pub fn transform_ops(args: &Vec<ArgType>, env: &mut Env, top: XForms) -> CalcRes
         Fold | 
         FoldR => fold(args, env, top),
         Filter => filter(args, env),
+        FilterMap => filter_map(args, env),
         RangeList => rangelist(args, env), 
         Sort => sort(args, env),
         SortBy => sort_by(args, env),
+        Reverse => reverse(args, env),
     }
 }
 
