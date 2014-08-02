@@ -106,8 +106,8 @@ pub fn map(args: &Args, env: &mut Env) -> CalcResult {
         list_vec.push(try!(try!(list.desymbolize(env)).to_vec()));
     }
 
-    let mut result: Vec<Lit> = Vec::new();
     let len = list_vec[0].len();
+    let mut result: Vec<Lit> = Vec::new();
     
     for x in range(0u, len) {
         let mut temp: Vec<Lit> = Vec::new();
@@ -149,13 +149,13 @@ pub fn fold(args: &Args, env: &mut Env, top: XForms) -> CalcResult {
         return Ok(Atom(list[0].clone()))
     }
 
-    if top == Reduce {
-        Ok(Atom(try!(reduce_helper(x, y, &list[0], list.tail(), env, &fun))))
-    } else if top == FoldR {
-        list.reverse();
-        Ok(Atom(try!(reduce_helper(x, y, &initval, list.as_slice(), env, &fun))))
-    } else {
-        Ok(Atom(try!(reduce_helper(x, y, &initval, list.as_slice(), env, &fun))))
+    match top {
+        Fold => Ok(Atom(try!(reduce_helper(x, y, &initval, list.as_slice(), env, &fun)))),
+        FoldR => {
+            list.reverse();
+            Ok(Atom(try!(reduce_helper(x, y, &initval, list.as_slice(), env, &fun))))
+        },
+        _ => Ok(Atom(try!(reduce_helper(x, y, &list[0], list.tail(), env, &fun)))),
     }
 }
 
