@@ -2,7 +2,7 @@
 
 extern crate types;
 
-pub use super::{ArgType, Atom, CalcResult, SExpr, Environment};
+pub use super::{ArgType, Atom, CalcResult, SExpr, Env, Environment};
 pub use self::types::literal::{Lit, Void};
 use self::types::operator::*;
 use super::matrice::matrix_ops;
@@ -14,8 +14,6 @@ pub mod arithmetic;
 pub mod logic;
 pub mod listops;
 pub mod trig;
-
-pub type Env = Environment;
 
 #[inline]
 pub fn eval(op_type: OperatorType, args: &Vec<ArgType>, env: &mut Env) -> CalcResult {

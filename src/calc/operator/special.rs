@@ -4,9 +4,8 @@ extern crate types;
 
 use self::types::literal::{Lit, Symbol, Void};
 use super::super::{Expression, Evaluate, BadArgType, BadNumberOfArgs};
-use super::{Environment, CalcResult, ArgType, Atom};
+use super::{Env, Environment, CalcResult, ArgType, Atom};
 
-type Env = Environment;
 type Expr = Expression;
 type Lists = Vec<Vec<Lit>>;
 pub type Table = Vec<(Vec<String>, String)>;

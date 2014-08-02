@@ -118,11 +118,9 @@ impl fmt::Show for LiteralType {
 impl<'a> LiteralType {
     #[inline]
     pub fn to_bool(&self) -> CalcResult<bool> {
-        use super::NonBoolean;
-
         match self {
             &Boolean(ref b) => Ok(*b),
-            _ => Err(NonBoolean)
+            x => Err(UnexpectedVal("Boolean".to_string(), x.to_string()))
         }
     }
 

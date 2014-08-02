@@ -2,17 +2,14 @@
 
 extern crate types;
 
+use std::num;
 use self::types::sexpr::BuiltIn;
 use self::types::literal::{Boolean, Lit};
 use self::types::operator::*;
-use super::super::{Evaluate, CalcResult, Environment, BadNumberOfArgs};
-use super::{ArgType, Atom, SExpr};
-
-pub type Args = Vec<ArgType>;
-pub type Env = Environment;
+use super::super::{Args, Atom, SExpr, Evaluate, CalcResult, Env, BadNumberOfArgs};
 
 #[inline]   
-pub fn handle_logic(args: &Vec<ArgType>, env: &mut Env, log: Gate) -> CalcResult {
+pub fn handle_logic(args: &Args, env: &mut Env, log: Gate) -> CalcResult {
     match log {
         If  => cond(args, env),
         And => and_or(args, env, false), 
@@ -23,13 +20,12 @@ pub fn handle_logic(args: &Vec<ArgType>, env: &mut Env, log: Gate) -> CalcResult
 }
 
 #[inline]
-pub fn query(args: &Vec<ArgType>, env: &mut Env, query: Introspect) -> CalcResult {
+pub fn query(args: &Args, env: &mut Env, query: Introspect) -> CalcResult {
     if args.len() != 1 {
         return Err(BadNumberOfArgs(query.to_string(), "only".to_string(), 1))
     }
 
     let arg = try!(args[0].desymbolize(env));
-
     match query {
         BoolQ => Ok(Atom(Boolean(arg.is_bool()))),
         LambdaQ => Ok(Atom(Boolean(arg.is_proc()))),
@@ -82,7 +78,7 @@ pub fn ordering(args: &Args, env: &mut Env, ord: OrderEq) -> CalcResult {
 #[inline]
 pub fn and_or(args: &Args, env: &mut Env, short: bool) -> CalcResult {    
     for val in args.iter() {
-        if try!(val.desymbolize(env)) == Boolean(short) {
+        if try!(try!(val.desymbolize(env)).to_bool()) == short {
             return Ok(Atom(Boolean(short)))
         }
     }
@@ -114,12 +110,8 @@ pub fn not(args: &Args, env: &mut Env) -> CalcResult {
 }
 
 pub fn num_op(args: &Args, env: &mut Env, op: RoundId) -> CalcResult {
-    use std::num;
-    use self::types::operator::{Round, RoundToNearest, Floor, Ceiling, Zero};
-
     let one: Lit = num::one();
     let two = one + one;
-    let half = one / two;
 
     if args.len() != 1 && op != RoundToNearest {
         return Err(BadNumberOfArgs(op.to_string(), "only".to_string(), 1))
@@ -133,8 +125,7 @@ pub fn num_op(args: &Args, env: &mut Env, op: RoundId) -> CalcResult {
         Round => Ok(Atom(try!(num.round()))),
         RoundToNearest => { 
             let nearest= try!(try!(args[1].desymbolize(env)).recip());
-
-            Ok(Atom(try!((num * nearest + half).floor()) / nearest))
+            Ok(Atom(try!((num * nearest + (one / two)).floor()) / nearest))
         },
         Floor => Ok(Atom(try!(num.floor()))),
         Ceiling => Ok(Atom(try!(num.ceil()))),

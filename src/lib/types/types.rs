@@ -16,6 +16,11 @@ pub mod literal;
 pub mod operator;
 pub mod record;
 
+pub type CalcResult<T = ArgType> = Result<T, ErrorKind>;
+pub type Env = Environment;
+pub type Args = Vec<ArgType>;
+pub type Expr = Expression;
+
 #[deriving(Clone, PartialEq)]
 pub enum ErrorKind {
     BadExpr,
@@ -25,8 +30,6 @@ pub enum ErrorKind {
     MatrixErr(MatrixErrors),
     BadNumberOfArgs(String, String, uint),
     BadArgType(String),
-    DivByZero,
-    NonBoolean,
     UnexpectedVal(String, String),
     UnboundArg(String),
 }
@@ -34,29 +37,21 @@ pub enum ErrorKind {
 impl fmt::Show for ErrorKind {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let res = match self {
-            &BadArgType(ref x) => x.clone(),
-            &BadExpr => "Malformed expression".to_string(),
-            &BadToken(ref x) => x.clone(),
-            &BadPowerRange => "Exponent too large for builtin `pow'!".to_string(),
-            &BadFloatRange => "Number too large or precise for `exp' and `log'".to_string(),
-            &MatrixErr(ref x) => x.to_string(),
-            &BadNumberOfArgs(ref x, ref y, args) => 
-                format!("`{}' requires {} {} {}.", x, y, args, match args {
-                    1 => "argument",
-                    _ => "arguments"
-                }),
-            &DivByZero => "Attempted division by zero!".to_string(),
-            &NonBoolean => "Non boolean condition".to_string(),
-            &UnexpectedVal(ref x, ref y) => format!("Expected {} but found {}", x, y),
-            &UnboundArg(ref x) => format!("Error: Unbound variable `{}'", x),
-        };
-        try!(write!(fmt, "{}", res));
+        try!(write!(fmt, "{}", match *self {
+            BadArgType(ref x) => x.clone(),
+            BadExpr => "Malformed expression".to_string(),
+            BadToken(ref x) => x.clone(),
+            BadPowerRange => "Exponent too large for builtin `pow'!".to_string(),
+            BadFloatRange => "Number too large or precise for `exp' and `log'".to_string(),
+            MatrixErr(ref x) => x.to_string(),
+            BadNumberOfArgs(ref x, ref y, args) => format!("`{}' requires {} {} argument{}.", 
+                        x, y, args, if args == 1 { "" } else { "" }),
+            UnexpectedVal(ref x, ref y) => format!("Expected {} but found {}", x, y),
+            UnboundArg(ref x) => format!("Error: Unbound variable `{}'", x),
+        }));
         Ok(())
     }
 }
-
-pub type CalcResult<T = ArgType> = Result<T, ErrorKind>;
 
 #[deriving(Clone)]
 pub struct Environment {

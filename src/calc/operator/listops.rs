@@ -4,11 +4,10 @@ extern crate types;
 
 use self::types::operator;
 use self::types::operator::*;
-use self::types::{Atom, ArgType, CalcResult, Environment, Expression};
+use self::types::{Atom, ArgType, CalcResult, Environment, Env, Expression};
 use self::types::literal::{List, Lit, LitRes};
 use super::super::{Evaluate, BadArgType, BadNumberOfArgs};
 
-pub type Env = Environment;
 pub type Expr = Expression;
 
 #[inline]
