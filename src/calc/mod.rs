@@ -17,7 +17,7 @@ pub mod record;
 
 /// A structure to allow persistence of variables and functions
 
-pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn define(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() < 2 {
         return Err(BadNumberOfArgs("define".to_string(), "only".to_string(), 2))
     }
@@ -120,7 +120,7 @@ impl Evaluate for Expression {
     }
 }
 
-pub fn eval(s: &str, env: &mut Environment) -> CalcResult {
+pub fn eval(s: &str, env: &mut Env) -> CalcResult {
     let expr = try!(self::parse::parse(s, env));
 
     expr.eval(env)

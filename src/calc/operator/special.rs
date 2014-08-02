@@ -2,15 +2,15 @@
 
 extern crate types;
 
+use self::types::Expr;
 use self::types::literal::{Lit, Symbol, Void};
-use super::super::{Expression, Evaluate, BadArgType, BadNumberOfArgs};
-use super::{Env, Environment, CalcResult, ArgType, Atom};
+use super::super::{Evaluate, BadArgType, BadNumberOfArgs};
+use super::{Args, Env, Environment, CalcResult, ArgType, Atom};
 
-type Expr = Expression;
 type Lists = Vec<Vec<Lit>>;
 pub type Table = Vec<(Vec<String>, String)>;
 
-pub fn text_graph(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
+pub fn text_graph(args: &Args, env: &mut Env) -> CalcResult {
     println!("Deprecated. {}, {}", args.len(), env);
     Ok(Atom(Void))
 }

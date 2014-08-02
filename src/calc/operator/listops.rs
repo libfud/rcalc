@@ -4,14 +4,12 @@ extern crate types;
 
 use self::types::operator;
 use self::types::operator::*;
-use self::types::{Atom, ArgType, CalcResult, Environment, Env, Expression};
+use self::types::{Args, Expr, Atom, CalcResult, Environment, Env};
 use self::types::literal::{List, Lit, LitRes};
 use super::super::{Evaluate, BadArgType, BadNumberOfArgs};
 
-pub type Expr = Expression;
-
 #[inline]
-pub fn list_ops(args: &Vec<ArgType>, env: &mut Env, lop: ListOps) -> CalcResult {
+pub fn list_ops(args: &Args, env: &mut Env, lop: ListOps) -> CalcResult {
     match lop {
         operator::List => list(args, env),
         Cons => cons(args, env), 
@@ -25,21 +23,21 @@ pub fn list_ops(args: &Vec<ArgType>, env: &mut Env, lop: ListOps) -> CalcResult 
 }
 
 #[inline]
-pub fn transform_ops(args: &Vec<ArgType>, env: &mut Env, top: XForms) -> CalcResult {
+pub fn transform_ops(args: &Args, env: &mut Env, top: XForms) -> CalcResult {
     match top {
         Map => map(args, env),
         Reduce |
         Fold | 
         FoldR => fold(args, env, top),
-        Filter => filter(args, env),
-        FilterMap => filter_map(args, env),
+        Filter |
+        FilterMap => filter_map(args, env, top),
         RangeList => rangelist(args, env), 
-        Sort => sort(args, env),
-        Reverse => reverse(args, env),
+        Sort |
+        Reverse => single(args, env, top),
     }
 }
 
-pub fn list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn list(args: &Args, env: &mut Environment) -> CalcResult {
     let mut list: Vec<Lit> = Vec::new();
     for arg in args.iter() {
         list.push(try!(arg.arg_to_literal(env)));
@@ -47,7 +45,7 @@ pub fn list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     Ok(Atom(List(list)))
 }
 
-pub fn cons(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn cons(args: &Args, env: &mut Environment) -> CalcResult {
     if args.len() != 2 {
         return Err(BadNumberOfArgs("cons".to_string(), "only".to_string(), 2))
     }
@@ -61,7 +59,7 @@ pub fn cons(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     }
 }
 
-pub fn car(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn car(args: &Args, env: &mut Environment) -> CalcResult {
     if args.len() != 1 {
         return Err(BadNumberOfArgs("car".to_string(), "only".to_string(), 1))
     }
@@ -78,7 +76,7 @@ pub fn car(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     }
 }
 
-pub fn cdr(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn cdr(args: &Args, env: &mut Environment) -> CalcResult {
     if args.len() != 1 {
         return Err(BadNumberOfArgs("cdr".to_string(), "only".to_string(), 1))
     }
@@ -93,7 +91,7 @@ pub fn cdr(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
 }
 
 /// Map can handle mapping a function to each element of one or more lists.
-pub fn map(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
+pub fn map(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() < 2 {
         return Err(BadNumberOfArgs("map".to_string(), "at least".to_string(), 2))
     }
@@ -130,7 +128,7 @@ pub fn map(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     Ok(Atom(List(result)))
 }
 
-pub fn fold(args: &Vec<ArgType>, env: &mut Env, top: XForms) -> CalcResult {
+pub fn fold(args: &Args, env: &mut Env, top: XForms) -> CalcResult {
     if args.len() < 3 {
         return Err(BadNumberOfArgs(top.to_string(), "at least".to_string(), 3))
     }
@@ -184,56 +182,46 @@ pub fn reduce_helper(x: String, y: String, initval: &Lit, list: &[Lit],
     Ok(result)
 }
 
-pub fn filter(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
-    if args.len() < 2 {
-        return Err(BadNumberOfArgs("filter".to_string(), "at least".to_string(), 3))
-    }
-
-    let (names, func) = try!(try!(args[0].desymbolize(env)).to_proc());
-
-    if names.len() != 1 {
-        return Err(BadArgType("Expected 1 name for predicate".to_string()))
-    }
-
-    let list = try!(try!(args[1].desymbolize(env)).to_vec());
-
-    let mut child_env = Environment::new_frame(env);
-    let mut new_list: Vec<Lit> = Vec::new();
-
-    for item in list.move_iter() {
-        child_env.symbols.insert(names[0].clone(), item.clone());
-
-        if try!(try!(try!(func.eval(&mut child_env)).desymbolize(env)).to_bool()) {
-            new_list.push(item)
-        }
-    }
-
-    Ok(Atom(List(new_list)))
-}
-
-pub fn filter_map(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
-    if args.len() < 3 {
-        return Err(BadNumberOfArgs("filter-map".to_string(), "only".to_string(), 3))
+pub fn filter_map(args: &Args, env: &mut Env, top: XForms) -> CalcResult {
+    if top == FilterMap && args.len() != 3 {
+        return Err(BadNumberOfArgs(top.to_string(), "only".to_string(), 3))
+    } else if args.len() != 2 {
+        return Err(BadNumberOfArgs(top.to_string(), "at least".to_string(), 3))
     }
 
     let (filter_names, filter) = try!(try!(args[0].desymbolize(env)).to_proc());
-    let (map_names, map) = try!(try!(args[1].desymbolize(env)).to_proc());
 
-    if map_names.len() != 1 || filter_names.len() != 1 {
-        return Err(BadArgType("Expected 1 variable for predicate and map".to_string()))
-    }
-
-    let list = try!(try!(args[2].desymbolize(env)).to_vec());
+    let list = if top == Filter {
+        try!(try!(args[1].desymbolize(env)).to_vec())
+    } else {
+        try!(try!(args[2].desymbolize(env)).to_vec())
+    };
 
     let mut child_env = Environment::new_frame(env);
     let mut new_list: Vec<Lit> = Vec::new();
 
-    for item in list.iter() {
-        child_env.symbols.insert(filter_names[0].clone(), item.clone());
-
-        if try!(try!(try!(filter.eval(&mut child_env)).desymbolize(env)).to_bool()) {
-            child_env.symbols.insert(map_names[0].clone(), item.clone());
-            new_list.push(try!(try!(map.eval(&mut child_env)).desymbolize(env)));
+    if top == Filter {
+        if filter_names.len() != 1 {
+            return Err(BadArgType("Expected 1 name for predicate".to_string()))
+        }
+        for item in list.move_iter() {
+            child_env.symbols.insert(filter_names[0].clone(), item.clone());
+            if try!(try!(try!(filter.eval(&mut child_env)).desymbolize(env)).to_bool()) {
+                new_list.push(item)
+            }
+        }
+    } else {
+        let (map_names, map) = try!(try!(args[1].desymbolize(env)).to_proc());
+        if map_names.len() != 1 || filter_names.len() != 1 {
+            return Err(BadArgType("Expected 1 variable for predicate and map".to_string()))
+        }
+        for item in list.iter() {
+            child_env.symbols.insert(filter_names[0].clone(), item.clone());
+            
+            if try!(try!(try!(filter.eval(&mut child_env)).desymbolize(env)).to_bool()) {
+                child_env.symbols.insert(map_names[0].clone(), item.clone());
+                new_list.push(try!(try!(map.eval(&mut child_env)).desymbolize(env)));
+            }
         }
     }
 
@@ -241,7 +229,7 @@ pub fn filter_map(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
 }
 
 #[inline]
-pub fn rangelist(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
+pub fn rangelist(args: &Args, env: &mut Env) -> CalcResult {
     use std::iter::range_step;
     use std::num;
 
@@ -259,24 +247,16 @@ pub fn rangelist(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     Ok(Atom(List(range_step(a, b, step).collect())))
 }
 
-
 #[inline]
-pub fn sort(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
-    if args.len() != 1 {
-        return Err(BadNumberOfArgs("Sort".to_string(), "only".to_string(), 1))
-    }
-    let mut list = try!(try!(args[0].desymbolize(env)).to_vec());
-    list.sort();
-    Ok(Atom(List(list)))
-}
-
-#[inline]
-pub fn reverse(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
+pub fn single(args: &Args, env: &mut Env, top: XForms) -> CalcResult {
     if args.len() != 1 {
         return Err(BadNumberOfArgs("reverse".to_string(), "only".to_string(), 1))
     }
 
     let mut list =  try!(try!(args[0].desymbolize(env)).to_vec());
-    list.reverse();
+    match top {
+        Sort => list.sort(),
+        _ => list.reverse()
+    }
     Ok(Atom(List(list)))
-}
+}   

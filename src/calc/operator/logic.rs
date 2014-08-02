@@ -37,8 +37,6 @@ pub fn query(args: &Args, env: &mut Env, query: Introspect) -> CalcResult {
     }
 }
 
-/// Loop through nested conditional statements until a non-conditional expression
-/// is reached.
 #[inline]
 pub fn cond(args: &Args, env: &mut Env)  -> CalcResult {
     let mut arguments = args.clone();
