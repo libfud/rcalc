@@ -6,16 +6,14 @@ extern crate types;
 use self::num::rational::Ratio;
 use self::types::operator::*;
 use self::types::literal::BigNum;
-use self::types::sexpr::{Atom, ArgType};
-use super::super::{CalcResult, Environment, Evaluate, BadNumberOfArgs, BadFloatRange};
+use super::super::{Atom, CalcResult, Args, Env, Evaluate, BadNumberOfArgs, BadFloatRange};
 
-pub fn float_ops(args: &Vec<ArgType>, env: &mut Environment, fop: Transcendental) -> CalcResult {
+pub fn float_ops(args: &Args, env: &mut Env, fop: Transcendental) -> CalcResult {
     if args.len() > 1 {
         return Err(BadNumberOfArgs(fop.to_string(), "only".to_string(), 1))
     }
 
     let floated = try!(try!(args[0].desymbolize(env)).to_f64());
-
     let answer = match fop {
         Sin => floated.sin(),
         Cos => floated.cos(),

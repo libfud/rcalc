@@ -6,7 +6,7 @@ extern crate parse;
 pub use self::types::{CalcResult, Environment, ErrorKind, BadArgType, BadNumberOfArgs, 
                       BadPowerRange, BadFloatRange, Env, Args};
 pub use self::types::sexpr::{Atom, SExpr, Expression, ArgType, BuiltIn, Function};
-pub use self::types::literal::{LiteralType, Symbol, Proc, Void};
+pub use self::types::literal::{Lit, LiteralType, Symbol, Proc, Void};
 pub use self::common::help;
 
 pub mod common;

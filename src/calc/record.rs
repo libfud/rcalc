@@ -2,11 +2,8 @@ extern crate types;
 
 use self::types::record::*;
 use self::types::literal::{Lit, Structure, Proto, Procedure, Void};
-use super::{Atom, ArgType, BadNumberOfArgs, BadArgType, CalcResult, 
-            Environment, Evaluate};
-
-pub type Args = Vec<ArgType>;
-pub type Env = Environment;
+use super::{Atom, Args, BadNumberOfArgs, BadArgType, CalcResult, 
+            Env, Environment, Evaluate};
 
 pub fn record_ops(args: &Args, env: &mut Env, rop: RecordOps) -> CalcResult {
     match rop {
@@ -15,8 +12,7 @@ pub fn record_ops(args: &Args, env: &mut Env, rop: RecordOps) -> CalcResult {
         SetMethods => add_methods(args, env),
         GetField => get_field(args, env), 
         CallMethod => call_method(args, env),
-        DelField |
-        DelMethod => del_attrib(args, env, rop),
+        DelField | DelMethod => del_attrib(args, env, rop),
         DefineRecord => define_record(args, env),
     }
 }
@@ -149,8 +145,7 @@ pub fn del_attrib(args: &Args, env: &mut Env, rop: RecordOps) -> CalcResult {
 
     match rop {
         DelField => try!(record.del_field(&name)),
-        DelMethod => try!(record.del_method(&name)),
-        _ => fail!("undefined")
+        _ => try!(record.del_method(&name)),
     }
 
     Ok(Atom(Structure(record)))

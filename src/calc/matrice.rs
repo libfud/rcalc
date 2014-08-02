@@ -7,10 +7,7 @@ use self::matrix::{Matrice, MatrixErrors, BadDimensionality};
 use self::types::MatrixErr;
 use self::types::operator::*;
 use self::types::literal::{Lit, List, Matrix};
-use super::{ArgType, Atom, CalcResult, Environment, Evaluate, BadArgType, BadNumberOfArgs};
-
-type Env = Environment;
-type Args<T = ArgType> = Vec<T>;
+use super::{Args, Env, Atom, CalcResult, Environment, Evaluate, BadArgType, BadNumberOfArgs};
 
 #[inline]
 pub fn matrix_ops(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
@@ -19,30 +16,22 @@ pub fn matrix_ops(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
 
         MatrixFromFn => matrix_from_fn(args, env),
 
-        MatrixSetRow | 
-        MatrixSetCol => matrix_set(args, env, mop),
+        MatrixSetRow | MatrixSetCol => matrix_set(args, env, mop),
 
-        MatrixAppendRows | 
-        MatrixAppendCols => matrix_append(args, env, mop),
+        MatrixAppendRows | MatrixAppendCols => matrix_append(args, env, mop),
 
         MatrixGetElem => get_elem(args, env),
 
-        MatrixGetRow | 
-        MatrixGetCol => get_row_col(args,env, mop),
+        MatrixGetRow | MatrixGetCol => get_row_col(args,env, mop),
 
-        Determ | 
-        MatrixInv | 
-        Transpose | 
-        PolygonArea => single(args, env, mop),
+        Determ | MatrixInv | Transpose | PolygonArea => single(args, env, mop),
 
         Scalar => scalar(args, env),
 
         Translate => translate_by(args, env),
 
-        DotProd |
-        CrossProd | 
-        MatrixConcatRows | 
-        MatrixConcatCols => double(args, env, mop),
+        DotProd | CrossProd | 
+        MatrixConcatRows | MatrixConcatCols => double(args, env, mop),
     }
 }        
 
@@ -131,14 +120,13 @@ pub fn scalar(args: &Args, env: &mut Env) -> CalcResult {
     }
 
     let matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
-
     let (names, func) = try!(try!(args[1].desymbolize(env)).to_proc());
+
     if names.len() != 1 {
         return Err(BadArgType("Only one variable expected".to_string()))
     };
 
     let matrix_elems = matrix.to_vec();
-
     let mut new_elems = Vec::with_capacity(matrix_elems.len());
 
     for elem in matrix_elems.iter() {
@@ -193,7 +181,7 @@ pub fn get_row_col(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     };
 
     if row_col >  num {
-            Err(MatrixErr(BadDimensionality))
+        Err(MatrixErr(BadDimensionality))
     } else {
         Ok(Atom(List(iterator.map(|x| x.clone()).collect())))
     }

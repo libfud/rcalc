@@ -112,9 +112,8 @@ pub fn table(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     }
 
     let (table, names_len, fn_len) = try!(make_table(lists, names, func, fun_str, env));
-
     table_writer(table, names_len, fn_len);
-    
+
     Ok(Atom(Void))
 }
 
@@ -124,7 +123,6 @@ pub fn table_from_matrix(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     }
 
     let matrix = try!(try!(args[0].desymbolize(env)).to_matrix());
-
     if matrix.cols() < 2 {
         return Err(BadArgType("Expeted at least one variable".to_string()))
     }
@@ -148,7 +146,6 @@ pub fn table_from_matrix(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     table.push((names, fun_str));
     for row in range(0, matrix.rows()) {
         let mut t_names: Vec<String> = matrix.get_row(row).map(|x| x.to_string()).collect();
-
         let val = t_names.pop().unwrap();
 
         if val.len() > fn_len {

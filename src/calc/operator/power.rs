@@ -3,22 +3,20 @@
 extern crate types;
 
 use std::num;
-use super::super::{Atom, ArgType, CalcResult, Environment, Evaluate, BadNumberOfArgs};
+use super::super::{Atom, Args, Lit, CalcResult, Env, Evaluate, BadNumberOfArgs};
 use super::trig::float_ops;
 use self::types::operator::{Ln, Exp};
-use self::types::literal::Lit;
 
-pub fn pow_wrapper(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+pub fn pow_wrapper(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() != 2 {
         return Err(BadNumberOfArgs("pow".to_string(), "only".to_string(), 2))
     } 
 
     let (base, exponent) = (try!(args[0].desymbolize(env)), try!(args[1].desymbolize(env)));
-
     Ok(Atom(try!(pow(&base, &exponent, env))))
 }
 
-pub fn pow(base: &Lit, exponent: &Lit, env: &mut Environment) -> CalcResult<Lit> {
+pub fn pow(base: &Lit, exponent: &Lit, env: &mut Env) -> CalcResult<Lit> {
     let one: Lit = num::one();
 
     if *base == one || *exponent == one {
