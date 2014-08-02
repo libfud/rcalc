@@ -64,16 +64,7 @@ pub fn car(args: &Args, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("car".to_string(), "only".to_string(), 1))
     }
 
-    match try!(args[0].desymbolize(env)) {
-        List(x) => {
-            if x.len() < 1 {
-                Err(BadArgType("Empty list!".to_string()))
-            } else {
-                Ok(Atom(x[0].clone()))
-            }
-        },
-        _ => Err(BadArgType("Wrong type for `car'".to_string()))
-    }
+    Ok(Atom(try!(try!(args[0].desymbolize(env)).to_vec())[0].clone()))
 }
 
 pub fn cdr(args: &Args, env: &mut Environment) -> CalcResult {
@@ -81,13 +72,7 @@ pub fn cdr(args: &Args, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("cdr".to_string(), "only".to_string(), 1))
     }
 
-    match try!(args[0].desymbolize(env)) {
-        List(x) => match x.len() {
-            0 => Err(BadArgType("List too short!".to_string())),
-            _ => Ok(Atom(List(x.tail().to_vec())))
-        },
-        _ => Err(BadArgType("Wrong type for `cdr'".to_string()))
-    }
+    Ok(Atom(List(try!(try!(args[0].desymbolize(env)).to_vec()).tail().to_vec())))
 }
 
 /// Map can handle mapping a function to each element of one or more lists.
@@ -149,13 +134,13 @@ pub fn fold(args: &Args, env: &mut Env, top: XForms) -> CalcResult {
         return Ok(Atom(list[0].clone()))
     }
 
-    match top {
-        Fold => Ok(Atom(try!(reduce_helper(x, y, &initval, list.as_slice(), env, &fun)))),
-        FoldR => {
-            list.reverse();
-            Ok(Atom(try!(reduce_helper(x, y, &initval, list.as_slice(), env, &fun))))
-        },
-        _ => Ok(Atom(try!(reduce_helper(x, y, &list[0], list.tail(), env, &fun)))),
+    if top == Reduce {
+        Ok(Atom(try!(reduce_helper(x, y, &list[0], list.tail(), env, &fun))))
+    } else if top == FoldR {
+        list.reverse();
+        Ok(Atom(try!(reduce_helper(x, y, &initval, list.as_slice(), env, &fun))))
+    } else {
+        Ok(Atom(try!(reduce_helper(x, y, &initval, list.as_slice(), env, &fun))))
     }
 }
 
@@ -243,6 +228,10 @@ pub fn rangelist(args: &Args, env: &mut Env) -> CalcResult {
     } else {
         num::one()
     };
+
+    if (b > a && step < num::zero()) || (a > b && step > num::zero()) {
+        return Err(BadArgType("bad step".to_string()))
+    }
 
     Ok(Atom(List(range_step(a, b, step).collect())))
 }
