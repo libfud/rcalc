@@ -6,19 +6,14 @@ extern crate parse;
 
 pub use self::num::rational::{BigRational, Ratio};
 pub use self::num::bigint;
-pub use self::types::{CalcResult, Environment, 
-                      ErrorKind, BadArgType, BadNumberOfArgs, 
-                      BadPowerRange, BadFloatRange, NonBoolean,
-                      };
+pub use self::types::{CalcResult, Environment, ErrorKind, BadArgType, BadNumberOfArgs, 
+                      BadPowerRange, BadFloatRange, NonBoolean};
 pub use self::types::sexpr::{Atom, SExpr, Expression, ArgType, BuiltIn, Function};
-pub use self::types::literal::{Lit, LitRes, LiteralType, 
-                               BigNum, Boolean, List, Matrix, Proc, Symbol, Void};
+pub use self::types::literal::{LiteralType, Symbol, Proc, Void};
 pub use self::common::help;
-pub use self::literal::{cons, car, cdr, list};
 
 pub mod common;
 pub mod function;
-pub mod literal;
 pub mod matrice;
 pub mod operator;
 pub mod record;
@@ -30,20 +25,12 @@ pub fn define(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("define".to_string(), "only".to_string(), 2))
     }
     
-    let name_and_vars = match try!(args[0].desymbolize(env)) {
-        List(ref x) => if x.len() == 0 {
+    let name_and_vars = try!(try!(args[0].desymbolize(env)).to_vec());
+    if name_and_vars.len() == 0 {
             return Err(BadArgType("Name required for definitions".to_string()))
-        } else {
-            x.clone()
-        },
-        x => return Err(BadArgType(format!("{} is not a symbol", x)))
-    };
+    }
 
-    let name = match name_and_vars[0] {
-        Symbol(ref x) => x.clone(),
-        _ => return Err(BadArgType("Names can only be symbols!".to_string()))
-    };
-
+    let name = try!(name_and_vars[0].to_sym_string());
     let vars = if name_and_vars.len() == 1 {
         vec![]
     } else {

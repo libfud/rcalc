@@ -1,6 +1,9 @@
 //! Functions and variables which are used in more than one module.
 
-use super::{ArgType, Atom, Symbol, Void, CalcResult};
+extern crate types;
+
+use self::types::literal::{Symbol, Void};
+use super::{ArgType, Atom, CalcResult};
 use std::collections::hashmap::HashMap;
 
 pub fn help(args: &Vec<ArgType>) -> CalcResult {

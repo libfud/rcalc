@@ -1,15 +1,16 @@
 //! Evaluate functions defined by the user
 
-use super::{CalcResult, Environment, Evaluate, ArgType, Atom, Proc, BadNumberOfArgs};
+use super::{CalcResult, Environment, Evaluate, ArgType, Atom, BadNumberOfArgs};
 
 ///Returns the value of the function for the arguments given
 #[inline]
-pub fn eval(fn_name: &String, args: &Vec<ArgType>,
-            env: &mut Environment) -> CalcResult {
+pub fn eval(fn_name: &String, args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
     
-    let (args_to_fulfill, func) = match try!(env.lookup(fn_name)) {
-        &Proc(ref x, ref y) => (x.clone(), y.clone()),
-        x => return Ok(Atom(x.clone()))
+    let arg = try!(env.lookup(fn_name)).clone();
+    let (args_to_fulfill, func) = if arg.is_proc() {
+        try!(arg.to_proc())
+    } else {
+        return Ok(Atom(arg))
     };
 
     if args.len() != args_to_fulfill.len() {

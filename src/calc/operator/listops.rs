@@ -2,6 +2,7 @@
 
 extern crate types;
 
+use self::types::operator;
 use self::types::operator::*;
 use self::types::{Atom, ArgType, CalcResult, Environment, Expression};
 use self::types::literal::{List, Lit, LitRes};
@@ -9,6 +10,88 @@ use super::super::{Evaluate, BadArgType, BadNumberOfArgs};
 
 pub type Env = Environment;
 pub type Expr = Expression;
+
+#[inline]
+pub fn list_ops(args: &Vec<ArgType>, env: &mut Env, lop: ListOps) -> CalcResult {
+    match lop {
+        operator::List => list(args, env),
+        Cons => cons(args, env), 
+        Car => car(args, env),
+        Cdr => cdr(args, env),
+        Cadr => car(&vec!(try!(cdr(args, env))), env), 
+        Cddr => cdr(&vec!(try!(cdr(args, env))), env),
+        Caddr => car(&vec!(try!(cdr(&vec!(try!(cdr(args, env))), env))), env),
+        Cdddr => cdr(&vec!(try!(cdr(&vec!(try!(cdr(args, env))), env))), env),
+    }
+}
+
+#[inline]
+pub fn transform_ops(args: &Vec<ArgType>, env: &mut Env, top: XForms) -> CalcResult {
+    match top {
+        Map => map(args, env),
+        Reduce |
+        Fold | 
+        FoldR => fold(args, env, top),
+        Filter => filter(args, env),
+        FilterMap => filter_map(args, env),
+        RangeList => rangelist(args, env), 
+        Sort => sort(args, env),
+        Reverse => reverse(args, env),
+    }
+}
+
+pub fn list(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+    let mut list: Vec<Lit> = Vec::new();
+    for arg in args.iter() {
+        list.push(try!(arg.arg_to_literal(env)));
+    }
+    Ok(Atom(List(list)))
+}
+
+pub fn cons(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+    if args.len() != 2 {
+        return Err(BadNumberOfArgs("cons".to_string(), "only".to_string(), 2))
+    }
+
+    let car = try!(args[0].arg_to_literal(env));
+    let cdr = try!(args[1].arg_to_literal(env));
+
+    match cdr {
+        List(x) => Ok(Atom(List(vec!(car).append(x.as_slice())))),
+        _ => Ok(Atom(List(vec!(car, cdr))))
+    }
+}
+
+pub fn car(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+    if args.len() != 1 {
+        return Err(BadNumberOfArgs("car".to_string(), "only".to_string(), 1))
+    }
+
+    match try!(args[0].desymbolize(env)) {
+        List(x) => {
+            if x.len() < 1 {
+                Err(BadArgType("Empty list!".to_string()))
+            } else {
+                Ok(Atom(x[0].clone()))
+            }
+        },
+        _ => Err(BadArgType("Wrong type for `car'".to_string()))
+    }
+}
+
+pub fn cdr(args: &Vec<ArgType>, env: &mut Environment) -> CalcResult {
+    if args.len() != 1 {
+        return Err(BadNumberOfArgs("cdr".to_string(), "only".to_string(), 1))
+    }
+
+    match try!(args[0].desymbolize(env)) {
+        List(x) => match x.len() {
+            0 => Err(BadArgType("List too short!".to_string())),
+            _ => Ok(Atom(List(x.tail().to_vec())))
+        },
+        _ => Err(BadArgType("Wrong type for `cdr'".to_string()))
+    }
+}
 
 /// Map can handle mapping a function to each element of one or more lists.
 pub fn map(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
@@ -61,37 +144,21 @@ pub fn fold(args: &Vec<ArgType>, env: &mut Env, top: XForms) -> CalcResult {
     };
 
     let initval = try!(args[1].desymbolize(env));
-
     let mut list =  try!(try!(args[2].desymbolize(env)).to_vec());
 
     if list.len() == 0 {
         return Ok(Atom(initval))
-    }
-
-    if top == FoldR { list.reverse(); }
-
-    Ok(Atom(try!(reduce_helper(x, y, &initval, list.as_slice(), env, &fun))))
-}
-
-pub fn reduce(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
-    if args.len() < 2 {
-        return Err(BadNumberOfArgs("reduce".to_string(), "at least".to_string(), 2))
-    }
-
-    let (names, fun) = try!(try!(args[0].desymbolize(env)).to_proc());
-    let (x, y) = if names.len() != 2 {
-        return Err(BadArgType("Expected 2 names".to_string()))
-    } else {
-        (names[0].clone(), names[1].clone())
-    };
-
-    let list =  try!(try!(args[1].desymbolize(env)).to_vec());
-    if list.len() == 0 {
-        Err(BadArgType("Cannot reduce empty lists!".to_string()))
     } else if list.len() == 1 {
-        Ok(Atom(list[0].clone()))
-    } else {
+        return Ok(Atom(list[0].clone()))
+    }
+
+    if top == Reduce {
         Ok(Atom(try!(reduce_helper(x, y, &list[0], list.tail(), env, &fun))))
+    } else if top == FoldR {
+        list.reverse();
+        Ok(Atom(try!(reduce_helper(x, y, &initval, list.as_slice(), env, &fun))))
+    } else {
+        Ok(Atom(try!(reduce_helper(x, y, &initval, list.as_slice(), env, &fun))))
     }
 }
 
@@ -201,31 +268,6 @@ pub fn sort(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     }
     let mut list = try!(try!(args[0].desymbolize(env)).to_vec());
     list.sort();
-    Ok(Atom(List(list)))
-}
-
-pub fn sort_by(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
-    use self::types::operator;
-
-    if args.len() != 2 {
-        return Err(BadNumberOfArgs("sort-by".to_string(), "only".to_string(), 2))
-    }
-
-    let mut list = try!(try!(args[0].desymbolize(env)).to_vec());
-
-    let order = match try!(try!(args[1].desymbolize(env)).to_proc()) {
-        (_, procedure) => match procedure.expr_type { 
-            ::types::sexpr::BuiltIn(operator::Ordering(cmp)) => cmp,
-            _ => return Err(BadArgType("Use only builtin".to_string()))
-        }
-    };
-
-    match order {
-        operator::Lt => list.sort_by(|a, b| a.cmp(b)),
-        operator::Gt => list.sort_by(|a, b| b.cmp(a)),
-        _ => return Err(BadArgType("Use only < and >".to_string()))
-    }
-
     Ok(Atom(List(list)))
 }
 

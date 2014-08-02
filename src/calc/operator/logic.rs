@@ -22,6 +22,25 @@ pub fn handle_logic(args: &Vec<ArgType>, env: &mut Env, log: Gate) -> CalcResult
     }
 }
 
+#[inline]
+pub fn query(args: &Vec<ArgType>, env: &mut Env, query: Introspect) -> CalcResult {
+    if args.len() != 1 {
+        return Err(BadNumberOfArgs(query.to_string(), "only".to_string(), 1))
+    }
+
+    let arg = try!(args[0].desymbolize(env));
+
+    match query {
+        BoolQ => Ok(Atom(Boolean(arg.is_bool()))),
+        LambdaQ => Ok(Atom(Boolean(arg.is_proc()))),
+        ListQ => Ok(Atom(Boolean(arg.is_list()))),
+        MatrixQ => Ok(Atom(Boolean(arg.is_matrix()))),
+        NumberQ => Ok(Atom(Boolean(arg.is_num()))),
+        StructQ => Ok(Atom(Boolean(arg.is_structure()))),
+        SymbolQ => Ok(Atom(Boolean(arg.is_symbol()))),
+    }
+}
+
 /// Loop through nested conditional statements until a non-conditional expression
 /// is reached.
 #[inline]

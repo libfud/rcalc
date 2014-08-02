@@ -280,7 +280,6 @@ pub enum XForms {
     Filter,
     FilterMap,
     Sort,
-    SortBy,
     RangeList,
     Reverse
 }
@@ -294,9 +293,8 @@ impl from_str::FromStr for XForms {
             "foldr" => Some(FoldR),
             "reduce" => Some(Reduce),
             "filter" => Some(Filter),
-            "fitler-map" => Some(FilterMap),
+            "filter-map" => Some(FilterMap),
             "sort" => Some(Sort),
-            "sort-by" => Some(SortBy),
             "range-list" => Some(RangeList),
             "reverse" => Some(Reverse),
             _ => None
@@ -315,7 +313,6 @@ impl fmt::Show for XForms {
             Filter => "filter",
             FilterMap => "filter-map",
             Sort => "sort",
-            SortBy => "sort-by",
             RangeList => "range-list",
             Reverse => "reverse",
         }));
@@ -399,6 +396,49 @@ impl from_str::FromStr for MatrixOps {
 }
 
 #[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
+pub enum Introspect {
+    BoolQ,
+    LambdaQ,
+    ListQ,
+    MatrixQ,
+    NumberQ,
+    StructQ,
+    SymbolQ,
+}
+
+impl fmt::Show for Introspect {
+    #[inline]
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(fmt, "{}", match *self {
+            BoolQ => "bool?",
+            ListQ => "list?",
+            MatrixQ => "matrix?",
+            NumberQ => "number?",
+            LambdaQ => "lambda?",
+            StructQ => "struct?",
+            SymbolQ => "symbol?",
+        }));
+        Ok(())
+    }
+}
+
+impl from_str::FromStr for Introspect {
+    #[inline]
+    fn from_str(s: &str) -> Option<Introspect> {
+        match s {
+            "symbol?" => Some(SymbolQ),
+            "number?" => Some(NumberQ),
+            "bool?" => Some(BoolQ),
+            "matrix?" => Some(MatrixQ),
+            "list?" => Some(ListQ),
+            "lambda?" => Some(LambdaQ),
+            "struct?" => Some(StructQ),
+            _ => None
+        }
+    }
+}
+
+#[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
 pub enum OperatorType {
     Arithmetic(Arith),
     Pow,
@@ -415,6 +455,7 @@ pub enum OperatorType {
     TableFromMatrix,
     MatrixStuff(MatrixOps),
     RecOps(RecordOps),
+    Query(Introspect),
     TextGraph,
     Help,
 }
@@ -438,6 +479,7 @@ impl fmt::Show for OperatorType {
             Lambda => "lambda".to_string(),
             Table => "table".to_string(),
             TableFromMatrix => "table-from-matrix".to_string(),
+            Query(ref x) => x.to_string(),
             TextGraph => "text-graph".to_string(),
             Help => "help".to_string(),
         }));
@@ -490,6 +532,11 @@ impl from_str::FromStr for OperatorType {
 
         match from_str::<RecordOps>(s) {
             Some(x) => return Some(RecOps(x)),
+            None => { }
+        }
+
+        match from_str::<Introspect>(s) {
+            Some(x) => return Some(Query(x)),
             None => { }
         }
     
