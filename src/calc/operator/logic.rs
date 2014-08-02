@@ -115,7 +115,6 @@ pub fn not(args: &Args, env: &mut Env) -> CalcResult {
 
 pub fn num_op(args: &Args, env: &mut Env, op: RoundId) -> CalcResult {
     use std::num;
-    use super::super::num::Integer;
     use self::types::operator::{Round, RoundToNearest, Floor, Ceiling, Zero};
 
     let one: Lit = num::one();
@@ -140,7 +139,6 @@ pub fn num_op(args: &Args, env: &mut Env, op: RoundId) -> CalcResult {
         Floor => Ok(Atom(try!(num.floor()))),
         Ceiling => Ok(Atom(try!(num.ceil()))),
         Zero => Ok(Atom(Boolean(num == num::zero()))),
-        _ => Ok(Atom(Boolean((op != Even) ^ 
-                             (try!(num.numer()).is_even() && try!(num.is_integer())))))
+        _ => Ok(Atom(Boolean((op != Even) ^ (try!(num.is_even())))))
     }
 }

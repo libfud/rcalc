@@ -328,6 +328,16 @@ impl<'a> LiteralType {
     }
 
     #[inline]
+    pub fn is_even(&self) -> CalcResult<bool> {
+        use self::num::integer::Integer;
+
+        match self {
+            &BigNum(ref x) => Ok(x.is_integer() &&x.numer().is_even()),
+            x => Err(UnexpectedVal("BigNum".to_string(), x.to_string()))
+        }
+    }
+
+    #[inline]
     pub fn abs(&self) -> Lit {
         if *self < num::zero() {
             -self

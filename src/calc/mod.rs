@@ -1,11 +1,8 @@
 //! The parent module to every other module in calc.
 
-extern crate num;
 extern crate types;
 extern crate parse;
 
-pub use self::num::rational::{BigRational, Ratio};
-pub use self::num::bigint;
 pub use self::types::{CalcResult, Environment, ErrorKind, BadArgType, BadNumberOfArgs, 
                       BadPowerRange, BadFloatRange, NonBoolean};
 pub use self::types::sexpr::{Atom, SExpr, Expression, ArgType, BuiltIn, Function};
