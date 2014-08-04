@@ -7,15 +7,6 @@ use super::{ArgType, Atom, BadArgType, CalcResult, Symbol, Void};
 use std::collections::hashmap::HashMap;
 
 pub fn help(args: &Vec<ArgType>) -> CalcResult {
-    let help_help =
-"The help function has the form (help term1, term2, term3...) and prints out
-examples of how operators are used. You can use help for individual operators
-for individual operators, and you can list operators by group with the 
-following terms: arithmetic, logic, trigonometry (or trig), and statistics
-(or stats). See also (help use). An example of usage is
-
-(+ 2 2)";
-
     let use_help =
 "rcalc is an arbitrary precision polish notation (lisp style) calculator.
 It requires that expressions are wrapped in parentheses ( \"( and \") ).
@@ -43,20 +34,7 @@ is quite buggy due to the limitations of IEEE754.";
 "The arithmetic operators are +, -, *, /, %, and pow.
 In general, the arithmetic operators can take 0 terms, or as many terms as you
 like.
-To see more help, use help with the appropriate arithmetic operator.
-Aadditionally, see (help abs), as I have not classified it yet.";
-
-    let pow_help =
-"The exponentiation operator. If supplied no arguments, returns the
-multiplcative identity, 1. If only one term is supplied, the implied power is
-1. Exponentiation with zero as a base is allowed, but has some notable
-behavior:
-
-(pow 0)   ; 0 to any non zero power is 0.
-(pow 0 0) ; 1  0^0 is one.
-(pow 2 .5)    ; 577/408
-(pow 256 1/8) ; 2
-(pow 8 -2)    ; 1/64";
+To see more help, use help with the appropriate arithmetic operator.";
 
     let trig_help =
 "Trigonometric functions. Currently only comprised of sin, cos, and tan. 
@@ -71,27 +49,10 @@ conditional statements with if. And, Or, and Not are also availalbe.
 (= 7 3) ; false
 (if (> 3 2) (+ 7 3) (/ 10 2)) ; 10";
 
-    let define_help = 
-"Define a variable. You can define it as another variable, or the result of a
-function.
-
-(define x 42) ; x = 42
-(define y (/ x 7)) ;  y = 6;
-(define z (+ (* x y) x)) ; z = 294
-(define (f x) (* x 2 (+ x 2))) ; (f 2) is 16, (f 3) is 30
-(define (h g x) (* (g x) 3 (+ (g x) 2))) ; (h f 4) is 7200";
-
-    let lambda_help =
-"The Anonymous function. (lambda (arguments) (body)).
-(reduce (lambda (x y) (+ x y)) 0 '(1 2 3 4 5)) ; 15
-(define (h g x) (* (g x) 3 (+ (g x) 2)))
-(h (lambda (x) (* x 7)) 4) ; The result is 1080";
-
     let mut help_map: HashMap<String, String> = HashMap::new();
 
-    for (key, val) in ["help", "use", "arithmetic","pow", "logic", "define", "lambda"]
-        .iter().zip([help_help, use_help, arithmetic_help, pow_help, trig_help, 
-                     logic_help, define_help, lambda_help].iter())
+    for (key, val) in ["use", "arithmetic", "trig", "logic"]
+        .iter().zip([use_help, arithmetic_help, trig_help, logic_help].iter())
     {
             help_map.insert(key.to_string(), val.to_string());
     }

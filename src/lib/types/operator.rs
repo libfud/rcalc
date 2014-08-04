@@ -476,11 +476,42 @@ pub enum MatrixOps {
     PolygonArea,
 }
 
+
 impl Help for MatrixOps {
-    fn help<'a>(&self) -> MatrixOps {
-        MakeMatrix => "make-matrix takes one argument, a list of lists. Each list represents a row,
+    fn help<'a>(&self) -> &'a str {
+        match *self {
+            MakeMatrix => "make-matrix takes one argument, a list of lists. Each list represents a row,
 and every list must be of equal length.",
-        
+            MatrixFromFn => "Takes a function with at least one argument, and as many lists as there are
+arguments. The number of arguments determins how many columns the matrix has, while the number of terms
+in the first list determines how many rows the matrix has.",
+            MatrixSetRow => "Set a row in a matrix to a given list. The first argument is the matrix,
+the second argument is the row to replace, and the third argument is the new row.",
+            MatrixSetCol => "Set a column in a matrix to a given list. The first argument is the matrix,
+the second argument is the colunm to replace, and the third argument is the new column.",
+            MatrixAppendRows => "Append rows to a matrix. Takes two arguments, the first being a matrix,
+and the second being a list of lists representing rows.",
+            MatrixAppendCols => "Append columns to a matrix. Takes two arguments, the first being a matrix,
+and the second being a list of lists representing columns.",
+            MatrixConcatRows => "Make a matrix from two others with the same number of columns.",
+            MatrixConcatCols => "Make a matrix from two others with the same number of rows.",
+            MatrixGetElem => "Get the element from a matrix in a given row and column. The first term
+is the matrix, the second is the row, and the last is the column. Indexed from 1, not 0.",
+            MatrixGetRow => "Get a row from a matrix. Takes one term.",
+            MatrixGetCol => "Get a column from a matrix.Takes one term.",
+            Scalar => "Apply a scalar function to a matrix.",
+            CrossProd => "Get the cross productof two vectors (1 row matrices).",
+            DotProd => "Get the Kronecker product of two matrices.",
+            Transpose => "Transpose a matrix. Takes one term.",
+            Translate => "Translate a matrix by given values.",
+            Determ => "Get the determinant of a matrix.",
+            MatrixInv => "Returns the inverse of a matrix.",
+            PolygonArea => "Returns the area of a polygon given as clockwise coordinates in a two column
+matrix."
+        }
+    }
+}
+
 
 impl fmt::Show for MatrixOps {
     #[inline]
@@ -547,6 +578,20 @@ pub enum Introspect {
     NumberQ,
     StructQ,
     SymbolQ,
+}
+
+impl Help for Introspect {
+    fn help<'a>(&self) -> &'a str {
+        match *self {
+            BoolQ => "Determines if the term is a boolean value.",
+            LambdaQ => "Determines if the term is a procedure.",
+            ListQ => "Determines if the term is a list.",
+            MatrixQ => "Determines if the term is a matrix.",
+            NumberQ => "Determines if the term is a number.",
+            StructQ => "Determines if the term is a struct.",
+            SymbolQ => "Determines if the term is a symbol.",
+        }
+    }
 }
 
 impl fmt::Show for Introspect {
@@ -702,7 +747,29 @@ impl Help for OperatorType {
         match *self {
             Arithmetic(x) => x.help(),
             Transcend(x) => x.help(),
-            _ => "lol"
+            Ordering(x) => x.help(),
+            RoundIdent(x) => x.help(),
+            Logic(x) => x.help(),
+            Listings(x) => x.help(),
+            TransForms(x) => x.help(),
+            MatrixStuff(x) => x.help(),
+//            RecOps => x.help(),
+            RecOps(_) => "No documentation at this time. Future tbd.",
+            Pow => "The power operator. Takes two terms.",
+            Quote => "This isn't correct right now.",
+            Define => "Define a variable. You can define it as another variable, 
+or the result of a function, or as a function.",
+            Lambda => "The Anonymous function. (lambda (arguments) (body)).",
+            Table => "The table function. Takes a function with at least one argument,
+and as many lists are there are arguments.",
+            TableFromMatrix => "Takes a fuction with one fewer argument than the matrix has columns.",
+            Query(x) => x.help(),
+            TextGraph => "deprecated",
+            Help => "The help function has the form (help term1, term2, term3...) and prints out
+examples of how operators are used. You can use help for individual operators
+for individual operators, and you can list operators by group with the 
+following terms: arithmetic, logic, trigonometry (or trig), and statistics
+(or stats). See also (help use)."
         }
     }
 }
