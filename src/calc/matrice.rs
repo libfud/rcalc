@@ -69,18 +69,18 @@ pub fn make_matrix(args: &Args, env: &mut Env) -> CalcResult {
     }
 }
 
+/// Make a matrix from a function. Each list supplied to it represents different coefficients for an
+/// additional variable. The number of lists given plus one represents the width of the matrix, and
+/// the number of variables in the first list determines its height.
 pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() < 2 {
-        return Err(BadNumberOfArgs("matrix-from-fn".to_string(), 
-                                   "at least".to_string(), 2))
+        return Err(BadNumberOfArgs("matrix-from-fn".to_string(), "at least".to_string(), 2))
     }
 
     let (names, func) = try!(try!(args[0].desymbolize(env)).to_proc());
     if names.len() < 1 {
         return Err(BadArgType("At least one variable must be supplied".to_string()))
-    }
-
-    if args.len() - 1 != names.len() {
+    } else if args.len() - 1 != names.len() {
         return Err(BadNumberOfArgs(func.to_string(), "only".to_string(), names.len()))
     }
 
@@ -96,6 +96,7 @@ pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
     let mut matrix_vec: Vec<Lit> = Vec::new();
 
     for column in range(0, lists[0].len()) {
+        println!("{}", column);
         let mut child_env = Environment::new_frame(env);
 
         let values: Vec<Lit> = lists.iter().map(|x| x[column].clone()).collect();
@@ -107,6 +108,8 @@ pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
 
         matrix_vec.push(try!(try!(func.eval(&mut child_env)).desymbolize(env)));
     }
+
+    println!("{}", matrix_vec);
 
     match Matrice::from_vec(matrix_vec, lists.len() + 1, lists[0].len()) {
         Ok(x) => Ok(Atom(Matrix(x))),
