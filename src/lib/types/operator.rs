@@ -20,6 +20,10 @@ mod not_fancy {
     pub static GreaterThanEq: &'static str = ">=";
 }
 
+pub trait Help {
+    fn help<'a>(&self) -> &'a str;
+}
+
 #[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)] 
 pub enum Arith {
     Add,
@@ -27,6 +31,20 @@ pub enum Arith {
     Mul,
     Div,
     Rem,
+}
+
+impl Help for Arith {
+    fn help<'a>(&self) -> &'a str {
+        match *self {
+            Add => "The addition operator. For 0 terms, returns the the additive identity.",
+            Sub => "The subtraction operator. Requires at least one term. If only one term is
+given, it returns the negation of that term.",
+            Mul => "The multiplication operator. For 0 terms, returns the multiplicative identity.",
+            Div => "The division operator. Requires at least one term. If only one term is
+given, it returns its reciprocal.",
+            Rem => "The remainder operator. Requires two terms."
+        }
+    }
 }
 
 impl fmt::Show for Arith {
@@ -66,6 +84,28 @@ pub enum Transcendental {
     ASinH, ACosH, ATanH
 }
 
+impl Help for Transcendental {
+    fn help<'a>(&self) -> &'a str {
+        match *self {
+            Log => "The common logarithm. Takes one term.",
+            Ln => "The natural logarithm. Takes one term.",
+            Exp => "Natural exponentiation. Takes one term.",
+            Sin => "The sine function. Takes one term, expressed in radians.",
+            Cos => "The cosine function. Takes one term, expressed in radians.",
+            Tan => "The tangent function. Takes one term, expressed in radians.",
+            ASin => "The inverse sine function. Takes one term in the range [-pi/2, pi/2].",
+            ACos => "The inverse cosine function. Takes one term in the range [-pi/2, pi/2].",
+            ATan => "The inverse tangent  function. Takes one term in the range [-pi/2, pi/2].",
+            SinH => "The hyperbolic sine function. Takes one term.",
+            CosH => "The hyperbolic cosine function. Takes one term.",
+            TanH => "The hyperbolic tangent function. Takes one term.",
+            ASinH => "The inverse hyperbolic sine function. Takes one term in the range [-pi/2, pi/2].",
+            ACosH => "The inverse hyperbolic cosine function. Takes one term in the range [-pi/2, pi/2].",
+            ATanH => "The inverse hyperbolic tangent function. Takes one term in the range [-pi/2, pi/2]."
+        }
+    }
+}
+
 impl fmt::Show for Transcendental {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
@@ -102,6 +142,19 @@ pub enum OrderEq {
     LtEq,
     Gt,
     GtEq
+}
+
+impl Help for OrderEq {
+    fn help<'a>(&self) -> &'a str {
+        match *self {
+            Lt => "The ordering less than. Takes two terms",
+            LtEq => "The ordering less than or equal. Takes two terms.",
+            Eq => "Equality. Takes two terms, and returns either true or false.",
+            NEq => "Inequality. Takes two terms, and returns either true or false.",
+            GtEq => "The ordering greater than or equal. Takes two terms.",
+            Gt => "The ordering greater than. Takes two terms."
+        }
+    }
 }
 
 impl fmt::Show for OrderEq {
@@ -151,6 +204,29 @@ pub enum RoundId {
     Zero,
     Odd,
     Even
+}
+
+impl Help for RoundId {
+    fn help<'a>(&self) -> &'a str {
+        match *self {
+            Round => "Round takes one term. Rounds away from zero.",
+            RoundToNearest => {
+                "Round to the nearest x. Takes two terms; the first is the number to be rounded,
+ and the second is the number towards which it is rounded."
+            },
+            Floor => {
+                "Floor takes one term, and returns the nearest integer whose absolute value
+ is less than the absolute of the term."
+            },
+            Ceiling => {
+                "Ceiling takes one term, and returns the nearest integer whose absolute value
+ is greater than the absolute of the term."
+            },
+            Zero => "zero? checks to see if the term is zero or not. Takes one term.",
+            Odd => "odd? checks to see if the term is odd or not. Takes one term.",
+            Even => "even? checks to see if the term is even or not. Takes one term."
+        }
+    }
 }
 
 impl fmt::Show for RoundId {
@@ -211,6 +287,19 @@ pub enum Gate {
     Xor
 }
 
+impl Help for Gate {
+    fn help<'a>(&self) -> &'a str {
+        match *self {
+            If => "if takes three expressions as arguments: a conditional statement, a consequent, 
+and an alternative.",
+            And => "The logical And operator. Returns true if all terms are true.",
+            Or => "The logical Or operator. Returns true if any terms are true.",
+            Not => "The logical Not operator. Returns the opposite of the term.",
+            Xor => "The logical Xor operator. Returns true iaoi one of two terms it is comparing are true."
+        }
+    }
+}
+
 impl fmt::Show for Gate {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
@@ -242,6 +331,21 @@ pub enum ListOps {
     Car, Cdr,
     Cadr, Cddr,
     Caddr, Cdddr,
+}
+
+impl Help for ListOps {
+    fn help<'a>(&self) -> &'a str {
+        match *self {
+            List => "list returns a list from its arguments, taking any amount of terms.",
+            Cons => "cons returns a list from its arguments, taking two terms.",
+            Car => "car returns the first element of a list. Takes one term.",
+            Cdr => "cdr returns the rest of a list. Takes one term.",
+            Cadr => "cadr returns the the second element of a list if its length is at least 2.",
+            Cddr => "cddr returns the tail of a list after the second element.",
+            Caddr => "caddr returns the third element of a list.",
+            Cdddr => "cdddr returns the tail of a list after the third element.",
+        }
+    }
 }
 
 impl fmt::Show for ListOps {
@@ -282,6 +386,39 @@ pub enum XForms {
     Sort,
     RangeList,
     Reverse
+}
+
+impl Help for XForms {
+    fn help<'a>(&self) -> &'a str {
+        match *self {
+            Map => "Map a function to each element of a list. The first argument is a function 
+with as many terms as there are lists. For example, if there are four lists, 
+the function must have four terms. Lists are traversed from left to right.
+Takes at least two terms, with every term after the first being a list.",
+            Fold => "The higher order function fold. Takes a function with two arguments, 
+an initial value and a list. If there are no terms in the list, returns the initial value. 
+If there is only one term in the list, it returns the first element in the list. 
+Lists are folded from left to right.",
+            FoldR => "The higher order function fold-right. Takes a function wtih two arguments, 
+an initial value and a list. If there are no terms terms in the list, returns the initial value. 
+If there is only one term in the list, it returns the first element in the list. 
+Lists are folded from right to left.",
+            Reduce => "The higher order function reduce. Takes a function with two arguments, 
+an initial value and a list with at least one term. If there is only one term in the list, 
+it returns that. Lists are folded from left to right.",
+            Filter => "The higher order function filter. Takes a predicate with one argument and a list.
+Returns a new list whose elements are comprised of members of the original list 
+for which the predicate is true.",
+            FilterMap => "The high order function filter-map. Takes a predicate with one argument, 
+a function with one argument, and a list. Returns a new list whose elemenets are
+comprised of members of the original list for which the predicate is true 
+and to which the mapping function has been applied.",
+            Sort => "Sorts a list from least to greatest values. Takes one list.",
+            RangeList => "Returns a list, taking a beginning (a), an end (b), and optionally a step. 
+The default step is one, returning the range (a, b].",
+            Reverse => "Reverses a list. Takes one argument."
+        }
+    }
 }
 
 impl from_str::FromStr for XForms {
@@ -338,6 +475,12 @@ pub enum MatrixOps {
 
     PolygonArea,
 }
+
+impl Help for MatrixOps {
+    fn help<'a>(&self) -> MatrixOps {
+        MakeMatrix => "make-matrix takes one argument, a list of lists. Each list represents a row,
+and every list must be of equal length.",
+        
 
 impl fmt::Show for MatrixOps {
     #[inline]
@@ -550,6 +693,16 @@ impl from_str::FromStr for OperatorType {
             "text-graph" => Some(TextGraph),
             "help" => Some(Help),
             _ => None
+        }
+    }
+}
+
+impl Help for OperatorType {
+    fn help<'a>(&self) -> &'a str {
+        match *self {
+            Arithmetic(x) => x.help(),
+            Transcend(x) => x.help(),
+            _ => "lol"
         }
     }
 }
