@@ -365,7 +365,11 @@ impl<'a> LiteralType {
         let one: BigRational = num::one();
         let half = one / (one + one);
         let x = try!(self.to_bignum());
-        Ok(BigNum((x + half).floor()))
+        if x > num::zero() {
+            Ok(BigNum((x + half).floor()))
+        } else {
+            Ok(BigNum((x - half).floor()))
+        }
     }
 }
 
