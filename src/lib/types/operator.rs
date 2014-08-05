@@ -753,9 +753,9 @@ impl Help for OperatorType {
             Listings(x) => x.help(),
             TransForms(x) => x.help(),
             MatrixStuff(x) => x.help(),
-//            RecOps => x.help(),
             RecOps(_) => "No documentation at this time. Future tbd.",
-            Pow => "The power operator. Takes two terms.",
+            Pow => "The power operator. Takes two terms, the first being the base and the second is 
+the power to which it is raised.",
             Quote => "This isn't correct right now.",
             Define => "Define a variable. You can define it as another variable, 
 or the result of a function, or as a function.",
@@ -766,10 +766,9 @@ and as many lists are there are arguments.",
             Query(x) => x.help(),
             TextGraph => "deprecated",
             Help => "The help function has the form (help term1, term2, term3...) and prints out
-examples of how operators are used. You can use help for individual operators
-for individual operators, and you can list operators by group with the 
-following terms: arithmetic, logic, trigonometry (or trig), and statistics
-(or stats). See also (help use)."
+examples of how operators are used. You can use help for individual operators, 
+and you can list operators by group with the following terms: 
+arithmetic, logic, and trigonometry (or trig). See also (help use)."
         }
     }
 }

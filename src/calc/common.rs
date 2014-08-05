@@ -28,7 +28,7 @@ points with fractional notation is disallowed, and the preferred method
 is either just an integer as a numerator or an explicit fraction. If you
 want to express the reciprocal of a number, either input it as 1/n, where n is
 a numeric literal, or as (/ n). Input as numbers with an explicit radix 
-is quite buggy due to the limitations of IEEE754.";
+is quite buggy due to the limitations of floating point numbers.";
 
     let arithmetic_help =
 "The arithmetic operators are +, -, *, /, %, and pow.
