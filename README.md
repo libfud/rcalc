@@ -37,8 +37,7 @@ which allow recursion are also present.
 rcalc will not be considered complete until it has the following:
 
 * limits
-* vectors, trees
-* help message for every feature, builtin function, and an interface for 
+* ~~help message for every feature, builtin function,~~ and an interface for 
 documenting user defined functions
 * graphing
 
@@ -49,9 +48,8 @@ documenting user defined functions
 * Arbitrary precision numbers
 * Trigonometric functions
 * Rational exponentiation
-* Matrices: dot product, inversion. Code present but not integrated yet for
-  minors, determinants, translations. Future work planned for Vectors,
-  Tensors, and quaternions.
+* Matrices: dot product, inversion, determinants, translations. 
+  Code present but not integrated yet for minors.
 * Boolean values, conditional statements and short circuiting operators
 * Comparisons for ordering and equality
 * Lists, constructing and destructuring, map, reduce, filter and sort
