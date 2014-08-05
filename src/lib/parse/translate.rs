@@ -7,7 +7,7 @@ use super::{CalcResult, Environment, Expression, ArgType, Atom, SExpr, LiteralTy
 use super::{Literal, LParen, RParen, Operator, Variable, Token};
 use super::tokenize::TokenStream;
 use super::sexpr;
-use super::literal::{List, Symbol, Proc};
+use super::literal::{Lit, List, Symbol, Proc};
 use super::sexpr::{BuiltIn, Function, ExprType};
 use super::operator::{Define, Lambda, Quote, Help, OperatorType};
 
@@ -62,12 +62,9 @@ pub fn lambda(tokens: &mut TokenStream<Token, ErrorKind>,
     
     let symbols = try!(get_symbols(tokens));
     let body = match try!(strip(tokens.next())) {
-        LParen => {
-            match tokens.rev(1) {
-                Ok(()) => { },
-                Err(()) => fail!("Unexpected truncation of expression")
-            }
-            try!(translate(tokens, env))
+        LParen => match tokens.rev(1) {
+            Ok(()) => try!(translate(tokens, env)),
+            Err(()) => fail!("Unexpected truncation of expression")
         },
         Variable(x) => Atom(Symbol(x)),
         Literal(x) => Atom(x),
@@ -85,9 +82,7 @@ pub fn lambda(tokens: &mut TokenStream<Token, ErrorKind>,
 
 pub fn expr_accumulator(tokens: &mut TokenStream<Token, ErrorKind>, 
                         env: &Env) -> CalcResult<Vec<ArgType>> {
-    use sexpr::Function;
-
-    let dummy_expr_type = Function("dummy".to_string());
+    let dummy_expr_type = sexpr::Function("dummy".to_string());
     let dumm_expr = try!(make_expr(dummy_expr_type, tokens, env));
     match tokens.rev(1) {
         Ok(()) => { },
@@ -108,20 +103,14 @@ pub fn define(tokens: &mut TokenStream<Token, ErrorKind>, env: &Env) -> CalcResu
     }
 
     let body = match try!(strip(tokens.next())) {
-        LParen => {
-            match tokens.rev(1) {
-                Ok(()) => { },
-                Err(()) => fail!("Unexpected truncation of expression")
-            }
-            try!(expr_accumulator(tokens, env))
+        LParen => match tokens.rev(1) {
+            Ok(()) => try!(expr_accumulator(tokens, env)),
+            Err(()) => fail!("Unexpected truncation of expression")
         },
         Variable(x) => vec!(Atom(Symbol(x))),
         Literal(x) => vec!(Atom(x)),
         Operator(x) => match x {
-            Quote => {
-                let list = try!(list_it(tokens, env));
-                vec!(Atom(List(list)))
-            },    
+            Quote => vec!(Atom(List(try!(list_it(tokens, env))))),
             _ => return Err(BadToken("Invalid body for define!".to_string())),
         },
         RParen => return Err(BadToken("unexpected rparen!".to_string()))
@@ -140,17 +129,10 @@ pub fn define(tokens: &mut TokenStream<Token, ErrorKind>, env: &Env) -> CalcResu
 pub fn handle_operator(tokens: &mut TokenStream<Token, ErrorKind>, env: &Env,
                        top_expr: &ExprType, op: OperatorType) -> Expr {
     match *top_expr {
-        sexpr::BuiltIn(Help) => {
-            Ok(Atom(Symbol(op.to_string())))
-        },
-
+        sexpr::BuiltIn(Help) => Ok(Atom(Symbol(op.to_string()))),
         _   => match op {
-            Quote => {
-                let list = try!(list_it(tokens, env));
-                Ok(Atom(List(list)))
-            },
-            
-            _ => return Err(BadToken(format!("Operator in wrong place: {}", op)))
+            Quote => Ok(Atom(List(try!(list_it(tokens, env))))),
+            _ => Err(BadToken(format!("Operator in wrong place: {}", op)))
         }
     }
 }
@@ -164,17 +146,11 @@ pub fn arg_accumulator(etype: &ExprType, tokens: &mut TokenStream<Token, ErrorKi
 
         match token {
             Variable(var) => args.push(Atom(Symbol(var))),
-            LParen => {
-                match tokens.rev(1) {
-                    Ok(()) => { },
-                    Err(()) => fail!("Unexpected truncation of expression")
-                }
-                let sub_expr = try!(translate(tokens, env));
-                args.push(sub_expr);
-            },
-            RParen => {
-                return Ok(args)
-            }
+            LParen => args.push( match tokens.rev(1) {
+                Ok(()) => try!(translate(tokens, env)),
+                Err(()) => fail!("Unexpected truncation of expression")
+            }),
+            RParen => return Ok(args),
             Operator(op) => args.push(try!(handle_operator(tokens, env, etype, op))),
             Literal(lit) => args.push(Atom(lit)),
         }
@@ -187,24 +163,18 @@ pub fn un_special(etype: ExprType, tokens: &mut TokenStream<Token, ErrorKind>,
     Ok(Expression::new(etype, args))
 }
 
-pub fn list_it(tokens: &mut TokenStream<Token, ErrorKind>, 
-               env: &Env) -> CalcResult<Vec<LiteralType>> {
+pub fn list_it(tokens: &mut TokenStream<Token, ErrorKind>, env: &Env) -> CalcResult<Vec<Lit>> {
     try!(begin_expr(tokens));
 
     let mut lit_vec: Vec<LiteralType> = Vec::new();
     loop {
         let token = try!(strip(tokens.next()));
         match token {
-            LParen => {
-                return Err(BadToken("Sorry, gotta pull this feature for now".to_string()))
-            }
+            LParen => return Err(BadToken("Sorry, gotta pull this feature for now".to_string())),
             Literal(lit_ty) => lit_vec.push(lit_ty),
             Variable(x) => lit_vec.push(try!(env.lookup(&x)).clone()),
             RParen => break,
-            Operator(Quote) => {
-                let sub_list = try!(list_it(tokens, env));
-                lit_vec.push(List(sub_list));
-            },
+            Operator(Quote) => lit_vec.push(List(try!(list_it(tokens, env)))),
             _ => return Err(BadToken(format!("Invalid token for list {}", token))),
         }
     }
@@ -213,22 +183,18 @@ pub fn list_it(tokens: &mut TokenStream<Token, ErrorKind>,
 }
         
 
-pub fn make_expr(etype: ExprType, tokens: &mut TokenStream<Token, ErrorKind>,
-                 env: &Env) -> Expr {
+pub fn make_expr(etype: ExprType, tokens: &mut TokenStream<Token, ErrorKind>, env: &Env) -> Expr {
 
     match etype {
-        sexpr::BuiltIn(Define)    => define(tokens, env),
-        sexpr::BuiltIn(Lambda)    => {
+        sexpr::BuiltIn(Define) => define(tokens, env),
+        sexpr::BuiltIn(Lambda) => {
             let (symbols, body) = try!(lambda(tokens, env));
             match body {
                 Atom(_) => Ok(body),
                 SExpr(x) => Ok(Atom(Proc(symbols, x))),
             }
         }, 
-        sexpr::BuiltIn(Quote)     => {
-            let list = try!(list_it(tokens, env));
-            Ok(Atom(List(list)))
-        },
+        sexpr::BuiltIn(Quote) => Ok(Atom(List(try!(list_it(tokens, env))))),
         _  => Ok(SExpr(try!(un_special(etype, tokens, env))))
     }
 }

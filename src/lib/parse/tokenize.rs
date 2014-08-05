@@ -23,14 +23,11 @@ impl<T, U: Clone> TokenStream<T, U> {
         if self.index + j == self.expr.len() {
             return None
         } else {
-            if self.expr.as_slice().slice_from(
-                self.index).chars().next().unwrap().is_whitespace() {
-                
+            if self.expr.as_slice().slice_from(self.index).chars().next().unwrap().is_whitespace() {
                 self.peek_helper(j + 1)
             } else {
-                let (token, _) = analyze(self.expr.as_slice().slice_from(
-                    self.index + j), self.rules.as_slice(), &self.on_err);
-
+                let (token, _) = analyze(self.expr.as_slice().slice_from(self.index + j), 
+                                         self.rules.as_slice(), &self.on_err);
                 token
             }
         }
@@ -67,9 +64,7 @@ impl<T, U: Clone> Iterator<Result<T, U>> for TokenStream<T, U> {
         if self.index == self.expr.len() {
             return None
         } else {
-            if self.expr.as_slice().slice_from(
-                self.index).chars().next().unwrap().is_whitespace() {
-                
+            if self.expr.as_slice().slice_from(self.index).chars().next().unwrap().is_whitespace() {
                 self.index += 1;
                 self.next()
             } else {
@@ -93,8 +88,8 @@ impl<T, U: Clone> Iterator<Result<T, U>> for TokenStream<T, U> {
     }
 }
 
-pub fn analyze<T, U: Clone>(expr: &str, funs: &[fn(&str) -> MaybeToken<T, U>], on_err: &U) -> 
-    MaybeToken<T, U> {
+pub fn analyze<T, U: Clone>(expr: &str, funs: &[fn(&str) -> MaybeToken<T, U>], 
+                            on_err: &U) -> MaybeToken<T, U> {
 
     for &fun in funs.iter() {
         let (token, len) = fun(expr);
@@ -103,6 +98,5 @@ pub fn analyze<T, U: Clone>(expr: &str, funs: &[fn(&str) -> MaybeToken<T, U>], o
         }
     }
 
-//    (Some(Err(BadToken(format!("Unrecognized token: {}", word)))), 0);
     (Some(Err(on_err.clone())), 0)
 }

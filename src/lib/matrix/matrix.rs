@@ -12,7 +12,7 @@ use fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRigh
 #[cfg(not(use_fancy))]
 use not_fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
 
-pub mod tensor;
+//pub mod tensor;
 
 #[cfg(test)]
 mod tests;
@@ -76,7 +76,7 @@ impl<T: fmt::Show > fmt::Show for Matrice<T> {
         let mut col_widths: Vec<uint> = Vec::new();
 
         for column in range(0, self.columns) {
-            let mut col = Vec::new();
+            let mut col = Vec::with_capacity(self.rows);
             for row in range(0, self.rows) {
                 col.push(self.elems[column + row * self.columns].to_string());
             }
@@ -120,7 +120,6 @@ impl<T> Matrice<T> {
     #[inline]
     pub fn scalar(&self, rhs: &T, op: |&T, &T| -> T) -> Matrice<T> {
         let new_elems = self.elems.iter().map(|lhs| op(lhs, rhs)).collect();
-
         Matrice { columns: self.columns, rows: self.rows, elems: new_elems }
     }
 
@@ -166,8 +165,7 @@ impl<T> Matrice<T> {
     #[inline]
     pub fn right_diag<'a>(&'a self) -> MatriceIterator<'a, T> {
         MatriceIterator {
-            elems: self.elems.slice(self.columns - 1,
-                                    (self.rows - 1) * self.columns + 1),
+            elems: self.elems.slice(self.columns - 1, (self.rows - 1) * self.columns + 1),
             jump: self.columns - 1
         }
     }
@@ -181,17 +179,13 @@ impl<T> Matrice<T> {
         }
 
         let (small, big) = (cmp::min(row_a, row_b), cmp::max(row_a, row_b));
-
-        let cols = self.columns;
-
-        let (low, high ) = self.elems.mut_split_at(big * cols);
-        let low = low.mut_slice(small * cols, (small + 1) * cols);
-        let high = high.mut_slice_to(cols);
+        let (low, high ) = self.elems.mut_split_at(big * self.columns);
+        let low = low.mut_slice(small * self.columns, (small + 1) * self.columns);
+        let high = high.mut_slice_to(self.columns);
 
         for (low_elem, high_elem) in low.mut_iter().zip(high.mut_iter()) {
             mem::swap(low_elem, high_elem);
         }
-
         Ok(())
     }
 }
@@ -241,7 +235,7 @@ impl<T: Clone> Matrice<T> {
         if other.len() != self.rows {
             Err(BadDimensionality)
         } else {
-            let mut new_elems = Vec::new();
+            let mut new_elems = Vec::with_capacity(self.elems.len() + other.len());
             for n in range(0, self.rows) {
                 new_elems.extend(self.elems.iter().skip(n * self.columns)
                                  .take(self.columns).map(|x| x.clone()));
@@ -262,10 +256,6 @@ impl<T: Clone> Matrice<T> {
     pub fn submatrix(&self, ofsx: uint, ofsy: uint, 
                      rows: uint, cols: uint) -> Option<Matrice<T>> {
         if ofsx + cols > self.columns || ofsy + rows > self.rows {
-            println!("{} + {} = {}. Columns = {}. {} + {} = {}. Rows = {}",
-                     ofsx, cols, ofsx + cols, self.columns,
-                     ofsy, rows, ofsy + rows, self.rows);
-            println!("Returning none from submatrix");
             return None
         }
 
@@ -283,8 +273,7 @@ impl<T: Clone> Matrice<T> {
             return None
         }
 
-        let mut new_elems: Vec<T> = Vec::with_capacity(self.rows * 2 * (self.columns
-                                                                        + other.columns));
+        let mut new_elems = Vec::with_capacity(self.rows * 2 * (self.columns + other.columns));
         for n in range(0, self.rows) {
             new_elems.extend(self.get_row(n).take(self.columns).map(|x| x.clone()));
             new_elems.extend(other.get_row(n).take(other.columns).map(|x| x.clone()));
@@ -299,8 +288,7 @@ impl<T: Clone> Matrice<T> {
             return None
         }
 
-        let mut new_elems: Vec<T> = Vec::with_capacity(self.cols() * 2 * 
-                                                       (self.rows + other.rows));
+        let mut new_elems = Vec::with_capacity(self.cols() * 2 * (self.rows + other.rows));
         new_elems.push_all(self.elems.as_slice());
         new_elems.push_all(other.elems.as_slice());
         
@@ -337,7 +325,7 @@ impl<T: Clone> Matrice<T> {
 
     #[inline]
     pub fn decross(&self, omit_row: uint, omit_col: uint) -> Matrice<T> {
-        let mut new_elems: Vec<T> = Vec::new();
+        let mut new_elems = Vec::new();
         for row in range(0, self.rows) {
             if row + 1 == omit_row {
                 continue
@@ -350,19 +338,19 @@ impl<T: Clone> Matrice<T> {
             }
         }
 
-        let new_rows = if omit_row == 0 || omit_row > self.rows {
-            self.rows
-        } else {
-            self.rows - 1
-        };
-        
-        let new_cols = if omit_col == 0 || omit_col > self.columns {
-            self.columns
-        } else {
-            self.columns - 1
-        };
-
-        Matrice { rows: new_rows, columns: new_cols, elems: new_elems }
+        Matrice { 
+            rows: if omit_row == 0 || omit_row > self.rows {
+                self.rows
+            } else {
+                self.rows - 1
+            },
+            columns: if omit_col == 0 || omit_col > self.columns {
+                self.columns
+            } else {
+                self.columns - 1
+            },
+            elems: new_elems
+        }
     }
 }
 
@@ -493,11 +481,9 @@ impl<T: Num + PartialOrd + Clone + fmt::Show> Matrice<T> {
             let divisor = upper.elems[row * self.columns + row].clone();
 
             for next_row in range(row + 1, self.rows) {
-                let n_row = next_row * self.columns;
-                let lower_elt = upper.elems[n_row + row] / divisor;
+                let lower_elt = upper.elems[next_row * self.columns + row] / divisor;
 
-                let new_row: Vec<T> = upper.get_row(next_row).zip(
-                    upper.get_row(row))
+                let new_row: Vec<T> = upper.get_row(next_row).zip(upper.get_row(row))
                     .map(|(x, y)| *x - (*y * lower_elt)).collect();
 
                 match upper.set_row(next_row, new_row) {
@@ -517,38 +503,6 @@ impl<T: Num + PartialOrd + Clone + fmt::Show> Matrice<T> {
         }
     }
 
-    /// Passing zero as an argument for row and column returns the same
-    /// matrix. Passing arguments greater than the number of rows & columns
-    /// also returns the same matrix.
-    pub fn sans_row_col<'a>(&'a self, omit_row: uint, omit_col: uint) -> Matrice<&'a T> {
-        let mut new_elems: Vec<&'a T> = Vec::new();
-        for row in range(0, self.rows) {
-            if row + 1 == omit_row {
-                continue
-            }
-            for col in range(0, self.columns) {
-                if col + 1 == omit_col {
-                    continue
-                } 
-                new_elems.push(&self.elems[row * self.columns + col]);
-            }
-        }
-
-        let new_rows = if omit_row == 0 || omit_row > self.rows {
-            self.rows
-        } else {
-            self.rows - 1
-        };
-        
-        let new_cols = if omit_col == 0 || omit_col > self.columns {
-            self.columns
-        } else {
-            self.columns - 1
-        };
-
-        Matrice { rows: new_rows, columns: new_cols, elems: new_elems }
-    }
-
     #[inline]
     pub fn transpose(&self) -> Matrice<T> {
         let mut new_elems = Vec::with_capacity(self.elems.len());
@@ -566,7 +520,6 @@ impl<T: Num + PartialOrd + Clone + fmt::Show> Matrice<T> {
         }
 
         let mut new_elems = Vec::with_capacity(self.elems.len());
-
         for row in range(0, self.rows) {
             new_elems.extend(self.get_row(row).map(|x| *x + other[row]))
         }
@@ -585,10 +538,7 @@ impl<T: Num + PartialOrd + Clone + fmt::Show> Matrice<T> {
         for row in range(0, self.rows) {
             for column in range(0, self.cols()) {
                 let submatrix = self.decross(row + 1, column + 1);
-                minors.push(match submatrix.determinant() {
-                    Some(x) => x,
-                    None => return None
-                });
+                minors.push(submatrix.determinant().unwrap_or(return None));
             }
         }
 
@@ -603,8 +553,7 @@ impl<T: Num + PartialOrd + Clone + fmt::Show> Matrice<T> {
             return Some(self.clone())
         } else if self.rows == 1 {
             let one: T = num::one();
-            return Some( Matrice { rows: 1, columns: 1,
-                                   elems: vec!(one / self.elems[0])})
+            return Some( Matrice { rows: 1, columns: 1, elems: vec!(one / self.elems[0])})
         }
 
         let mut minors = match self.minors() {
@@ -700,13 +649,11 @@ impl<T: Num + SquareRoot<T>> Matrice<T> {
     #[inline]
     pub fn cross_prod(&self, other: &Matrice<T>) -> Option<Matrice<T>> {
         match ((self.rows, self.columns), (other.rows, other.columns)) {
-            ((1, 3), (1, 3)) |
-            ((3, 1), (3, 1)) => {
-                Some(Matrice { 
-                    rows: self.rows, columns: self.columns, elems:
-                    vec!(self.elems[1] * other.elems[2] - self.elems[2] * other.elems[1],
-                         self.elems[2] * other.elems[0] - self.elems[0] * other.elems[2],
-                         self.elems[0] * other.elems[1] - self.elems[1] * other.elems[0])
+            ((1, 3), (1, 3)) | ((3, 1), (3, 1)) => {
+                Some(Matrice { rows: self.rows, columns: self.columns, elems:
+                               vec!(self.elems[1] * other.elems[2] - self.elems[2] * other.elems[1],
+                                    self.elems[2] * other.elems[0] - self.elems[0] * other.elems[2],
+                                    self.elems[0] * other.elems[1] - self.elems[1] * other.elems[0])
                 })
             },
             (_, _) => None
@@ -742,7 +689,6 @@ impl<T: Add<T, T>> Add<Matrice<T>, Matrice<T>> for Matrice<T> {
         let new_elems: Vec<T> = self.elems.iter().zip(other.elems.iter()).map(
             |(lhs, rhs)| *lhs + *rhs).collect();
 
-
         Matrice { columns: self.columns, rows: self.rows, elems: new_elems }
     }
 }
@@ -757,7 +703,6 @@ impl<T: Sub<T, T>> Sub<Matrice<T>, Matrice<T>> for Matrice<T> {
         let new_elems: Vec<T> = self.elems.iter().zip(other.elems.iter()).map(
             |(lhs, rhs)| *lhs - *rhs).collect();
 
-
         Matrice { columns: self.columns, rows: self.rows, elems: new_elems }
     }
 }
@@ -765,7 +710,6 @@ impl<T: Sub<T, T>> Sub<Matrice<T>, Matrice<T>> for Matrice<T> {
 impl<T: Num + Clone + fmt::Show> Neg<Matrice<T>> for Matrice<T> {
     #[inline]
     fn neg(&self) -> Matrice<T> {
-        use std::num;
         let one: T = num::one();
         self.scalar(&-one, |a, b| *a * *b)
     }

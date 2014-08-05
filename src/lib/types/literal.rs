@@ -11,6 +11,9 @@ use std::num;
 use std::num::{Zero, One};
 use std::fmt;
 
+pub type Lit = LiteralType;
+pub type LitRes =  CalcResult<LiteralType>;
+
 #[deriving(Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub enum LiteralType {
     Boolean(bool),
@@ -69,9 +72,7 @@ impl<'a> fmt::Show for WithEnv<'a> {
                 }));
             },
             &Matrix(ref m) => try!(write!(fmt, "{}", m)),
-            &Proc(ref args, ref expr) => {
-                try!(write!(fmt, "Procedure: parameters: {}, body: {}", args, expr))
-            },
+            &Proc(ref a, ref e) => try!(write!(fmt, "Procedure: parameters: {}, body: {}", a, e)),
             &Proto(ref p) => try!(write!(fmt, "{}", p)),
             &Structure(ref rec) => try!(write!(fmt, "{}", rec)),
             &Symbol(ref s) => try!(write!(fmt, "{} {}", s, match self.env.lookup(s) {
@@ -103,9 +104,7 @@ impl fmt::Show for LiteralType {
             }
             Matrix(ref m) => try!(write!(fmt, "{}", m)),
             Structure(ref rec) => try!(write!(fmt, "{}", rec)),
-            Proc(ref args, ref expr) => {
-                try!(write!(fmt, "Procedure: parameters: {}, body: {}", args, expr))
-            },
+            Proc(ref a, ref e) => try!(write!(fmt, "Procedure: parameters: {}, body: {}", a, e)),
             Proto(ref p) => try!(write!(fmt, "{}", p)),
             Symbol(ref s) => try!(write!(fmt, "{}", s)),
             Void => ()
@@ -330,7 +329,7 @@ impl<'a> LiteralType {
         use self::num::integer::Integer;
 
         match self {
-            &BigNum(ref x) => Ok(x.is_integer() &&x.numer().is_even()),
+            &BigNum(ref x) => Ok(x.is_integer() && x.numer().is_even()),
             x => Err(UnexpectedVal("BigNum".to_string(), x.to_string()))
         }
     }
@@ -372,9 +371,6 @@ impl<'a> LiteralType {
         }
     }
 }
-
-pub type Lit = LiteralType;
-pub type LitRes =  CalcResult<LiteralType>;
 
 impl Num for Lit { }
 
@@ -492,7 +488,7 @@ impl SquareRoot<Lit> for Lit {
         let one: Lit = num::one();
         let two = one + one;
         let sixteen = (two + two) * (two + two);
-        let epsilon = *self / (sixteen * sixteen * sixteen * (one + one));
+        let epsilon = *self / (sixteen * sixteen * sixteen * two);
         //x / 8192
         
         //Well, I guess it's a guess.
