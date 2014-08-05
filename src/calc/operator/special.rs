@@ -5,7 +5,7 @@ extern crate types;
 use self::types::Expr;
 use self::types::literal::{Lit, Symbol, Void};
 use super::super::{Evaluate, BadArgType, BadNumberOfArgs};
-use super::{Args, Env, Environment, CalcResult, ArgType, Atom};
+use super::{Args, Env, Environment, CalcResult, Atom};
 
 type Lists = Vec<Vec<Lit>>;
 pub type Table = Vec<(Vec<String>, String)>;
@@ -83,7 +83,7 @@ fn table_writer(table: Table, name_lens: Vec<uint>, fn_len: uint) {
     }
 }
 
-pub fn table(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {    
+pub fn table(args: &Args, env: &mut Env) -> CalcResult {    
     if args.len() < 2 {
         return Err(BadNumberOfArgs("table".to_string(), "at least".to_string(), 2))
     }
@@ -117,7 +117,7 @@ pub fn table(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
     Ok(Atom(Void))
 }
 
-pub fn table_from_matrix(args: &Vec<ArgType>, env: &mut Env) -> CalcResult {
+pub fn table_from_matrix(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() != 2 {
         return Err(BadNumberOfArgs("table-from-matrix".to_string(), "only".to_string(), 2))
     }

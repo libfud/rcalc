@@ -2,7 +2,7 @@
 
 extern crate types;
 
-pub use super::{ArgType, Args, Atom, CalcResult, SExpr, Env, Environment, Void};
+pub use super::{Args, Atom, CalcResult, SExpr, Env, Environment, Void};
 use self::types::operator::*;
 use super::matrice::matrix_ops;
 
