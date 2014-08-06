@@ -16,3 +16,5 @@ default.txt
 *.o
 *.metadata
 *.bc
+*.png
+*.fingerprint

@@ -16,50 +16,55 @@ pub type Table = Vec<(Vec<String>, String)>;
 ///takes a function, beginning for x axis, y axis, and how many units to draw, and filename
 pub fn graph(args: &Args, env: &mut Env) -> CalcResult {
     use std::num;
-    use std::iter::range_step;
+    use std::iter::{range_step};
 
     if args.len() < 8 {
-        return Err(BadNumberOfArgs("graph".to_string(), "only".to_string(), 8))
+        return Err(BadNumberOfArgs("graph".to_string(), "at least".to_string(), 8))
+    } else if args.len() > 10 {
+        return Err(BadNumberOfArgs("graph".to_string(), "at most".to_string(), 10))
     }
 
     let (names, func) = try!(try!(args[0].desymbolize(env)).to_proc());
     let (begin_x, begin_y) = (try!(args[1].desymbolize(env)), try!(args[2].desymbolize(env)));
     let (width, height) = (try!(args[3].desymbolize(env)), try!(args[4].desymbolize(env)));
-    let (x_zoom, y_zoom) = (try!(args[5].desymbolize(env)), try!(args[6].desymbolize(env)));
+    let step = try!(args[5].desymbolize(env));
+    let zoom = try!(args[6].desymbolize(env));
     let filepath = try!(try!(args[7].arg_to_literal(env)).to_sym_string());
+    let imgx = if args.len() > 8 {
+        (try!(try!(args[8].desymbolize(env)).to_uint()) as u32)
+    } else {
+        1024u32
+    };
+    let imgy = if args.len() == 10 {
+        (try!(try!(args[9].desymbolize(env)).to_uint()) as u32)
+    } else {
+        1024u32
+    };
 
     if names.len() != 1 {
-        return Err(BadArgType("No!".to_string()))
+        return Err(BadArgType("Only graph functions taking one argument".to_string()))
     }
 
-    if [&width, &height, &x_zoom, &y_zoom].iter().any(|x| **x < num::zero() || 
-                                                      x.is_integer() == Ok(false)) {
-        return Err(BadArgType("No!".to_string()))
+    if [&width, &height].iter().any(|x| **x < num::zero()) {
+        return Err(BadArgType("Width and height must be positive.".to_string()))
     }
 
-    let imgx = 1024;
-    let imgy = 1024;
     let mut imgbuf = self::image::ImageBuf::new(imgx, imgy);
-
-    let one: Lit = num::one();
-    let two = one + one;
-    let eight = two * two * two;
-    let step = x_zoom / eight;
-
     let mut child_env = Environment::new_frame(env);
+    let mut counter = 0;
     for x in range_step(begin_x.clone(), begin_x + width, step) {
         child_env.symbols.insert(names[0].clone(), x.clone());
-        let result = try!(try!(func.eval(&mut child_env)).desymbolize(env));
+        let result = try!(try!(func.eval(&mut child_env)).desymbolize(env)) * zoom;
 
-        let pixel = image::Luma(255);
-        let this_x = try!((x - begin_x).to_uint()) as u32;
-        let this_y = try!((result - begin_y).to_uint()) as u32;
-        if this_y < 1024 {
-            imgbuf.put_pixel(this_x, 1024 - this_y, pixel);
+        if result > begin_y && result < begin_y + height {
+            let pixel = image::Luma(255); 
+            let y = try!((begin_y + height - result).to_uint()) as u32;
+            imgbuf.put_pixel(counter, y, pixel);
         }
+        counter += 1;
     }
 
-    let fout = File::create(&Path::new(filepath.append(".png").as_slice())).unwrap();
+    let fout = File::create(&Path::new(format!("{}{}{}","images/",filepath,".png").as_slice())).unwrap();
     let _ = image::ImageLuma8(imgbuf).save(fout, image::PNG);
 
     Ok(Atom(Void))
