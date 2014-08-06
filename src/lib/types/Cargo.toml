@@ -1,0 +1,10 @@
+[package]
+
+name = "types"
+version = "0.1.0"
+authors = [ "libfud" ]
+
+[[lib]]
+
+[dependencies.matrix]
+path = "src/lib/matrix"

@@ -1,0 +1,10 @@
+[package]
+
+name = "parse"
+version = "0.1.0"
+authors = [ "libfud" ]
+
+[[lib]]
+
+[dependencies.types]
+path = "src/lib/types"

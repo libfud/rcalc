@@ -583,9 +583,9 @@ pub enum Introspect {
 impl Help for Introspect {
     fn help<'a>(&self) -> &'a str {
         match *self {
-            BoolQ => "Determines if the term is a boolean value.",
+            BoolQ   => "Determines if the term is a boolean value.",
             LambdaQ => "Determines if the term is a procedure.",
-            ListQ => "Determines if the term is a list.",
+            ListQ   => "Determines if the term is a list.",
             MatrixQ => "Determines if the term is a matrix.",
             NumberQ => "Determines if the term is a number.",
             StructQ => "Determines if the term is a struct.",
@@ -598,8 +598,8 @@ impl fmt::Show for Introspect {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match *self {
-            BoolQ => "bool?",
-            ListQ => "list?",
+            BoolQ   => "bool?",
+            ListQ   => "list?",
             MatrixQ => "matrix?",
             NumberQ => "number?",
             LambdaQ => "lambda?",
@@ -616,9 +616,9 @@ impl from_str::FromStr for Introspect {
         match s {
             "symbol?" => Some(SymbolQ),
             "number?" => Some(NumberQ),
-            "bool?" => Some(BoolQ),
+            "bool?"   => Some(BoolQ),
             "matrix?" => Some(MatrixQ),
-            "list?" => Some(ListQ),
+            "list?"   => Some(ListQ),
             "lambda?" => Some(LambdaQ),
             "struct?" => Some(StructQ),
             _ => None
@@ -628,48 +628,48 @@ impl from_str::FromStr for Introspect {
 
 #[deriving(Clone, PartialOrd, PartialEq, Eq, Ord)]
 pub enum OperatorType {
-    Arithmetic(Arith),
     Pow,
-    Transcend(Transcendental),
-    Ordering(OrderEq),
-    RoundIdent(RoundId),
-    Logic(Gate),
-    Quote, 
-    Listings(ListOps),
-    TransForms(XForms),
+    Help,
+    Graph,
+    Table, 
+    Quote,
     Define,
     Lambda,
-    Table, 
+    Logic(Gate),
     TableFromMatrix,
-    MatrixStuff(MatrixOps),
     RecOps(RecordOps),
+    Arithmetic(Arith),
+    Listings(ListOps),
+    Ordering(OrderEq),
     Query(Introspect),
-    TextGraph,
-    Help,
+    TransForms(XForms),
+    RoundIdent(RoundId),
+    MatrixStuff(MatrixOps),
+    Transcend(Transcendental),
 }
 
 impl fmt::Show for OperatorType {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match *self {
-            Arithmetic(ref x) => x.to_string(),
-            Transcend(ref x) => x.to_string(),
-            Ordering(ref x) => x.to_string(),
-            RoundIdent(ref x) => x.to_string(),
-            Logic(ref x) => x.to_string(),
-            Listings(ref x) => x.to_string(),
-            TransForms(ref x) => x.to_string(),
+            Pow                => "pow".to_string(),
+            Help               => "help".to_string(),
+            Graph              => "graph".to_string(),
+            Table              => "table".to_string(),
+            Quote              => "'".to_string(),
+            Define             => "define".to_string(),
+            Lambda             => "lambda".to_string(),
+            Logic(ref x)       => x.to_string(),
+            Query(ref x)       => x.to_string(),
+            RecOps(ref x)      => x.to_string(),
+            Ordering(ref x)    => x.to_string(),
+            Listings(ref x)    => x.to_string(),
+            Transcend(ref x)   => x.to_string(),
+            Arithmetic(ref x)  => x.to_string(),
+            RoundIdent(ref x)  => x.to_string(),
+            TransForms(ref x)  => x.to_string(),
             MatrixStuff(ref x) => x.to_string(),
-            RecOps(ref x) => x.to_string(),
-            Pow => "pow".to_string(),
-            Quote => "'".to_string(),
-            Define => "define".to_string(),
-            Lambda => "lambda".to_string(),
-            Table => "table".to_string(),
-            TableFromMatrix => "table-from-matrix".to_string(),
-            Query(ref x) => x.to_string(),
-            TextGraph => "text-graph".to_string(),
-            Help => "help".to_string(),
+            TableFromMatrix    => "table-from-matrix".to_string(),
         }));
         Ok(())
     }
@@ -735,7 +735,7 @@ impl from_str::FromStr for OperatorType {
             "quote" | "'" => Some(Quote),
             "table" => Some(Table),
             "table-from-matrix" => Some(TableFromMatrix),
-            "text-graph" => Some(TextGraph),
+            "graph" => Some(Graph),
             "help" => Some(Help),
             _ => None
         }
@@ -764,7 +764,7 @@ or the result of a function, or as a function.",
 and as many lists are there are arguments.",
             TableFromMatrix => "Takes a fuction with one fewer argument than the matrix has columns.",
             Query(x) => x.help(),
-            TextGraph => "deprecated",
+            Graph => "graph takes 8 args, a function, (x, y) orig, width, len, {x,y}-zoom and filename.",
             Help => "The help function has the form (help term1, term2, term3...) and prints out
 examples of how operators are used. You can use help for individual operators, 
 and you can list operators by group with the following terms: 

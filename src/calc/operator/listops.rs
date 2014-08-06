@@ -26,14 +26,10 @@ pub fn list_ops(args: &Args, env: &mut Env, lop: ListOps) -> CalcResult {
 pub fn transform_ops(args: &Args, env: &mut Env, top: XForms) -> CalcResult {
     match top {
         Map => map(args, env),
-        Reduce |
-        Fold | 
-        FoldR => fold(args, env, top),
-        Filter |
-        FilterMap => filter_map(args, env, top),
+        Reduce | Fold | FoldR => fold(args, env, top),
+        Filter | FilterMap => filter_map(args, env, top),
         RangeList => rangelist(args, env), 
-        Sort |
-        Reverse => single(args, env, top),
+        Sort | Reverse => single(args, env, top),
     }
 }
 
