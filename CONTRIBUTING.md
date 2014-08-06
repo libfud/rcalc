@@ -54,3 +54,21 @@ a string, consider going to src/lib/parse and adding to the Token enum.
 If you do this, you'll also need to add a function which returns
 a MaybeToken<Token, ErrorKind> which matches against a static string,
 then adding it to the rules in the parse function.
+
+## Requesting a pull for a change
+
+I don't have a style guide written for rcalc yet. There's some existing
+inconsistencies that I should fix, but in general, if your code has the
+following traits, it works, and I think there's reason to include it,
+I'll merge it:
+
+* Lines are less than 120 characters long
+* Function signatures have the opening brace on the same line
+* Conditional statements have the opening brace on the same line,
+ code below, and a closing brace below the code. `else if` and `else`
+are written on the same line as the closing brace for the previous
+condition.
+* Variable names are descriptive unless it's very obvious what you're
+doing. Mapping/folding for iterators with one liners are examples
+where it may be appropriate to use short variable names, provided
+the object being iterated has a descriptive name.
