@@ -16,6 +16,13 @@ In order to build it, ensure that you have downloaded or built the latest nightl
 version of rust, the development headers for readline if you use linux, make sure
 you have the development headers for readline. Then run
 
+`cargo build`
+
+Ignore the errors for now. Until I can figure out what I'm doing wrong, just use
+it to build the library for rust-image (or install it some other way that you
+can link against it), and copy or move the library it builds to src/lib.
+Then run 
+
 `make`
 
 To run rcalc, just use
@@ -27,24 +34,16 @@ This will compile a binary file called rcalc.
 
 ## Goals
 
-rcalc is still immature, and lacks many features. It currently can perform
-the arithmatic operations (addition, subtraction, multiplication, and division),
-perform exponentiation with (some) rational integer exponents, and perform sine, 
-cosine and tangent functions. Additionally, ordering and equality for boolean 
-functions are present, as well as AND, OR and NOT. User defined functions
-which allow recursion are also present.
-
-rcalc will not be considered complete until it has the following:
-
-* limits
-* ~~help message for every feature, builtin function,~~ and an interface for 
-documenting user defined functions
-* graphing
+As far as I'm concerned, this is 1.0 now. I've got plans in the future for
+rcalc, but this is going to go into maintenance mode for a little while.
+I'll continue to keep up (or try to) with the latest rust nightlies,
+but I'm not going to actively develop this for a while.
 
 ## Features 
 
 (List not necessarily complete)
 
+* Graphing
 * Arbitrary precision numbers
 * Trigonometric functions
 * Rational exponentiation
