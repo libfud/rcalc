@@ -18,7 +18,7 @@ $(LIBDIR)/libtypes.dummy: $(TYPES_SRC) $(LIBDIR)/libmatrix.dummy
 	touch $@
 
 $(LIBDIR)/libmatrix.dummy: $(MATRIX_SRC)
-	$(RUSTC) $(LIBDIR)/matrix/matrix.rs -O --cfg use_fancy --out-dir $(LIBDIR)
+	$(RUSTC) $(LIBDIR)/matrix/matrix.rs  -O --cfg use_fancy --out-dir $(LIBDIR)
 	touch $@
 
 $(LIBDIR)/libparse.dummy: $(PARSE_SRC) $(LIBDIR)/libtypes.dummy
