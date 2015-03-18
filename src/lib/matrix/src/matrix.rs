@@ -6,18 +6,14 @@ extern crate num;
 use num::traits::{Num, Zero, One};
 use std::fmt;
 use std::cmp;
-//use std::num;
 use std::mem;
-use std::ops::{Add,Sub,Neg,Mul,Div};
-use std::iter::AdditiveIterator;
-use std::iter::repeat;
+use std::ops::{Add,Sub,Neg,Mul,Div,Deref};
+use std::iter::{repeat, AdditiveIterator};
 
 #[cfg(use_fancy)]
 use fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
 #[cfg(not(use_fancy))]
 use not_fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
-
-//pub mod tensor;
 
 #[cfg(test)]
 mod tests;
@@ -57,10 +53,10 @@ impl fmt::Display for MatrixErrors {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}",  match *self {
-            InvalidAxis => "Invalid axis",
+            MatrixErrors::InvalidAxis => "Invalid axis",
             MatrixErrors::MismatchedAxes => "Mismatched axes",
-            BadDimensionality => "Bad dimensionality",
-            BadMatrixOp => "Bad matrix operation",
+            MatrixErrors::BadDimensionality => "Bad dimensionality",
+            MatrixErrors::BadMatrixOp => "Bad matrix operation",
         }));
         Ok(())
     }
@@ -124,7 +120,7 @@ impl<T> Matrice<T> {
     }
 
     #[inline]
-    pub fn scalar<F: FnMut(T, T) -> T>(&self, rhs: &T, op: F) -> Matrice<T> {
+    pub fn scalar<F: Fn(T, T) -> T>(&self, rhs: &T, op: F) -> Matrice<T> {
         let new_elems = self.elems.iter().map(|lhs| op(*lhs, *rhs)).collect();
         Matrice { columns: self.columns, rows: self.rows, elems: new_elems }
     }
@@ -269,7 +265,7 @@ impl<T: Clone> Matrice<T> {
 
         let mut new_elems: Vec<T> = Vec::with_capacity(rows * cols);
         for n in range(ofsy, rows + ofsy) {
-            new_elems.extend(self.get_row(n).skip(ofsx).take(cols).map(|x: T| x.clone()));
+            new_elems.extend(self.get_row(n).skip(ofsx).take(cols).map(|x: &T| x.clone()));
         }
 
         Some(Matrice { columns: cols, rows: rows, elems: new_elems })
@@ -283,8 +279,8 @@ impl<T: Clone> Matrice<T> {
 
         let mut new_elems = Vec::<T>::with_capacity(self.rows * 2 * (self.columns + other.columns));
         for n in range(0, self.rows) {
-            new_elems.extend(self.get_row(n).take(self.columns).map(|x: T| x.clone()));
-            new_elems.extend(other.get_row(n).take(other.columns).map(|x: T| x.clone()));
+            new_elems.extend(self.get_row(n).take(self.columns).map(|x: &T| x.clone()));
+            new_elems.extend(other.get_row(n).take(other.columns).map(|x: &T| x.clone()));
         }
         Some(Matrice { columns: self.columns + other.columns, rows: self.rows,
                        elems: new_elems })
@@ -411,7 +407,7 @@ impl<T: Clone + Zero + One + PartialEq> Matrice<T> {
 }
 
 impl<'a, T: PartialOrd + Clone + fmt::Display + Zero + One + Sub<Output=T> + 
-    Div<Output=T> + Neg<Output=T>> Matrice<T> {
+    Div<Output=T> + Neg<Output=T> + Add<Output=T>> Matrice<T> {
     #[inline]
     pub fn trace(&self) -> Option<T> {
         if self.rows != self.columns {
@@ -442,8 +438,16 @@ impl<'a, T: PartialOrd + Clone + fmt::Display + Zero + One + Sub<Output=T> +
         let mut new_elems: Vec<T> = Vec::with_capacity(self.columns * other.rows);
         for row in range(0, self.rows) {
             for col in range(0, other.columns) {
-                new_elems.push(self.get_row(row).zip(other.get_col(col))
-                               .map(|(lhs, rhs): (&T, &T)| *lhs * *rhs).sum());
+//                new_elems.push(self.get_row(row).zip(other.get_col(col))
+//                               .map(|(lhs, rhs): (&'a T, &'a T)| *lhs * *rhs).sum());
+                let mut answer = num::zero();
+
+                for elemx in self.get_row(row) {
+                    for elemy in self.get_col(col) {
+                        answer = answer + *elemx * *elemy;
+                    }
+                }
+                new_elems.push(answer);
             }
         }
 
@@ -495,7 +499,7 @@ impl<'a, T: PartialOrd + Clone + fmt::Display + Zero + One + Sub<Output=T> +
                 let lower_elt = upper.elems[next_row * self.columns + row] / divisor;
 
                 let new_row: Vec<T> = upper.get_row(next_row).zip(upper.get_row(row))
-                    .map(|(x, y): (&T, &T)| *x - (*y * lower_elt)).collect();
+                    .map(|(x, y)| *x - (*y * lower_elt)).collect();
 
                 match upper.set_row(next_row, new_row) {
                     Ok(_) => { },
@@ -572,13 +576,23 @@ impl<'a, T: PartialOrd + Clone + fmt::Display + Zero + One + Sub<Output=T> +
             None => return None
         };
 
-        let determinant: T = range(0, self.columns).map(|n| {
+/*        let determinant: T = range(0, self.columns).map(|n| {
             if n % 2 == 0 {
                 self.elems[n] * minors.elems[n]
             } else {
                 -(self.elems[n] * minors.elems[n])
             }
         }).sum();
+*/
+
+        let mut determinant = num::zero();
+        for n in range(0, self.columns) {
+            if n % 2 == 0 {
+                determinant = determinant + self.elems[n] * minors.elems[n]
+            } else {
+                determinant = determinant - self.elems[n] * minors.elems[n]
+            }
+        }
 
         if determinant.is_zero() {
             return None
@@ -648,11 +662,16 @@ impl SquareRoot<f64> for f64 {
     }
 }
 
-impl<T: SquareRoot<T> + Mul<Output=T> + Sub<Output=T>> Matrice<T> {
+impl<T: SquareRoot<T> + Mul<Output=T> + Sub<Output=T> + Add<Output=T> + Zero> Matrice<T> {
     #[inline]
     pub fn euclid_norm(&self) -> Option<T> {
         if (self.rows == 1) ^ (self.cols() == 1) {
-            Some(self.elems.iter().map(|x| *x * *x).sum().sqrt())
+//            Some(self.elems.iter().map(|x| *x * *x).sum().sqrt())
+            let mut answer = num::zero();
+            for elem in self.elems.iter() {
+                answer = answer + *elem * *elem;
+            }
+            Some(answer)
         } else {
             None
         }
@@ -679,6 +698,8 @@ pub struct MatriceIterator<'a, T: 'a> {
 }
 
 impl<'a, T> Iterator for MatriceIterator<'a, T> {
+    type Item = &'a T;
+
     fn next(&mut self) -> Option<&'a T> {
         let val = self.elems.get(0);
         self.elems = self.elems.slice_from(cmp::min(self.jump, self.elems.len()));
@@ -692,7 +713,7 @@ impl<'a, T> Iterator for MatriceIterator<'a, T> {
 }
 
 //impl<T: Add> Add for Matrice<T> {
-impl<T: Add<T>> Add<Matrice<T>> for Matrice<T> {
+impl<T: Add<Output=T>> Add<Matrice<T>> for Matrice<T> {
     #[inline]
 
     type Output = Matrice<T>;
@@ -709,7 +730,7 @@ impl<T: Add<T>> Add<Matrice<T>> for Matrice<T> {
     }
 }
 
-impl<T: Sub> Sub for Matrice<T> {
+impl<T: Sub<Output=T>> Sub for Matrice<T> {
 //impl<T: Sub<T, T>> Sub<Matrice<T>, Matrice<T>> for Matrice<T> {
     #[inline]
 
@@ -727,7 +748,7 @@ impl<T: Sub> Sub for Matrice<T> {
     }
 }
 
-impl<T: Num> Neg for Matrice<T> {
+impl<T: Num + Neg<Output=T> + Mul<Output=T>> Neg for Matrice<T> {
 //impl<T: Num + Clone + fmt::Display> Neg<Matrice<T>> for Matrice<T> {
     #[inline]
     type Output = Matrice<T>;
@@ -737,3 +758,4 @@ impl<T: Num> Neg for Matrice<T> {
         self.scalar(&-one, |a, b| a * b)
     }
 }
+
