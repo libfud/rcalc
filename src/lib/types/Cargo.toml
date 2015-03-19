@@ -2,9 +2,9 @@
 
 name = "types"
 version = "0.1.0"
-authors = [ "libfud" ]
+authors = ["Dominick Allen <dominick.allen1989@gmail.com"]
 
-[[lib]]
+[lib]
 
-[dependencies.matrix]
-path = "src/lib/matrix"
+name = "types"
+
