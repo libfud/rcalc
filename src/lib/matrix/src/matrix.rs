@@ -1,5 +1,6 @@
 #![crate_name = "matrix"]
 #![crate_type = "lib"]
+#![feature(core,collections)]
 
 extern crate num;
 
@@ -7,35 +8,35 @@ use num::traits::{Num, Zero, One};
 use std::fmt;
 use std::cmp;
 use std::mem;
-use std::ops::{Add,Sub,Neg,Mul,Div,Deref};
-use std::iter::{repeat, AdditiveIterator};
+use std::ops::{Add,Sub,Neg,Mul,Div};
+use std::iter::repeat;
 
 #[cfg(use_fancy)]
-use fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
+use fancy::{UPPER_LEFT, UPPER_RIGHT, LOWER_LEFT, LOWER_RIGHT, MIDDLE_LEFT, MIDDLE_RIGHT};
 #[cfg(not(use_fancy))]
-use not_fancy::{UpperLeft, UpperRight, LowerLeft, LowerRight, MiddleLeft, MiddleRight};
+use not_fancy::{UPPER_LEFT, UPPER_RIGHT, LOWER_LEFT, LOWER_RIGHT, MIDDLE_LEFT, MIDDLE_RIGHT};
 
 #[cfg(test)]
 mod tests;
 
 #[cfg(use_fancy)]
 mod fancy {
-    pub static UpperLeft: &'static str = "⎡";
-    pub static UpperRight: &'static str = "⎤";
-    pub static LowerLeft: &'static str = "⎣";
-    pub static LowerRight: &'static str = "⎦";
-    pub static MiddleLeft: &'static str = "⎢";
-    pub static MiddleRight: &'static str = "⎥";
+    pub static UPPER_LEFT: &'static str = "⎡";
+    pub static UPPER_RIGHT: &'static str = "⎤";
+    pub static LOWER_LEFT: &'static str = "⎣";
+    pub static LOWER_RIGHT: &'static str = "⎦";
+    pub static MIDDLE_LEFT: &'static str = "⎢";
+    pub static MIDDLE_RIGHT: &'static str = "⎥";
 }
 
 #[cfg(not(use_fancy))]
 mod not_fancy {
-    pub static UpperLeft: &'static str = "[";
-    pub static UpperRight: &'static str = "]";
-    pub static LowerLeft: &'static str = "[";
-    pub static LowerRight: &'static str = "]";
-    pub static MiddleLeft:  &'static str = "|";
-    pub static MiddleRight: &'static str = "|";
+    pub static UPPER_LEFT: &'static str = "[";
+    pub static UPPER_RIGHT: &'static str = "]";
+    pub static LOWER_LEFT: &'static str = "[";
+    pub static LOWER_RIGHT: &'static str = "]";
+    pub static MIDDLE_LEFT:  &'static str = "|";
+    pub static MIDDLE_RIGHT: &'static str = "|";
 }
 
 
@@ -88,11 +89,11 @@ impl<T: fmt::Display > fmt::Display for Matrice<T> {
 
         for row in range(0, self.rows) {
             try!(write!(fmt, "{}", if row == 0 {
-                UpperLeft
+                UPPER_LEFT
             } else if row == self.rows - 1 {
-                LowerLeft
+                LOWER_LEFT
             } else {
-                MiddleLeft
+                MIDDLE_LEFT
             }));
             for col in range(0, self.columns) {
                 let len = columns[col][row].len(); // space and comma
@@ -101,11 +102,11 @@ impl<T: fmt::Display > fmt::Display for Matrice<T> {
                             c = if col != self.columns - 1 { "," } else { "" }));
             }
             try!(writeln!(fmt, "{}", if row == 0 {
-                UpperRight
+                UPPER_RIGHT
             } else if row == self.rows - 1 {
-                LowerRight
+                LOWER_RIGHT
             } else {
-                MiddleRight
+                MIDDLE_RIGHT
             }));
         }                
 
@@ -143,7 +144,8 @@ impl<T: Clone> Matrice<T> {
     #[inline]
     pub fn get_row<'a>(&'a self, row: usize) -> MatriceIterator<'a, T> {
         MatriceIterator { 
-            elems: self.elems.slice(row * self.columns, (row + 1) * self.columns),
+//            elems: self.elems.slice(row * self.columns, (row + 1) * self.columns),
+            elems: &self.elems[row * self.columns .. (row + 1) * self.columns],
             jump: 1
         }
     }
@@ -151,7 +153,8 @@ impl<T: Clone> Matrice<T> {
     #[inline]
     pub fn get_col<'a>(&'a self, col: usize) -> MatriceIterator<'a, T> {
         MatriceIterator {
-            elems: self.elems.slice_from(col),
+//            elems: self.elems.slice_from(col),
+            elems: &self.elems[col ..],
             jump: self.columns
         }
     }
@@ -167,7 +170,8 @@ impl<T: Clone> Matrice<T> {
     #[inline]
     pub fn right_diag<'a>(&'a self) -> MatriceIterator<'a, T> {
         MatriceIterator {
-            elems: self.elems.slice(self.columns - 1, (self.rows - 1) * self.columns + 1),
+//            elems: self.elems.slice(self.columns - 1, (self.rows - 1) * self.columns + 1),
+            elems: &self.elems[self.columns - 1 .. (self.rows - 1) * self.columns + 1],
             jump: self.columns - 1
         }
     }
@@ -182,8 +186,10 @@ impl<T: Clone> Matrice<T> {
 
         let (small, big) = (cmp::min(row_a, row_b), cmp::max(row_a, row_b));
         let (low, high ) = self.elems.split_at_mut(big * self.columns);
-        let low = low.slice_mut(small * self.columns, (small + 1) * self.columns);
-        let high = high.slice_to_mut(self.columns);
+//        let low = low.slice_mut(small * self.columns, (small + 1) * self.columns);
+        let low = &mut low[small * self.columns .. (small + 1) * self.columns];
+//        let high = high.slice_to_mut(self.columns);
+        let high = &mut high[.. self.columns];
 
         for (low_elem, high_elem) in low.iter_mut().zip(high.iter_mut()) {
             mem::swap(low_elem, high_elem);
@@ -654,13 +660,15 @@ pub trait SquareRoot<T> {
 
 impl SquareRoot<f32> for f32 {
     fn sqrt(&self) -> f32 {
-        self.sqrt()
+        std::num::Float::sqrt(*self)
+//        self.sqrt()
     }
 }
 
 impl SquareRoot<f64> for f64 {
     fn sqrt(&self) -> f64 {
-        self.sqrt()
+        std::num::Float::sqrt(*self)
+//        self.sqrt()
     }
 }
 
@@ -707,7 +715,8 @@ impl<'a, T> Iterator for MatriceIterator<'a, T> {
 
     fn next(&mut self) -> Option<&'a T> {
         let val = self.elems.get(0);
-        self.elems = self.elems.slice_from(cmp::min(self.jump, self.elems.len()));
+//        self.elems = self.elems.slice_from(cmp::min(self.jump, self.elems.len()));
+        self.elems = &self.elems[cmp::min(self.jump, self.elems.len()) ..];
         val
     }
 
@@ -753,7 +762,7 @@ impl<T: Sub<Output=T> + Clone> Sub for Matrice<T> {
     }
 }
 
-impl<T: Num + Neg<Output=T> + Mul<Output=T>> Neg for Matrice<T> {
+impl<T: Num + Neg<Output=T> + Mul<Output=T> + Clone> Neg for Matrice<T> {
 //impl<T: Num + Clone + fmt::Display> Neg<Matrice<T>> for Matrice<T> {
     #[inline]
     type Output = Matrice<T>;
