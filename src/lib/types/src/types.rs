@@ -1,14 +1,16 @@
 #![crate_name = "types"]
 #![crate_type = "lib"]
-#![feature(default_type_params)]
+#![feature(core,collections)]
 
 extern crate matrix;
 
 pub use self::matrix::MatrixErrors;
 pub use literal::{LiteralType, WithEnv};
-pub use sexpr::{ArgType, Atom, SExpr, Expression};
+pub use sexpr::ArgType;
+pub use sexpr::ArgType::{Atom, SExpr};
+pub use sexpr::Expression;
 pub use operator::OperatorType;
-use std::collections::hashmap::HashMap;
+use std::collections::HashMap;
 use std::fmt;
 
 pub mod sexpr;
@@ -21,39 +23,39 @@ pub type Env = Environment;
 pub type Args = Vec<ArgType>;
 pub type Expr = Expression;
 
-#[deriving(Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum ErrorKind {
     BadExpr,
     BadToken(String),
     BadPowerRange,
     BadFloatRange,
     MatrixErr(MatrixErrors),
-    BadNumberOfArgs(String, String, uint),
+    BadNumberOfArgs(String, String, usize),
     BadArgType(String),
     UnexpectedVal(String, String),
     UnboundArg(String),
 }
 
-impl fmt::Show for ErrorKind {
+impl fmt::Display for ErrorKind {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match *self {
-            BadArgType(ref x) => x.clone(),
-            BadExpr => "Malformed expression".to_string(),
-            BadToken(ref x) => x.clone(),
-            BadPowerRange => "Exponent too large for builtin `pow'!".to_string(),
-            BadFloatRange => "Number too large or precise for `exp' and `log'".to_string(),
-            MatrixErr(ref x) => x.to_string(),
-            BadNumberOfArgs(ref x, ref y, args) => format!("`{}' requires {} {} argument{}.", 
+            ErrorKind::BadArgType(ref x) => x.clone(),
+            ErrorKind::BadExpr => "Malformed expression".to_string(),
+            ErrorKind::BadToken(ref x) => x.clone(),
+            ErrorKind::BadPowerRange => "Exponent too large for builtin `pow'!".to_string(),
+            ErrorKind::BadFloatRange => "Number too large or precise for `exp' and `log'".to_string(),
+            ErrorKind::MatrixErr(ref x) => x.to_string(),
+            ErrorKind::BadNumberOfArgs(ref x, ref y, args) => format!("`{}' requires {} {} argument{}.", 
                         x, y, args, if args == 1 { "" } else { "" }),
-            UnexpectedVal(ref x, ref y) => format!("Expected {} but found {}", x, y),
-            UnboundArg(ref x) => format!("Error: Unbound variable `{}'", x),
+            ErrorKind::UnexpectedVal(ref x, ref y) => format!("Expected {} but found {}", x, y),
+            ErrorKind::UnboundArg(ref x) => format!("Error: Unbound variable `{}'", x),
         }));
         Ok(())
     }
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct Environment {
     pub symbols: HashMap<String, LiteralType>,
     pub parent: Option<Box<Environment>>
@@ -65,24 +67,24 @@ impl<'a> Environment {
     }
 
     pub fn new_frame(par: &Environment) -> Environment {
-        Environment { symbols: HashMap::new(), parent: Some(box par.clone()) }
+        Environment { symbols: HashMap::new(), parent: Some(Box::new(par.clone())) }
     }
 
     pub fn lookup(&'a self, var: &String) -> CalcResult<&'a LiteralType> {
-        match self.symbols.find(var) {
+        match self.symbols.get(var) {
             Some(val) => Ok(val),
             None      => match self.parent {
                 Some(ref par) => par.lookup(var),
-                None => Err(UnboundArg(var.clone()))
+                None => Err(ErrorKind::UnboundArg(var.clone()))
             }
         }
     }
 }
 
-impl fmt::Show for Environment {
+impl fmt::Display for Environment {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        try!(writeln!(fmt, "{}", self.symbols));
+        try!(writeln!(fmt, "{:?}", self.symbols));
         try!(write!(fmt, "Has {} parent.", if self.parent.is_some() { "a" } else { "no" }));
         Ok(())
     }

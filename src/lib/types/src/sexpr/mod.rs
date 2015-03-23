@@ -4,30 +4,30 @@ use std::fmt;
 
 use super::{LiteralType, Environment, OperatorType};
 
-#[deriving(Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Clone, PartialEq, PartialOrd, Eq, Ord, Debug)]
 pub enum ExprType {
     BuiltIn(OperatorType),
     Function(String)
 }
 
-impl fmt::Show for ExprType {
+impl fmt::Display for ExprType {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match *self {
-            BuiltIn(ref op) => op.to_string(),
-            Function(ref s) => s.clone(),
+            ExprType::BuiltIn(ref op) => op.to_string(),
+            ExprType::Function(ref s) => s.clone(),
         }));
         Ok(())
     }
 }
 
-#[deriving(Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Clone, PartialEq, PartialOrd, Eq, Ord, Debug)]
 pub struct Expression {
     pub expr_type: ExprType,
     pub args: Vec<ArgType>,
 }
 
-impl fmt::Show for Expression {
+impl fmt::Display for Expression {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "({} ", self.expr_type));
@@ -48,39 +48,43 @@ impl Expression {
     }
     pub fn to_symbol(&self, env: &Environment) -> String {
         let mut symbols = String::new();
-        symbols = symbols.append("(");
+        symbols.push_str("(");
         match self.expr_type {
-            Function(ref f) => {
-                symbols = symbols.append(f.as_slice());
+            ExprType::Function(ref f) => {
+                symbols.push_str(f.as_slice());
             }
-            BuiltIn(ref op) => {
-                symbols = symbols.append(op.to_string().append(" ").as_slice());
+            ExprType::BuiltIn(ref op) => {
+                //FIXME
+                let mut intermediate = op.to_string();
+                intermediate.push_str(" ");
+                symbols.push_str(intermediate.as_slice());
             }
         }
         for argument in self.args.iter() {
-            let arg = match argument {
-                &Atom(ref x) => x.to_string(),
-                &SExpr(ref x) => x.to_symbol(env),
+            let mut arg = match argument {
+                &ArgType::Atom(ref x) => x.to_string(),
+                &ArgType::SExpr(ref x) => x.to_symbol(env),
             };
-            symbols = symbols.append(arg.append(" ").as_slice());
+            arg.push_str(" ");
+            symbols.push_str(arg.as_slice());
         }
-        symbols = symbols.append(")");
+        symbols.push_str(")");
         symbols
     }
 }
 
-#[deriving(Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub enum ArgType {
     Atom(LiteralType),
     SExpr(Expression),
 }
 
-impl fmt::Show for ArgType {
+impl fmt::Display for ArgType {
     #[inline]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
-            &Atom(ref x)  => x.to_string(),
-            &SExpr(ref x) => x.to_string()
+            &ArgType::Atom(ref x)  => x.to_string(),
+            &ArgType::SExpr(ref x) => x.to_string()
         }));
         Ok(())
     }

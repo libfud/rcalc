@@ -8,3 +8,9 @@ authors = ["Dominick Allen <dominick.allen1989@gmail.com"]
 
 name = "types"
 
+[dependencies.matrix]
+path = "../matrix"
+
+[dependencies.num]
+version = "0.1.15"
+

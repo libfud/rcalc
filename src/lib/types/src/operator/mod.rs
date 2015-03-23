@@ -5,20 +5,20 @@ use std::str::FromStr;
 use super::record::RecordOps;
 
 #[cfg(use_fancy)]
-use self::fancy::{LessThanEq, GreaterThanEq};
+use self::fancy::{LESS_THAN_EQ, GREATER_THAN_EQ};
 #[cfg(not(use_fancy))]
-use self::not_fancy::{LessThanEq, GreaterThanEq};
+use self::not_fancy::{LESS_THAN_EQ, GREATER_THAN_EQ};
 
 #[cfg(use_fancy)]
 mod fancy {
-    pub static LessThanEq: &'static str = "≤";
-    pub static GreaterThanEq: &'static str = "≥";
+    pub static LESS_THAN_EQ: &'static str = "≤";
+    pub static GREATER_THAN_EQ: &'static str = "≥";
 }
 
 #[cfg(not(use_fancy))]
 mod not_fancy {
-    pub static LessThanEq: &'static str = "<=";
-    pub static GreaterThanEq: &'static str = ">=";
+    pub static LESS_THAN_EQ: &'static str = "<=";
+    pub static GREATER_THAN_EQ: &'static str = ">=";
 }
 
 pub trait Help {
@@ -64,6 +64,7 @@ impl fmt::Display for Arith {
 
 impl FromStr for Arith {
     #[inline]
+    type Err = ();
     fn from_str(s: &str) -> Result<Arith,()> {
         match s {
             "+" => Ok(Arith::Add),
@@ -133,6 +134,7 @@ impl fmt::Display for Transcendental {
 
 impl FromStr for Transcendental {
     #[inline]
+    type Err= ();
     fn from_str(s: &str) -> Result<Transcendental,()> {
         match s {
             "log"   => Ok(Transcendental::Log), 
@@ -183,8 +185,8 @@ impl fmt::Display for OrderEq {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(fmt, "{}", match self {
             &OrderEq::Eq => "=", &OrderEq::NEq => "!=",
-            &OrderEq::Lt => "<", &OrderEq::LtEq => LessThanEq,
-            &OrderEq::Gt => ">", &OrderEq::GtEq => GreaterThanEq
+            &OrderEq::Lt => "<", &OrderEq::LtEq => LESS_THAN_EQ,
+            &OrderEq::Gt => ">", &OrderEq::GtEq => GREATER_THAN_EQ
         }));
         Ok(())
     }
@@ -192,6 +194,7 @@ impl fmt::Display for OrderEq {
 
 impl FromStr for OrderEq {
     #[inline]
+    type Err = ();
     fn from_str(s: &str) -> Result<OrderEq,()> {
         match s {
             "<"  => Ok(OrderEq::Lt),
@@ -207,14 +210,14 @@ impl FromStr for OrderEq {
 
 impl<'a> OrderEq {
     #[inline]
-    pub fn to_ord<T: PartialOrd + PartialEq>(self) -> Box<&'a FnMut(T, T) -> bool> {
+    pub fn to_ord<T: PartialOrd + PartialEq>(self) -> Box<Fn(T, T) -> bool> {
         match self {
-            OrderEq::Eq => Box::new( |a: T, b: T| a == b),
-            OrderEq::NEq => |a: T, b: T| a != b,
-            OrderEq::Lt => |a: T, b: T| a < b,
-            OrderEq::LtEq => |a: T, b: T| a <= b,
-            OrderEq::Gt => |a: T, b: T| a > b,
-            OrderEq::GtEq => |a: T, b: T| a >= b,
+            OrderEq::Eq => Box::new(move |a: T, b: T| a == b),
+            OrderEq::NEq => Box::new(move |a: T, b: T| a != b),
+            OrderEq::Lt => Box::new(move |a: T, b: T| a < b),
+            OrderEq::LtEq => Box::new(move |a: T, b: T| a <= b),
+            OrderEq::Gt => Box::new(move |a: T, b: T| a > b),
+            OrderEq::GtEq => Box::new(move |a: T, b: T| a >= b),
          }
     }
 }
@@ -789,14 +792,14 @@ impl FromStr for OperatorType {
 impl Help for OperatorType {
     fn help<'a>(&self) -> &'a str {
         match *self {
-            OperatorType::Arithmetic(x) => x.help(),
-            OperatorType::Transcend(x) => x.help(),
-            OperatorType::Ordering(x) => x.help(),
-            OperatorType::RoundIdent(x) => x.help(),
-            OperatorType::Logic(x) => x.help(),
-            OperatorType::Listings(x) => x.help(),
-            OperatorType::TransForms(x) => x.help(),
-            OperatorType::MatrixStuff(x) => x.help(),
+            OperatorType::Arithmetic(ref x) => x.help(),
+            OperatorType::Transcend(ref x) => x.help(),
+            OperatorType::Ordering(ref x) => x.help(),
+            OperatorType::RoundIdent(ref x) => x.help(),
+            OperatorType::Logic(ref x) => x.help(),
+            OperatorType::Listings(ref x) => x.help(),
+            OperatorType::TransForms(ref x) => x.help(),
+            OperatorType::MatrixStuff(ref x) => x.help(),
             OperatorType::RecOps(_) => "No documentation at this time. Future tbd.",
             OperatorType::Pow => "The power operator. Takes two terms, the first being the base and the second is 
 the power to which it is raised.",
@@ -807,7 +810,7 @@ or the result of a function, or as a function.",
             OperatorType::Table => "The table function. Takes a function with at least one argument,
 and as many lists are there are arguments.",
             OperatorType::TableFromMatrix => "Takes a fuction with one fewer argument than the matrix has columns.",
-            OperatorType::Query(x) => x.help(),
+            OperatorType::Query(ref x) => x.help(),
             OperatorType::Graph => "graph takes 8 args, a function, (x, y) orig, width, len, {x,y}-zoom and filename.",
             OperatorType::Help => "The help function has the form (help term1, term2, term3...) and prints out
 examples of how operators are used. You can use help for individual operators, 
