@@ -1,0 +1,222 @@
+   Compiling parse v0.1.0 (file:///home/libfud/build/rcalc/src/lib/parse)
+src/parse.rs:22:17: 22:21 warning: derive(Show) is deprecated in favor of derive(Debug)
+src/parse.rs:22 #[derive(Clone, Show, PartialEq)]
+                                ^~~~
+src/tokenize.rs:3:52: 3:56 warning: the `uint` type is deprecated; use `usize` or a fixed-sized integer
+src/tokenize.rs:3 pub type MaybeToken<T, U> = (Option<Result<T, U>>, uint);
+                                                                     ^~~~
+src/tokenize.rs:3:56: 3:56 help: add #![feature(int_uint)] to the crate attributes to silence this warning
+src/tokenize.rs:7:12: 7:16 warning: the `uint` type is deprecated; use `usize` or a fixed-sized integer
+src/tokenize.rs:7     index: uint,
+                             ^~~~
+src/tokenize.rs:7:16: 7:16 help: add #![feature(int_uint)] to the crate attributes to silence this warning
+src/tokenize.rs:22:30: 22:34 warning: the `uint` type is deprecated; use `usize` or a fixed-sized integer
+src/tokenize.rs:22     fn peek_helper(&self, j: uint) -> Option<Result<T, U>> {
+                                                ^~~~
+src/tokenize.rs:22:34: 22:34 help: add #![feature(int_uint)] to the crate attributes to silence this warning
+src/tokenize.rs:36:30: 36:34 warning: the `uint` type is deprecated; use `usize` or a fixed-sized integer
+src/tokenize.rs:36     pub fn rev(&mut self, i: uint) -> Result<(), ()> {
+                                                ^~~~
+src/tokenize.rs:36:34: 36:34 help: add #![feature(int_uint)] to the crate attributes to silence this warning
+src/tokenize.rs:53:28: 53:32 warning: the `uint` type is deprecated; use `usize` or a fixed-sized integer
+src/tokenize.rs:53     pub fn index(&self) -> uint {
+                                              ^~~~
+src/tokenize.rs:53:32: 53:32 help: add #![feature(int_uint)] to the crate attributes to silence this warning
+src/tokenize.rs:84:29: 84:33 warning: the `uint` type is deprecated; use `usize` or a fixed-sized integer
+src/tokenize.rs:84     fn size_hint(&self) -> (uint, Option<uint>) {
+                                               ^~~~
+src/tokenize.rs:84:33: 84:33 help: add #![feature(int_uint)] to the crate attributes to silence this warning
+src/tokenize.rs:84:42: 84:46 warning: the `uint` type is deprecated; use `usize` or a fixed-sized integer
+src/tokenize.rs:84     fn size_hint(&self) -> (uint, Option<uint>) {
+                                                            ^~~~
+src/tokenize.rs:84:46: 84:46 help: add #![feature(int_uint)] to the crate attributes to silence this warning
+src/parse.rs:110:53: 110:55 warning: the `u` and `us` suffixes on integers are deprecated; use `usize` or one of the fixed-sized suffixes
+src/parse.rs:110     let (divisors, radices) = num_str.chars().fold((0u, 0u), |(mut x, mut y), c| {
+                                                                     ^~
+src/parse.rs:110:55: 110:55 help: add #![feature(int_uint)] to the crate attributes to silence this warning
+src/parse.rs:110:57: 110:59 warning: the `u` and `us` suffixes on integers are deprecated; use `usize` or one of the fixed-sized suffixes
+src/parse.rs:110     let (divisors, radices) = num_str.chars().fold((0u, 0u), |(mut x, mut y), c| {
+                                                                         ^~
+src/parse.rs:110:59: 110:59 help: add #![feature(int_uint)] to the crate attributes to silence this warning
+src/translate.rs:26:59: 26:64 error: the trait `core::fmt::Display` is not implemented for the type `Token` [E0277]
+src/translate.rs:26             "Expected operator or function but found {}", token)))
+                                                                              ^~~~~
+note: in expansion of format_args!
+<std macros>:2:26: 2:59 note: expansion site
+<std macros>:1:1: 2:61 note: in expansion of format!
+src/translate.rs:25:27: 26:66 note: expansion site
+src/translate.rs:26:59: 26:64 note: `Token` cannot be formatted with the default formatter; try using `:?` instead if you are using a format string
+src/translate.rs:26             "Expected operator or function but found {}", token)))
+                                                                              ^~~~~
+note: in expansion of format_args!
+<std macros>:2:26: 2:59 note: expansion site
+<std macros>:1:1: 2:61 note: in expansion of format!
+src/translate.rs:25:27: 26:66 note: expansion site
+src/translate.rs:54:77: 54:78 error: the trait `core::fmt::Display` is not implemented for the type `Token` [E0277]
+src/translate.rs:54                     x => return Err(BadToken(format!("Unexpected token {}", x)))
+                                                                                                ^
+note: in expansion of format_args!
+<std macros>:2:26: 2:59 note: expansion site
+<std macros>:1:1: 2:61 note: in expansion of format!
+src/translate.rs:54:46: 54:80 note: expansion site
+src/translate.rs:54:77: 54:78 note: `Token` cannot be formatted with the default formatter; try using `:?` instead if you are using a format string
+src/translate.rs:54                     x => return Err(BadToken(format!("Unexpected token {}", x)))
+                                                                                                ^
+note: in expansion of format_args!
+<std macros>:2:26: 2:59 note: expansion site
+<std macros>:1:1: 2:61 note: in expansion of format!
+src/translate.rs:54:46: 54:80 note: expansion site
+src/translate.rs:60:58: 60:59 error: the trait `core::fmt::Display` is not implemented for the type `Token` [E0277]
+src/translate.rs:60         x => Err(BadToken(format!("Unexpected token {}", x)))
+                                                                             ^
+note: in expansion of format_args!
+<std macros>:2:26: 2:59 note: expansion site
+<std macros>:1:1: 2:61 note: in expansion of format!
+src/translate.rs:60:27: 60:61 note: expansion site
+src/translate.rs:60:58: 60:59 note: `Token` cannot be formatted with the default formatter; try using `:?` instead if you are using a format string
+src/translate.rs:60         x => Err(BadToken(format!("Unexpected token {}", x)))
+                                                                             ^
+note: in expansion of format_args!
+<std macros>:2:26: 2:59 note: expansion site
+<std macros>:1:1: 2:61 note: in expansion of format!
+src/translate.rs:60:27: 60:61 note: expansion site
+src/translate.rs:80:36: 80:62 error: the trait `core::fmt::Display` is not implemented for the type `Token` [E0277]
+src/translate.rs:80         Err(BadToken(format!("{}", try!(strip(tokens.peek())))))
+                                                       ^~~~~~~~~~~~~~~~~~~~~~~~~~
+note: in expansion of format_args!
+<std macros>:2:26: 2:59 note: expansion site
+<std macros>:1:1: 2:61 note: in expansion of format!
+src/translate.rs:80:22: 80:64 note: expansion site
+src/translate.rs:80:36: 80:62 note: `Token` cannot be formatted with the default formatter; try using `:?` instead if you are using a format string
+src/translate.rs:80         Err(BadToken(format!("{}", try!(strip(tokens.peek())))))
+                                                       ^~~~~~~~~~~~~~~~~~~~~~~~~~
+note: in expansion of format_args!
+<std macros>:2:26: 2:59 note: expansion site
+<std macros>:1:1: 2:61 note: in expansion of format!
+src/translate.rs:80:22: 80:64 note: expansion site
+src/translate.rs:103:30: 103:41 error: type `collections::vec::Vec<collections::string::String>` does not implement any method in scope named `move_iter`
+src/translate.rs:103         get_symbols(tokens)).move_iter().map(|x| Symbol(x)).collect();
+                                                  ^~~~~~~~~~~
+src/translate.rs:126:67: 126:82 error: mismatched types:
+ expected `&mut collections::vec::Vec<types::sexpr::ArgType>`,
+    found `&[types::sexpr::ArgType]`
+(values differ in mutability) [E0308]
+src/translate.rs:126                                  vec!(Atom(List(symbols))).append(body.as_slice())));
+                                                                                       ^~~~~~~~~~~~~~~
+src/translate.rs:126:34: 126:83 error: mismatched types:
+ expected `collections::vec::Vec<types::sexpr::ArgType>`,
+    found `()`
+(expected struct `collections::vec::Vec`,
+    found ()) [E0308]
+src/translate.rs:126                                  vec!(Atom(List(symbols))).append(body.as_slice())));
+                                                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/translate.rs:129:36: 129:62 error: the trait `core::fmt::Display` is not implemented for the type `Token` [E0277]
+src/translate.rs:129         Err(BadToken(format!("{}", try!(strip(tokens.peek())))))
+                                                        ^~~~~~~~~~~~~~~~~~~~~~~~~~
+note: in expansion of format_args!
+<std macros>:2:26: 2:59 note: expansion site
+<std macros>:1:1: 2:61 note: in expansion of format!
+src/translate.rs:129:22: 129:64 note: expansion site
+src/translate.rs:129:36: 129:62 note: `Token` cannot be formatted with the default formatter; try using `:?` instead if you are using a format string
+src/translate.rs:129         Err(BadToken(format!("{}", try!(strip(tokens.peek())))))
+                                                        ^~~~~~~~~~~~~~~~~~~~~~~~~~
+note: in expansion of format_args!
+<std macros>:2:26: 2:59 note: expansion site
+<std macros>:1:1: 2:61 note: in expansion of format!
+src/translate.rs:129:22: 129:64 note: expansion site
+src/translate.rs:182:75: 182:80 error: the trait `core::fmt::Display` is not implemented for the type `Token` [E0277]
+src/translate.rs:182             _ => return Err(BadToken(format!("Invalid token for list {}", token))),
+                                                                                               ^~~~~
+note: in expansion of format_args!
+<std macros>:2:26: 2:59 note: expansion site
+<std macros>:1:1: 2:61 note: in expansion of format!
+src/translate.rs:182:38: 182:82 note: expansion site
+src/translate.rs:182:75: 182:80 note: `Token` cannot be formatted with the default formatter; try using `:?` instead if you are using a format string
+src/translate.rs:182             _ => return Err(BadToken(format!("Invalid token for list {}", token))),
+                                                                                               ^~~~~
+note: in expansion of format_args!
+<std macros>:2:26: 2:59 note: expansion site
+<std macros>:1:1: 2:61 note: in expansion of format!
+src/translate.rs:182:38: 182:82 note: expansion site
+src/parse.rs:47:9: 47:17 error: mismatched types:
+ expected `core::result::Result<types::operator::OperatorType, ()>`,
+    found `core::option::Option<_>`
+(expected enum `core::result::Result`,
+    found enum `core::option::Option`) [E0308]
+src/parse.rs:47         Some(op)    => (Some(Ok(Token::Operator(op))), word.len()),
+                        ^~~~~~~~
+src/parse.rs:91:13: 91:20 error: mismatched types:
+ expected `core::result::Result<num::rational::Ratio<num::bigint::BigInt>, num::rational::ParseRatioError>`,
+    found `core::option::Option<_>`
+(expected enum `core::result::Result`,
+    found enum `core::option::Option`) [E0308]
+src/parse.rs:91             Some(x) => Ok(x),
+                            ^~~~~~~
+src/parse.rs:92:13: 92:17 error: mismatched types:
+ expected `core::result::Result<num::rational::Ratio<num::bigint::BigInt>, num::rational::ParseRatioError>`,
+    found `core::option::Option<_>`
+(expected enum `core::result::Result`,
+    found enum `core::option::Option`) [E0308]
+src/parse.rs:92             None => Err(BadArgType("Bad numeric encoding".to_string()))
+                            ^~~~
+src/parse.rs:96:13: 96:20 error: mismatched types:
+ expected `core::result::Result<f64, core::num::ParseFloatError>`,
+    found `core::option::Option<_>`
+(expected enum `core::result::Result`,
+    found enum `core::option::Option`) [E0308]
+src/parse.rs:96             Some(x) => Ok(Ratio::from_float(x).unwrap()),
+                            ^~~~~~~
+src/parse.rs:97:13: 97:17 error: mismatched types:
+ expected `core::result::Result<f64, core::num::ParseFloatError>`,
+    found `core::option::Option<_>`
+(expected enum `core::result::Result`,
+    found enum `core::option::Option`) [E0308]
+src/parse.rs:97             None =>  Err(BadArgType("Bad numeric encoding".to_string()))
+                            ^~~~
+src/parse.rs:127:32: 127:37 error: mismatched types:
+ expected `fn(&str) -> (core::option::Option<core::result::Result<Token, types::ErrorKind>>, usize) {is_paren}`,
+    found `fn(&str) -> (core::option::Option<core::result::Result<Token, types::ErrorKind>>, usize) {is_op}`
+(expected fn item,
+    found a different fn item) [E0308]
+src/parse.rs:127     let rules = vec!(is_paren, is_op, is_bool, is_var, is_number);
+                                                ^~~~~
+<std macros>:1:1: 4:58 note: in expansion of vec!
+src/parse.rs:127:17: 127:67 note: expansion site
+src/parse.rs:127:39: 127:46 error: mismatched types:
+ expected `fn(&str) -> (core::option::Option<core::result::Result<Token, types::ErrorKind>>, usize) {is_paren}`,
+    found `fn(&str) -> (core::option::Option<core::result::Result<Token, types::ErrorKind>>, usize) {is_bool}`
+(expected fn item,
+    found a different fn item) [E0308]
+src/parse.rs:127     let rules = vec!(is_paren, is_op, is_bool, is_var, is_number);
+                                                       ^~~~~~~
+<std macros>:1:1: 4:58 note: in expansion of vec!
+src/parse.rs:127:17: 127:67 note: expansion site
+src/parse.rs:127:48: 127:54 error: mismatched types:
+ expected `fn(&str) -> (core::option::Option<core::result::Result<Token, types::ErrorKind>>, usize) {is_paren}`,
+    found `fn(&str) -> (core::option::Option<core::result::Result<Token, types::ErrorKind>>, usize) {is_var}`
+(expected fn item,
+    found a different fn item) [E0308]
+src/parse.rs:127     let rules = vec!(is_paren, is_op, is_bool, is_var, is_number);
+                                                                ^~~~~~
+<std macros>:1:1: 4:58 note: in expansion of vec!
+src/parse.rs:127:17: 127:67 note: expansion site
+src/parse.rs:127:56: 127:65 error: mismatched types:
+ expected `fn(&str) -> (core::option::Option<core::result::Result<Token, types::ErrorKind>>, usize) {is_paren}`,
+    found `fn(&str) -> (core::option::Option<core::result::Result<Token, types::ErrorKind>>, usize) {is_number}`
+(expected fn item,
+    found a different fn item) [E0308]
+src/parse.rs:127     let rules = vec!(is_paren, is_op, is_bool, is_var, is_number);
+                                                                        ^~~~~~~~~
+<std macros>:1:1: 4:58 note: in expansion of vec!
+src/parse.rs:127:17: 127:67 note: expansion site
+src/parse.rs:128:54: 128:59 error: mismatched types:
+ expected `collections::vec::Vec<fn(&str) -> (core::option::Option<core::result::Result<_, _>>, usize)>`,
+    found `collections::vec::Vec<fn(&str) -> (core::option::Option<core::result::Result<Token, types::ErrorKind>>, usize) {is_paren}>`
+(expected fn pointer,
+    found fn item) [E0308]
+src/parse.rs:128     let mut tokens = TokenStream::new(s.to_string(), rules, BadToken("Unrecognized token".to_string()));
+                                                                      ^~~~~
+error: aborting due to 19 previous errors
+Could not compile `parse`.
+
+To learn more, run the command again with --verbose.

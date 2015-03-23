@@ -1,11 +1,14 @@
 //! Methods of raising an index to a given power.
 
 extern crate types;
+extern crate num;
 
-use std::num;
-use super::super::{Atom, Args, Lit, CalcResult, Env, Evaluate, BadNumberOfArgs};
+use super::super::{Args, Lit, CalcResult, Env, Evaluate};
 use super::trig::float_ops;
-use self::types::operator::{Ln, Exp};
+use self::types::operator::Transcendental::{Ln, Exp};
+use self::types::ErrorKind::BadNumberOfArgs;
+use self::types::sexpr::ArgType::Atom;
+use self::types::LiteralType;
 
 pub fn pow_wrapper(args: &Args, env: &mut Env) -> CalcResult {
     if args.len() != 2 {
@@ -25,11 +28,12 @@ pub fn pow(base: &Lit, exponent: &Lit, env: &mut Env) -> CalcResult<Lit> {
         return Ok(one)
     }
 
-    let positive = *exponent > num::zero();
-    let power = try!(exponent.abs().to_uint()) as u64;
+    let positive = exponent.clone() > num::zero();
+    let power = try!(exponent.clone().abs().to_usize()) as u64;
 
-    let maybe_radix = exponent - try!(exponent.floor());
-    let root  = if maybe_radix == num::zero() {
+    let maybe_radix = exponent.clone() - try!(exponent.floor());
+    let zero: LiteralType = num::zero();
+    let root: LiteralType = if maybe_radix == zero {
         num::one()
     } else {
         let root_log = try!(try!(float_ops(&vec!(Atom(base.clone())), env, Ln)).desymbolize(env));
@@ -52,10 +56,10 @@ pub fn exp_by_sq(base_orig: &Lit, mut power: u64) -> Lit {
 
     while power > 0 {
         if power % 2 == 1 {
-            result = result * base;
+            result = result.clone() * base.clone();
         }
         power /= 2;
-        base = base * base;
+        base = base.clone() * base.clone();
     }
 
     result

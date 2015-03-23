@@ -2,11 +2,15 @@
 
 extern crate types;
 extern crate parse;
+extern crate num;
 
-pub use self::types::{CalcResult, Environment, ErrorKind, BadArgType, BadNumberOfArgs, 
-                      BadPowerRange, BadFloatRange, Env, Args};
-pub use self::types::sexpr::{Atom, SExpr, Expression, ArgType, BuiltIn, Function};
-pub use self::types::literal::{Lit, LiteralType, Symbol, Proc, Void};
+pub use self::types::{CalcResult, Environment, ErrorKind, Env};
+pub use self::types::ErrorKind::{BadArgType, BadNumberOfArgs, BadPowerRange, BadFloatRange};
+pub use self::types::sexpr::{Expression, ArgType, ExprType};
+pub use self::types::sexpr::ArgType::{Atom,SExpr};
+pub use self::types::sexpr::ExprType::{BuiltIn, Function};
+pub use self::types::literal::LiteralType::{Symbol, Proc, Void};
+pub use self::types::literal::{Lit, LiteralType};
 pub use self::common::help;
 
 pub mod common;
@@ -14,6 +18,8 @@ pub mod function;
 pub mod matrice;
 pub mod operator;
 pub mod record;
+
+pub type Args = Vec<ArgType>;
 
 /// A structure to allow persistence of variables and functions
 
@@ -44,7 +50,7 @@ pub fn define(args: &Args, env: &mut Env) -> CalcResult {
             &Atom(ref x) => { env.symbols.insert(name, x.clone()); },
             &SExpr(ref x) => match arg.eval(env) {
                 Ok(Atom(y)) => { env.symbols.insert(name, y); },
-                Ok(_) => fail!("Impossible!"),
+                Ok(_) => panic!("Impossible!"),
                 Err(_) => { env.symbols.insert(name, Proc(vars, x.clone())); }
             }
         }
@@ -73,7 +79,7 @@ impl Evaluate for ArgType {
     fn eval(&self, env: &mut Environment) -> CalcResult {
         match self {
             &Atom(_) => Ok(self.clone()),
-            &SExpr(ref s) =>  match s.expr_type {
+            &SExpr(ref s) =>  match s.clone().expr_type {
                 BuiltIn(x) => operator::eval(x, &s.args, env),
                 Function(ref f) => function::eval(f, &s.args, env)
             }
@@ -101,7 +107,7 @@ impl Evaluate for ArgType {
 impl Evaluate for Expression {
     #[inline]
     fn eval(&self, env: &mut Environment) -> CalcResult {
-        match self.expr_type {
+        match self.clone().expr_type {
             BuiltIn(x) => operator::eval(x, &self.args, env),
             Function(ref f) => function::eval(f, &self.args, env)
         }

@@ -2,11 +2,18 @@
 
 extern crate types;
 
-use std::num;
-use self::types::sexpr::BuiltIn;
-use self::types::literal::{Boolean, Lit};
+use super::{zero, one};
+use self::types::sexpr::ExprType::BuiltIn;
+use self::types::literal::LiteralType::Boolean;
+use self::types::literal::Lit;
 use self::types::operator::*;
-use super::super::{Args, Atom, SExpr, Evaluate, CalcResult, Env, BadNumberOfArgs};
+use self::types::operator::Gate::*;
+use self::types::operator::RoundId::*;
+use self::types::operator::Introspect::*;
+use self::types::operator::OperatorType::*;
+use self::types::ArgType::{Atom, SExpr};
+use self::types::ErrorKind::BadNumberOfArgs;
+use super::super::{Args, Evaluate, CalcResult, Env};
 
 #[inline]   
 pub fn handle_logic(args: &Args, env: &mut Env, log: Gate) -> CalcResult {
@@ -108,8 +115,8 @@ pub fn not(args: &Args, env: &mut Env) -> CalcResult {
 }
 
 pub fn num_op(args: &Args, env: &mut Env, op: RoundId) -> CalcResult {
-    let one: Lit = num::one();
-    let two = one + one;
+    let one: Lit = one();
+    let two = one.clone() + one.clone();
 
     if args.len() != 1 && op != RoundToNearest {
         return Err(BadNumberOfArgs(op.to_string(), "only".to_string(), 1))
@@ -123,11 +130,11 @@ pub fn num_op(args: &Args, env: &mut Env, op: RoundId) -> CalcResult {
         Round => Ok(Atom(try!(num.round()))),
         RoundToNearest => { 
             let nearest= try!(try!(args[1].desymbolize(env)).recip());
-            Ok(Atom(try!((num * nearest + (one / two)).floor()) / nearest))
+            Ok(Atom(try!((num * nearest.clone() + (one / two)).floor()) / nearest))
         },
         Floor => Ok(Atom(try!(num.floor()))),
         Ceiling => Ok(Atom(try!(num.ceil()))),
-        Zero => Ok(Atom(Boolean(num == num::zero()))),
+        Zero => Ok(Atom(Boolean(num == zero()))),
         _ => Ok(Atom(Boolean((op != Even) ^ (try!(num.is_even())))))
     }
 }

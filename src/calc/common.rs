@@ -3,8 +3,11 @@
 extern crate types;
 
 use self::types::operator::{Help, OperatorType};
-use super::{ArgType, Atom, BadArgType, CalcResult, Symbol, Void};
-use std::collections::hashmap::HashMap;
+use self::types::ErrorKind::BadArgType;
+use self::types::sexpr::ArgType::Atom;
+use self::types::literal::LiteralType::{Symbol, Void};
+use super::{ArgType, CalcResult};
+use std::collections::HashMap;
 
 pub fn help(args: &Vec<ArgType>) -> CalcResult {
     let use_help =
@@ -64,18 +67,21 @@ conditional statements with if. And, Or, and Not are also availalbe.
             _ => return Err(BadArgType("expected a string".to_string()))
         };
         
-        match from_str::<OperatorType>(term.as_slice()) {
-            Some(x) => {
-                println!("{}", x.help());
+        match term.as_slice().parse::<OperatorType>() {
+            Ok(x) => {
+//                println!("{}", x.help());
+                println!("sadface");
                 continue
             }
-            None => { }
+            _ => { }
         }
-
-        println!("{}", match help_map.find(term) {
-            Some(val) => format!("{}", val),
-            None => format!("Help for `{}' is not available", term)
+/*
+        println!("{}", match help_map.get(term) {
+            Ok(val) => format!("{}", val),
+            _ => format!("Help for `{}' is not available", term)
         });
+*/
+        println!(":(");
     }
 
     Ok(Atom(Void))

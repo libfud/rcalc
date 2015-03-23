@@ -4,11 +4,15 @@ name = "rcalc"
 version = "0.17.0"
 authors = [ "libfud" ]
 
-[dependencies.image]
-git = "https://github.com/PistonDevelopers/rust-image.git"
 [dependencies.matrix]
 path = "src/lib/matrix"
 [dependencies.types]
 path = "src/lib/types"
 [dependencies.parse]
 path = "src/lib/parse"
+
+[dependencies.num]
+path = "/home/libfud/build/num"
+
+[dependencies.readline]
+version = "*"

@@ -1,17 +1,24 @@
 //!List operations.
 
 extern crate types;
+extern crate num;
 
-use self::types::operator;
+use super::{zero, one};
 use self::types::operator::*;
-use self::types::{Args, Expr, Atom, CalcResult, Environment, Env};
-use self::types::literal::{List, Lit, LitRes};
-use super::super::{Evaluate, BadArgType, BadNumberOfArgs};
+use self::types::operator::XForms::*;
+use self::types::operator::ListOps::*;
+use self::types::{Args, Expr, CalcResult, Environment, Env};
+use self::types::literal::{Lit, LiteralType};
+use self::types::sexpr::ArgType::Atom;
+use self::types::ErrorKind::{BadArgType,BadNumberOfArgs};
+use super::super::Evaluate;
+
+pub type LitRes = CalcResult<LiteralType>;
 
 #[inline]
 pub fn list_ops(args: &Args, env: &mut Env, lop: ListOps) -> CalcResult {
     match lop {
-        operator::List => list(args, env),
+        List => list(args, env),
         Cons => cons(args, env), 
         Car => car(args, env),
         Cdr => cdr(args, env),
@@ -38,7 +45,7 @@ pub fn list(args: &Args, env: &mut Environment) -> CalcResult {
     for arg in args.iter() {
         list.push(try!(arg.arg_to_literal(env)));
     }
-    Ok(Atom(List(list)))
+    Ok(Atom(self::types::literal::LiteralType::List(list)))
 }
 
 pub fn cons(args: &Args, env: &mut Environment) -> CalcResult {
@@ -50,8 +57,12 @@ pub fn cons(args: &Args, env: &mut Environment) -> CalcResult {
     let cdr = try!(args[1].arg_to_literal(env));
 
     match cdr {
-        List(x) => Ok(Atom(List(vec!(car).append(x.as_slice())))),
-        _ => Ok(Atom(List(vec!(car, cdr))))
+        self::types::literal::LiteralType::List(x) => {
+            let mut new_list = vec!(car);
+            new_list.append(&mut (x.clone()));
+            Ok(Atom(self::types::literal::LiteralType::List(new_list)))
+        },
+        _ => Ok(Atom(self::types::literal::LiteralType::List(vec!(car, cdr))))
     }
 }
 
@@ -68,7 +79,8 @@ pub fn cdr(args: &Args, env: &mut Environment) -> CalcResult {
         return Err(BadNumberOfArgs("cdr".to_string(), "only".to_string(), 1))
     }
 
-    Ok(Atom(List(try!(try!(args[0].desymbolize(env)).to_vec()).tail().to_vec())))
+    Ok(Atom(self::types::literal::LiteralType::List(
+        try!(try!(args[0].desymbolize(env)).to_vec()).tail().to_vec())))
 }
 
 /// Map can handle mapping a function to each element of one or more lists.
@@ -90,9 +102,9 @@ pub fn map(args: &Args, env: &mut Env) -> CalcResult {
     let len = list_vec[0].len();
     let mut result: Vec<Lit> = Vec::new();
     
-    for x in range(0u, len) {
+    for x in (0usize .. len) {
         let mut temp: Vec<Lit> = Vec::new();
-        for y in range(0u, names.len()) {
+        for y in (0usize .. names.len()) {
             if list_vec[y].len() != len {
                 return Err(BadArgType("Mismatched lengths!".to_string()))
             }
@@ -106,7 +118,7 @@ pub fn map(args: &Args, env: &mut Env) -> CalcResult {
         result.push(try!(try!(func.eval(&mut child_env)).arg_to_literal(env)));
     }
 
-    Ok(Atom(List(result)))
+    Ok(Atom(self::types::literal::LiteralType::List(result)))
 }
 
 pub fn fold(args: &Args, env: &mut Env, top: XForms) -> CalcResult {
@@ -185,7 +197,7 @@ pub fn filter_map(args: &Args, env: &mut Env, top: XForms) -> CalcResult {
         if filter_names.len() != 1 {
             return Err(BadArgType("Expected 1 name for predicate".to_string()))
         }
-        for item in list.move_iter() {
+        for item in list.into_iter() {
             child_env.symbols.insert(filter_names[0].clone(), item.clone());
             if try!(try!(try!(filter.eval(&mut child_env)).desymbolize(env)).to_bool()) {
                 new_list.push(item)
@@ -206,14 +218,11 @@ pub fn filter_map(args: &Args, env: &mut Env, top: XForms) -> CalcResult {
         }
     }
 
-    Ok(Atom(List(new_list)))
+    Ok(Atom(self::types::literal::LiteralType::List(new_list)))
 }
 
 #[inline]
 pub fn rangelist(args: &Args, env: &mut Env) -> CalcResult {
-    use std::iter::range_step;
-    use std::num;
-
     if args.len() < 2 || args.len() > 3 {
         return Err(BadNumberOfArgs("rangelist".to_string(),"at least".to_string(), 2))
     }
@@ -222,14 +231,24 @@ pub fn rangelist(args: &Args, env: &mut Env) -> CalcResult {
     let step = if args.len() == 3 {
         try!(args[2].desymbolize(env))
     } else {
-        num::one()
+        one()
     };
 
-    if (b > a && step < num::zero()) || (a > b && step > num::zero()) {
+    if (b > a && step < zero()) || (a > b && step > zero()) {
         return Err(BadArgType("bad step".to_string()))
     }
+    let mut new_list: Vec<LiteralType> = Vec::new();
+    let mut item = a.clone();
+    loop {
+        new_list.push(item.clone());
+        item = item.clone() + b.clone();
+        if (b.clone() > a.clone() && item.clone() >= b.clone()) || 
+            (b.clone() < a.clone() && item.clone() <= b.clone()) {
+            break
+        }
+    }
 
-    Ok(Atom(List(range_step(a, b, step).collect())))
+    Ok(Atom(self::types::literal::LiteralType::List(new_list)))
 }
 
 #[inline]
@@ -243,5 +262,5 @@ pub fn single(args: &Args, env: &mut Env, top: XForms) -> CalcResult {
         Sort => list.sort(),
         _ => list.reverse()
     }
-    Ok(Atom(List(list)))
+    Ok(Atom(self::types::literal::LiteralType::List(list)))
 }   

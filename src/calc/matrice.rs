@@ -3,11 +3,15 @@
 extern crate matrix;
 extern crate types;
 
-use self::matrix::{Matrice, MatrixErrors, BadDimensionality};
-use self::types::MatrixErr;
+use self::matrix::{Matrice, MatrixErrors};
+use self::matrix::MatrixErrors::BadDimensionality;
 use self::types::operator::*;
-use self::types::literal::{Lit, List, Matrix};
-use super::{Args, Env, Atom, CalcResult, Environment, Evaluate, BadArgType, BadNumberOfArgs};
+use self::types::operator::MatrixOps::*;
+use self::types::literal::Lit;
+use self::types::literal::LiteralType::{List, Matrix};
+use self::types::sexpr::ArgType::{Atom,SExpr};
+use self::types::ErrorKind::{BadArgType, BadNumberOfArgs, MatrixErr};
+use super::{Args, Env, CalcResult, Environment, Evaluate};
 
 #[inline]
 pub fn matrix_ops(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
@@ -35,13 +39,13 @@ pub fn matrix_ops(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     }
 }        
 
-pub fn list_to_2d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, (uint, uint))> {
-    let mut length = 0u;
-    let mut width = 0u;
+pub fn list_to_2d(arg: Lit, env: &mut Env) -> CalcResult<(Vec<Lit>, (usize, usize))> {
+    let mut length = 0usize;
+    let mut width = 0usize;
     let list = try!(arg.to_vec());
     let mut arg_list = Vec::new();
 
-    for x in list.move_iter() {
+    for x in list.into_iter() {
         let sub_list = try!(try!(Atom(x).desymbolize(env)).to_vec());
         length = sub_list.len();
         arg_list.push_all(sub_list.as_slice());
@@ -95,7 +99,7 @@ pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
 
     let mut matrix_vec: Vec<Lit> = Vec::new();
 
-    for column in range(0, lists[0].len()) {
+    for column in (0 .. lists[0].len()) {
         println!("{}", column);
         let mut child_env = Environment::new_frame(env);
 
@@ -109,7 +113,7 @@ pub fn matrix_from_fn(args: &Args, env: &mut Env) -> CalcResult {
         matrix_vec.push(try!(try!(func.eval(&mut child_env)).desymbolize(env)));
     }
 
-    println!("{}", matrix_vec);
+    println!("{:?}", matrix_vec);
 
     match Matrice::from_vec(matrix_vec, lists.len() + 1, lists[0].len()) {
         Ok(x) => Ok(Atom(Matrix(x))),
@@ -150,8 +154,8 @@ pub fn get_elem(args: &Args, env: &mut Env) -> CalcResult {
     }
 
     let matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
-    let mut row = try!((try!(args[1].desymbolize(env))).to_uint());
-    let mut col = try!((try!(args[2].desymbolize(env))).to_uint());
+    let mut row = try!((try!(args[1].desymbolize(env))).to_usize());
+    let mut col = try!((try!(args[2].desymbolize(env))).to_usize());
 
     if row == 0 || col == 0 {
         return Err(BadArgType("Matrices are indexed starting from 1".to_string()))
@@ -172,7 +176,7 @@ pub fn get_row_col(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     }
 
     let matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
-    let row_col = match try!((try!(args[1].desymbolize(env))).to_uint()) {
+    let row_col = match try!((try!(args[1].desymbolize(env))).to_usize()) {
         0 => return Err(BadArgType("Matrices are indexed starting from 1".to_string())),
         x => x - 1
     };
@@ -180,7 +184,7 @@ pub fn get_row_col(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     let (iterator, num) = match mop {
         MatrixGetRow => (matrix.get_row(row_col), matrix.rows()),
         MatrixGetCol => (matrix.get_col(row_col), matrix.cols()),
-        _ => fail!("Undefined")
+        _ => panic!("Undefined")
     };
 
     if row_col >  num {
@@ -196,7 +200,7 @@ pub fn matrix_set(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     }
 
     let mut matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
-    let old_item = try!((try!(args[1].desymbolize(env))).to_uint());
+    let old_item = try!((try!(args[1].desymbolize(env))).to_usize());
     let new_items = try!(try!(args[2].desymbolize(env)).to_vec());
 
     match mop {
@@ -208,7 +212,7 @@ pub fn matrix_set(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
             Ok(_) => Ok(Atom(Matrix(matrix))),
             Err(m) => Err(MatrixErr(m))
         },
-        _ => fail!("Undefined")
+        _ => panic!("Undefined")
     }
 }
 
@@ -218,22 +222,22 @@ pub fn matrix_append(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
     }
 
     let mut matrix = try!((try!(args[0].desymbolize(env))).to_matrix());
-    let (new_items,(len, count)) = try!(list_to_2d(try!(args[1].desymbolize(env)), env));
+    let (mut new_items,(len, count)) = try!(list_to_2d(try!(args[1].desymbolize(env)), env));
 
     match mop {
-        MatrixAppendRows => for list in range(0, count) {
-            match matrix.append_row(new_items.slice(list * len, (list + 1) * len).to_vec()) {
+        MatrixAppendRows => for list in (0 .. count) {
+            match matrix.append_row(&mut new_items.slice(list * len, (list + 1) * len).to_vec()) {
                 Ok(_) =>  { },
                 Err(m) => return Err(MatrixErr(m))
             }
         },
-        MatrixAppendCols => for list in range(0, count) {
+        MatrixAppendCols => for list in (0.. count) {
             match matrix.append_col(new_items.slice(list * len, (list + 1) * len).to_vec()) {
                 Ok(_) =>  { },
                 Err(m) => return Err(MatrixErr(m))
             }
         },
-        _ => fail!("Undefined")
+        _ => panic!("Undefined")
     }
 
     Ok(Atom(Matrix(matrix)))
@@ -258,7 +262,7 @@ pub fn single(args: &Args, env: &mut Env, mop: MatrixOps) -> CalcResult {
 
     match res {
         Some(x) => Ok(Atom(x)),
-        None => Err(BadArgType(format!("{} failed", mop)))
+        None => Err(BadArgType(format!("{} paniced", mop)))
     }
 }
 

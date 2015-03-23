@@ -1,21 +1,23 @@
 //! Special functions like table and plot points.
 
 extern crate types;
-extern crate image;
+//extern crate image;
 
-use std::io::File;
-use self::types::Expr;
-use self::types::literal::{Lit, Symbol, Void};
-use self::image::GenericImage;
-use super::super::{Evaluate, BadArgType, BadNumberOfArgs};
-use super::{Args, Env, Environment, CalcResult, Atom};
+//use std::fs::File;
+use self::types::{Args, Expr, Env, Environment, CalcResult};
+use self::types::literal::{Lit};
+use self::types::LiteralType::{Symbol, Void};
+use self::types::ErrorKind::{BadArgType, BadNumberOfArgs};
+use self::types::sexpr::ArgType::Atom;
+//use self::image::GenericImage;
+use super::super::Evaluate;
 
 type Lists = Vec<Vec<Lit>>;
 pub type Table = Vec<(Vec<String>, String)>;
 
 ///takes a function, beginning for x axis, y axis, and how many units to draw, and filename
-pub fn graph(args: &Args, env: &mut Env) -> CalcResult {
-    use std::num;
+pub fn graph(_args: &Args, _env: &mut Env) -> CalcResult {
+/*    use std::num;
     use std::iter::{range_step};
 
     if args.len() < 8 {
@@ -31,12 +33,12 @@ pub fn graph(args: &Args, env: &mut Env) -> CalcResult {
     let zoom = try!(args[6].desymbolize(env));
     let filepath = try!(try!(args[7].arg_to_literal(env)).to_sym_string());
     let imgx = if args.len() > 8 {
-        (try!(try!(args[8].desymbolize(env)).to_uint()) as u32)
+        (try!(try!(args[8].desymbolize(env)).to_usize()) as u32)
     } else {
         1024u32
     };
     let imgy = if args.len() == 10 {
-        (try!(try!(args[9].desymbolize(env)).to_uint()) as u32)
+        (try!(try!(args[9].desymbolize(env)).to_usize()) as u32)
     } else {
         1024u32
     };
@@ -58,7 +60,7 @@ pub fn graph(args: &Args, env: &mut Env) -> CalcResult {
 
         if result > begin_y && result < begin_y + height {
             let pixel = image::Luma(255); 
-            let y = try!((begin_y + height - result).to_uint()) as u32;
+            let y = try!((begin_y + height - result).to_usize()) as u32;
             imgbuf.put_pixel(counter, y, pixel);
         }
         counter += 1;
@@ -66,30 +68,31 @@ pub fn graph(args: &Args, env: &mut Env) -> CalcResult {
 
     let fout = File::create(&Path::new(format!("{}{}{}","images/",filepath,".png").as_slice())).unwrap();
     let _ = image::ImageLuma8(imgbuf).save(fout, image::PNG);
-
+*/
+    println!("Sorry, nonfunctional right now. Wait for rust-image to stabilize.");
     Ok(Atom(Void))
 }
 
 fn make_table(lists: Lists, names: Vec<String>, func: Expr, fun_str: String,
-              env: &mut Env) -> CalcResult<(Table, Vec<uint>, uint)> {
+              env: &mut Env) -> CalcResult<(Table, Vec<usize>, usize)> {
     if lists.len() < 1 {
-        fail!("make-table requires at least one list of variables")
+        panic!("make-table requires at least one list of variables")
     }
 
-    let mut names_len = Vec::from_elem(names.len(), 0u);
+    let mut names_len = Vec::with_capacity(names.len());
     let (mut table, mut fn_len) = (Vec::new(), fun_str.len());
     table.push((names.clone(), fun_str));
 
-    for column in range(0, lists[0].len()) {
+    for column in (0.. lists[0].len()) {
         let mut child_env = Environment::new_frame(env);
 
         let values: Vec<Lit> = lists.iter().map(|x| x[column].clone()).collect();
         let mut t_names: Vec<String> = Vec::with_capacity(values.len());
 
-        for val in range(0, values.len()) {
+        for val in (0 .. values.len()) {
             let name = values[val].to_string();
             if name.len() > names_len[val] {
-                *names_len.get_mut(val) = name.len();
+                *names_len.get_mut(val).unwrap() = name.len();
             }
             t_names.push(name);
         }
@@ -109,7 +112,8 @@ fn make_table(lists: Lists, names: Vec<String>, func: Expr, fun_str: String,
     Ok((table, names_len, fn_len))
 }
 
-fn table_writer(table: Table, name_lens: Vec<uint>, fn_len: uint) {
+fn table_writer(_table: Table, _name_lens: Vec<usize>, _fn_len: usize) {
+/*
     print!("┌");
     for &i in name_lens.iter() {
         print!("{}┬", "─".repeat(i + 2));
@@ -117,7 +121,7 @@ fn table_writer(table: Table, name_lens: Vec<uint>, fn_len: uint) {
     println!("{}┐", "─".repeat(fn_len + 1));
     for (i, &(ref names, ref fx)) in table.iter().enumerate() {
         print!("│");
-        for nom in range(0, names.len()) {
+        for nom in (0.. names.len()) {
             print!("{}{} │", " ".repeat(1 + name_lens[nom] - names[nom].len()), names[nom]);
         }
 
@@ -136,6 +140,8 @@ fn table_writer(table: Table, name_lens: Vec<uint>, fn_len: uint) {
         }
         println!("{}{}", horiz.repeat(fn_len + 1), end);
     }
+*/
+    println!("it's screwed up.");
 }
 
 pub fn table(args: &Args, env: &mut Env) -> CalcResult {    
@@ -172,7 +178,8 @@ pub fn table(args: &Args, env: &mut Env) -> CalcResult {
     Ok(Atom(Void))
 }
 
-pub fn table_from_matrix(args: &Args, env: &mut Env) -> CalcResult {
+pub fn table_from_matrix(_args: &Args, _env: &mut Env) -> CalcResult {
+/*
     if args.len() != 2 {
         return Err(BadNumberOfArgs("table-from-matrix".to_string(), "only".to_string(), 2))
     }
@@ -195,11 +202,11 @@ pub fn table_from_matrix(args: &Args, env: &mut Env) -> CalcResult {
     }
 
     let mut table: Table = Vec::with_capacity(matrix.rows() + 1);
-    let mut name_lens = Vec::from_elem(matrix_vars, 0u);
+    let mut name_lens = Vec::with_capacity(matrix_vars, 0u);
     let mut fn_len = fun_str.len();
 
     table.push((names, fun_str));
-    for row in range(0, matrix.rows()) {
+    for row in (0.. matrix.rows()) {
         let mut t_names: Vec<String> = matrix.get_row(row).map(|x| x.to_string()).collect();
         let val = t_names.pop().unwrap();
 
@@ -207,17 +214,18 @@ pub fn table_from_matrix(args: &Args, env: &mut Env) -> CalcResult {
             fn_len = t_names.last().unwrap().len();
         }
 
-        for nom in range(0, t_names.len()) {
+        for nom in (0.. t_names.len()) {
             if t_names[nom].len() > name_lens[nom] {
-                *name_lens.get_mut(nom) = t_names[nom].len();
+                name_lens.get_mut(nom) = t_names[nom].len();
             }
         }        
         
         table.push((t_names, val))
     }
-
-    println!("{}", table);
-    println!("{} {}", name_lens, fn_len);
-    table_writer(table, name_lens, fn_len);
+*/
+//    println!("{}", table);
+//    println!("{} {}", name_lens, fn_len);
+    println!("It's screwed up.");
+//    table_writer(table, name_lens, fn_len);
     Ok(Atom(Void))
 }

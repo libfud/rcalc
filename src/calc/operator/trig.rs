@@ -5,8 +5,11 @@ extern crate types;
 
 use self::num::rational::Ratio;
 use self::types::operator::*;
-use self::types::literal::BigNum;
-use super::super::{Atom, CalcResult, Args, Env, Evaluate, BadNumberOfArgs, BadFloatRange};
+use self::types::operator::Transcendental::*;
+use self::types::literal::LiteralType::BigNum;
+use self::types::sexpr::ArgType::Atom;
+use self::types::ErrorKind::{BadNumberOfArgs, BadFloatRange};
+use super::super::{CalcResult, Args, Env, Evaluate};
 
 pub fn float_ops(args: &Args, env: &mut Env, fop: Transcendental) -> CalcResult {
     if args.len() > 1 {

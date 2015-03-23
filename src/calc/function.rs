@@ -1,6 +1,10 @@
 //! Evaluate functions defined by the user
 
-use super::{CalcResult, Environment, Evaluate, ArgType, Atom, BadNumberOfArgs};
+extern crate types;
+
+use super::{CalcResult, Environment, Evaluate, ArgType};
+use self::types::sexpr::ArgType::Atom;
+use self::types::ErrorKind::BadNumberOfArgs;
 
 ///Returns the value of the function for the arguments given
 #[inline]

@@ -65,7 +65,7 @@ impl fmt::Display for MatrixErrors {
 
 /* Matrices and their implementation */
 
-#[derive(Clone, PartialOrd, PartialEq, Eq, Ord)]
+#[derive(Clone, PartialOrd, PartialEq, Eq, Ord, Debug)]
 pub struct Matrice<T> {
     columns: usize,
     rows: usize,
@@ -78,16 +78,16 @@ impl<T: fmt::Display > fmt::Display for Matrice<T> {
         let mut columns: Vec<Vec<String>> = Vec::new();
         let mut col_widths: Vec<usize> = Vec::new();
 
-        for column in range(0, self.columns) {
+        for column in 0..self.columns {
             let mut col = Vec::with_capacity(self.rows);
-            for row in range(0, self.rows) {
+            for row in 0.. self.rows {
                 col.push(self.elems[column + row * self.columns].to_string());
             }
             col_widths.push(col.iter().fold(0, |a, b| cmp::max(a, b.len())));
             columns.push(col);
         }
 
-        for row in range(0, self.rows) {
+        for row in 0..self.rows {
             try!(write!(fmt, "{}", if row == 0 {
                 UPPER_LEFT
             } else if row == self.rows - 1 {
@@ -95,7 +95,7 @@ impl<T: fmt::Display > fmt::Display for Matrice<T> {
             } else {
                 MIDDLE_LEFT
             }));
-            for col in range(0, self.columns) {
+            for col in 0..self.columns {
                 let len = columns[col][row].len(); // space and comma
                 try!(write!(fmt, "{a}{b}{c}", b = columns[col][row],
                             a = repeat(" ").take(col_widths[col] + 1 - len).collect::<String>(),
@@ -246,7 +246,7 @@ impl<T: Clone> Matrice<T> {
             Err(MatrixErrors::BadDimensionality)
         } else {
             let mut new_elems = Vec::with_capacity(self.elems.len() + other.len());
-            for n in range(0, self.rows) {
+            for n in 0..self.rows {
                 new_elems.extend(self.elems.iter().skip(n * self.columns)
                                  .take(self.columns).map(|x| x.clone()));
                 new_elems.push(other[n].clone());
@@ -270,7 +270,7 @@ impl<T: Clone> Matrice<T> {
         }
 
         let mut new_elems: Vec<T> = Vec::with_capacity(rows * cols);
-        for n in range(ofsy, rows + ofsy) {
+        for n in ofsy..(rows + ofsy) {
             new_elems.extend(self.get_row(n).skip(ofsx).take(cols).map(|x: &T| x.clone()));
         }
 
@@ -284,7 +284,7 @@ impl<T: Clone> Matrice<T> {
         }
 
         let mut new_elems = Vec::<T>::with_capacity(self.rows * 2 * (self.columns + other.columns));
-        for n in range(0, self.rows) {
+        for n in 0.. self.rows {
             new_elems.extend(self.get_row(n).take(self.columns).map(|x: &T| x.clone()));
             new_elems.extend(other.get_row(n).take(other.columns).map(|x: &T| x.clone()));
         }
@@ -312,8 +312,8 @@ impl<T: Clone> Matrice<T> {
             return Err(MatrixErrors::BadDimensionality);
         }
 
-        for (elt, new) in range(old_row * self.columns,
-                                (old_row + 1) * self.columns).zip(new_row.iter()) {
+        for (elt, new) in ((old_row * self.columns)..
+                                ((old_row + 1) * self.columns)).zip(new_row.iter()) {
             *self.elems.get_mut(elt).unwrap() = new.clone()
         }
 
@@ -326,7 +326,7 @@ impl<T: Clone> Matrice<T> {
             return Err(MatrixErrors::BadDimensionality)
         }
 
-        for (elt, new) in range(0, self.rows).zip(new_col.iter()) {
+        for (elt, new) in (0..self.rows).zip(new_col.iter()) {
             *self.elems.get_mut(elt * self.rows + old_col).unwrap() = new.clone()
         }
         
@@ -336,11 +336,11 @@ impl<T: Clone> Matrice<T> {
     #[inline]
     pub fn decross(&self, omit_row: usize, omit_col: usize) -> Matrice<T> {
         let mut new_elems = Vec::new();
-        for row in range(0, self.rows) {
+        for row in 0..self.rows {
             if row + 1 == omit_row {
                 continue
             }
-            for col in range(0, self.columns) {
+            for col in (0.. self.columns) {
                 if col + 1 == omit_col {
                     continue
                 } 
@@ -370,7 +370,7 @@ impl<T: Clone + Zero + One + PartialEq> Matrice<T> {
     pub fn ident(n: usize) -> Matrice<T> {
         let mut elems: Vec<T> = repeat(num::zero()).take(n * n).collect::<Vec<T>>();
 //        let mut elems: Vec<T> = Vec::from_fn(n * n, |_| num::zero());
-        for i in range(0, n) {
+        for i in (0.. n) {
             *elems.get_mut(i * n + i).unwrap() = num::one();
         }
         
@@ -387,12 +387,12 @@ impl<T: Clone + Zero + One + PartialEq> Matrice<T> {
     /// Return a vector of pivots and the column at which they occur.
     #[inline]
     pub fn row_pivots<'a>(&'a self) -> Vec<Option<(&'a T, usize)>> {
-        range(0, self.rows).map(|row| Matrice::get_pivot(self.get_row(row))).collect()
+        (0..self.rows).map(|row| Matrice::get_pivot(self.get_row(row))).collect()
     }
 
     #[inline]
     pub fn col_pivots<'a>(&'a self) -> Vec<Option<(&'a T, usize)>> {
-        range(0, self.columns).map(|col| Matrice::get_pivot(self.get_col(col))).collect()
+        (0..self.columns).map(|col| Matrice::get_pivot(self.get_col(col))).collect()
     }
 
     #[inline]
@@ -401,7 +401,7 @@ impl<T: Clone + Zero + One + PartialEq> Matrice<T> {
             false
         } else {
             let one: T = num::one();
-            range(0, self.rows()).all(|i| {
+            (0.. self.rows()).all(|i| {
                 self.get_row(i).enumerate().all(|(j, x): (usize, &T)| if i == j {
                     *x == one 
                 } else { 
@@ -442,8 +442,8 @@ impl<'a, T: PartialOrd + Clone + fmt::Display + Zero + One + Sub<Output=T> +
         }
 
         let mut new_elems: Vec<T> = Vec::with_capacity(self.columns * other.rows);
-        for row in range(0, self.rows) {
-            for col in range(0, other.columns) {
+        for row in (0.. self.rows) {
+            for col in (0.. other.columns) {
 //                new_elems.push(self.get_row(row).zip(other.get_col(col))
 //                               .map(|(lhs, rhs): (&'a T, &'a T)| *lhs * *rhs).sum());
                 let mut answer = num::zero();
@@ -480,7 +480,7 @@ impl<'a, T: PartialOrd + Clone + fmt::Display + Zero + One + Sub<Output=T> +
 
         /* We're going to change the tail rows so that we get into row echelon form. */
         let mut swaps = 0usize;
-        for row in range(0, self.rows) {
+        for row in (0.. self.rows) {
             /* Because the final determinant is equal to the product
              * of the main diagonal, it doesn't matter if we switch rows
              * to avoid division by zero. */
@@ -501,7 +501,7 @@ impl<'a, T: PartialOrd + Clone + fmt::Display + Zero + One + Sub<Output=T> +
              * so the divisors will be along the main diagonal */
             let divisor = upper.elems[row * self.columns + row].clone();
 
-            for next_row in range(row + 1, self.rows) {
+            for next_row in (row + 1.. self.rows) {
                 let lower_elt = upper.elems[next_row * self.columns + row].clone() / divisor.clone();
 
                 let new_row: Vec<T> = upper.get_row(next_row).zip(upper.get_row(row))
@@ -527,7 +527,7 @@ impl<'a, T: PartialOrd + Clone + fmt::Display + Zero + One + Sub<Output=T> +
     #[inline]
     pub fn transpose(&self) -> Matrice<T> {
         let mut new_elems = Vec::with_capacity(self.elems.len());
-        for column in range(0, self.columns) {
+        for column in (0.. self.columns) {
             new_elems.extend(self.get_col(column).map(|x: &T| x.clone()));
         }
 
@@ -541,7 +541,7 @@ impl<'a, T: PartialOrd + Clone + fmt::Display + Zero + One + Sub<Output=T> +
         }
 
         let mut new_elems = Vec::with_capacity(self.elems.len());
-        for row in range(0, self.rows) {
+        for row in (0.. self.rows) {
             new_elems.extend(self.get_row(row).map(|x: &T| x.clone() + other[row].clone()))
         }
 
@@ -556,8 +556,8 @@ impl<'a, T: PartialOrd + Clone + fmt::Display + Zero + One + Sub<Output=T> +
         }
 
         let mut minors: Vec<T> = Vec::with_capacity(self.rows * self.rows);
-        for row in range(0, self.rows) {
-            for column in range(0, self.cols()) {
+        for row in (0.. self.rows) {
+            for column in (0.. self.cols()) {
                 let submatrix = self.decross(row + 1, column + 1);
                 minors.push(submatrix.determinant().unwrap_or(return None));
             }
@@ -592,7 +592,7 @@ impl<'a, T: PartialOrd + Clone + fmt::Display + Zero + One + Sub<Output=T> +
 */
 
         let mut determinant: T = num::zero();
-        for n in range(0, self.columns) {
+        for n in (0.. self.columns) {
             if n % 2 == 0 {
                 determinant = determinant.clone() + self.elems[n].clone() * minors.elems[n].clone()
             } else {
@@ -604,8 +604,8 @@ impl<'a, T: PartialOrd + Clone + fmt::Display + Zero + One + Sub<Output=T> +
             return None
         }
 
-        for row in range(0, minors.rows) {
-            for x in range(0, minors.columns) {
+        for row in (0.. minors.rows) {
+            for x in 0.. minors.columns {
                 let i = row * self.cols() + x;
                 if (row % 2 == 0)^(x % 2 == 0) {
                     *minors.elems.get_mut(i).unwrap() = minors.elems[i].clone() / 
@@ -630,7 +630,7 @@ impl<T: Clone + PartialOrd + Zero + Add + Sub<Output=T> + Mul + One + Div<Output
         }
 
         let mut answer: T = num::zero();
-        for n in range(0, self.rows()) {
+        for n in 0..self.rows() {
             let n_row = n * 2;
             answer = if n == 0 { 
                 answer + self.elems[0].clone() * self.elems[3].clone() 

@@ -1,19 +1,24 @@
 extern crate types;
 
 use self::types::record::*;
-use self::types::literal::{Lit, Structure, Proto, Procedure, Void};
-use super::{Atom, Args, BadNumberOfArgs, BadArgType, CalcResult, 
-            Env, Environment, Evaluate};
+use self::types::literal::LiteralType::{Structure, Proto, Void};
+use self::types::literal::{Procedure, Lit};
+use self::types::sexpr::ArgType::Atom;
+use self::types::ErrorKind::{BadNumberOfArgs,BadArgType};
+use super::{ArgType, CalcResult, Environment, Evaluate};
+
+pub type Env = Environment;
+pub type Args = Vec<ArgType>;
 
 pub fn record_ops(args: &Args, env: &mut Env, rop: RecordOps) -> CalcResult {
     match rop {
-        MakeStruct => make_struct(args, env),
-        SetFields => add_fields(args, env),
-        SetMethods => add_methods(args, env),
-        GetField => get_field(args, env), 
-        CallMethod => call_method(args, env),
-        DelField | DelMethod => del_attrib(args, env, rop),
-        DefineRecord => define_record(args, env),
+        RecordOps::MakeStruct => make_struct(args, env),
+        RecordOps::SetFields => add_fields(args, env),
+        RecordOps::SetMethods => add_methods(args, env),
+        RecordOps::GetField => get_field(args, env), 
+        RecordOps::CallMethod => call_method(args, env),
+        RecordOps::DelField | RecordOps::DelMethod => del_attrib(args, env, rop),
+        RecordOps::DefineRecord => define_record(args, env),
     }
 }
 
@@ -50,7 +55,7 @@ pub fn define_record(args: &Args, env: &mut Env) -> CalcResult {
     let field_list = try!(try!(args[1].desymbolize(env)).to_vec());
     let mut fields = Vec::with_capacity(field_list.len());
 
-    for name in field_list.move_iter() {
+    for name in field_list.into_iter() {
         fields.push(try!(name.to_sym_string()));
     }
 
@@ -58,7 +63,7 @@ pub fn define_record(args: &Args, env: &mut Env) -> CalcResult {
 
     if args.len() == 3 {
         let methods = try!(try!(args[2].desymbolize(env)).to_vec());
-        for method_list in methods.move_iter() {
+        for method_list in methods.into_iter() {
             let list = try!(try!(Atom(method_list).desymbolize(env)).to_vec());
             let (name, method) = try!(list_to_method(list, env));
             proto.set_method(&name, &method);
@@ -123,7 +128,7 @@ pub fn call_method(args: &Args, env: &mut Env) -> CalcResult {
     }
 
     let mut child_env = Environment::new_frame(env);
-    for (param, val) in params.iter().zip(args.slice_from(2).iter()) {
+    for (param, val) in params.iter().zip(args[2 ..].iter()) {
         child_env.symbols.insert(param.clone(), try!(val.desymbolize(env)));
     }
 
@@ -144,7 +149,7 @@ pub fn del_attrib(args: &Args, env: &mut Env, rop: RecordOps) -> CalcResult {
     let name = try!(try!(args[1].arg_to_literal(env)).to_sym_string());
 
     match rop {
-        DelField => try!(record.del_field(&name)),
+        RecordOps::DelField => try!(record.del_field(&name)),
         _ => try!(record.del_method(&name)),
     }
 

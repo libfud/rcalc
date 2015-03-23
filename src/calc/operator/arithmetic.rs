@@ -2,24 +2,27 @@
 
 extern crate types;
 
-use std::num;
-use self::types::operator::{Add, Sub, Mul, Div, Rem, Arith};
-use super::super::{Args, Env, Atom, Lit, CalcResult, BadNumberOfArgs, Evaluate};
+use super::{one, zero};
+use self::types::operator::Arith::{Add, Sub, Mul, Div, Rem};
+use self::types::operator::Arith;
+use self::types::ArgType::Atom;
+use self::types::ErrorKind::BadNumberOfArgs;
+use super::super::{Args, Env, Lit, CalcResult, Evaluate};
 
 #[inline]
-fn minlen_op_ident(op: &Arith) -> (uint, Option<uint>, |Lit, Lit| -> Lit,  Lit) {
+fn minlen_op_ident(op: &Arith) -> (usize, Option<usize>, Box<FnMut(Lit, Lit) -> Lit>,  Lit) {
     match op {
-        &Add => (0, None, |a: Lit, b: Lit| a + b, num::zero()),
-        &Sub => (1, None, |a: Lit, b: Lit| a - b, num::zero()),
-        &Mul => (0, None, |a: Lit, b: Lit| a * b, num::one()),
-        &Div => (1, None, |a: Lit, b: Lit| a / b, num::one()),
-        &Rem => (2, Some(2), |a: Lit, b: Lit| a % b, num::one()),
+        &Add => (0, None, Box::new(move |a: Lit, b: Lit| a + b), zero()),
+        &Sub => (1, None, Box::new(move |a: Lit, b: Lit| a - b), zero()),
+        &Mul => (0, None, Box::new(move |a: Lit, b: Lit| a * b), one()),
+        &Div => (1, None, Box::new(move |a: Lit, b: Lit| a / b), one()),
+        &Rem => (2, Some(2), Box::new(move |a: Lit, b: Lit| a % b), one()),
     }
 }
 
 #[inline]
 pub fn arith(args: &Args, env: &mut Env, oper: Arith) -> CalcResult {
-    let (min_len, max_len, op, ident) = minlen_op_ident(&oper);
+    let (min_len, max_len, mut op, ident) = minlen_op_ident(&oper);
     if args.len() < min_len {
         return Err(BadNumberOfArgs(oper.to_string(), "at least".to_string(), min_len))
     } else if max_len.is_some() {

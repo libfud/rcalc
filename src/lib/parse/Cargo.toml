@@ -2,9 +2,14 @@
 
 name = "parse"
 version = "0.1.0"
-authors = [ "libfud" ]
+authors = [ "Dominick Allen <dominick.allen1989@gmail.com> "]
 
-[[lib]]
+[lib]
+
+name = "parse"
 
 [dependencies.types]
-path = "src/lib/types"
+path = "../types"
+
+[dependencies.num]
+path = "/home/libfud/build/num"

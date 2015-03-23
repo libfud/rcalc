@@ -3,30 +3,36 @@
 #![feature(default_type_params, globs, macro_rules)]
 
 //! Polish notation programmable calculator.
+//extern crate readline;
+
+
 #[cfg(not(test))]
 extern crate types;
 #[cfg(not(test))]
-use types::{Environment, WithEnv, Atom, SExpr};
-#[cfg(target_os = "linux" , not(test))]
-use r_readline::*;
-#[cfg(not(target_os = "linux"), not(test))]
-use rust_no_readline::*;
+use std::ffi::{CString, CStr};
+#[cfg(not(test))]
+use types::{Environment, WithEnv};
+
+use types::sexpr::ArgType::{Atom, SExpr};
+//use readline::{readline,add_history};
+//use readline::common::ReadlineBytes;
+
 #[cfg(not(test))]
 use calc::eval;
 #[cfg(test)]
 pub use calc::eval;
-use std::task::TaskBuilder;
+//use std::task::TaskBuilder;
 
 #[cfg(test)]
 mod test;
 mod calc;
-
+/*
 #[cfg(target_os = "linux")]
 pub mod r_readline {
     extern crate libc;
 
     use self::libc::c_char;
-    use std::c_str::CString;
+    use std::ffi::CString;
     #[link(name = "readline")]
 
     extern {
@@ -41,12 +47,13 @@ pub mod r_readline {
             return None
         }
 
-        let c_buf = prompt.to_c_str();
+//        let c_buf = prompt.to_c_str();
+        let c_buf = CString::new(prompt.as_slice()).unwrap();
 
         unsafe {
             let ret_str = readline(c_buf.as_ptr());
             if ret_str.is_not_null() {
-                CString::new(ret_str, true).as_str().map(|ret_str| ret_str.to_string())
+                CString::new(ret_str, true).as_str().map(|ret_str: String| ret_str.to_string())
             } else {
                 None
             }
@@ -59,7 +66,7 @@ pub mod r_readline {
         if line.len() == 0 {
             return
         }
-        let c_line = line.to_c_str();
+        let c_line = CString::new(line.as_slice()).unwrap();
         unsafe {
             add_history(c_line.as_ptr());
         }
@@ -86,17 +93,27 @@ pub mod rust_no_readline {
         return
     }
 }
+*/
 
 #[cfg(not(test))]
 fn main() {
+    use std::io::prelude::*;
+
     let mut env = Environment::new_global();
 
     loop {
-        let expr = match rust_readline(">>> ") {
-            Some(val)   => val.to_string(),
-            None        => continue,
+/*        let prompt: CString = CString::new(">>> ");
+        let (expr, hist) = match readline(&prompt) {
+            Ok(val) => (cstr_to_string(& val), val),
+            _         => continue,
         };
-        rust_add_history(expr.as_slice());
+        add_history(hist);*/
+        print!(">>>");
+        let stdin = std::io::stdin();
+        let expr = match stdin.lock().lines().next().unwrap() {
+            Ok(x) => x,
+            _ => continue
+        };
 
         let exit_q: Vec<&str> = expr.as_slice().words().collect();
         if exit_q.len() == 0 {
@@ -111,6 +128,7 @@ fn main() {
             _   => { },
         }
 
+/*
         let ((exp_tx, exp_rx), (env_tx, env_rx)) = (channel(), channel());
         env_tx.send(env.clone());
         exp_tx.send(expr.as_slice().trim().to_string());
@@ -131,6 +149,13 @@ fn main() {
                 }
             },
             Err(_) => continue,
+        }
+*/
+        let result = eval(&expr, &mut env);
+        match result {
+            Ok(Atom(x)) => println!("{}", WithEnv { data: &x, env: &env }),
+            Ok(SExpr(x)) => println!("{}", x),
+            Err(f) => println!("{}", f),
         }
     }
 }

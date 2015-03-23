@@ -12,5 +12,4 @@ name = "types"
 path = "../matrix"
 
 [dependencies.num]
-version = "0.1.15"
-
+path = "/home/libfud/build/num"
